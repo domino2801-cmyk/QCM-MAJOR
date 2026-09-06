@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question pour un Major - Édition Tactique</title>
+    <link rel="stylesheet" href="ui/Style.css?v=ranking">
+</head>
+<body>
+    <div class="container">
+        <button id="close-app" class="close-app" type="button" aria-label="Fermer l’application" title="Fermer l’application">X</button>
+        <button id="admin-access-btn" class="admin-access" type="button" aria-label="Ouvrir l’administration" title="Administration">⚙</button>
+
+        <div id="auth-screen" class="screen active">
+            <div class="brand-lockup"><img src="public/images/logo2.png" width="70" alt=""><h1>Question pour un Major</h1></div>
+            <p class="subtitle">Créez votre profil ou connectez-vous pour accéder à la préparation.</p>
+            <div class="auth-tabs" role="tablist" aria-label="Authentification">
+                <button class="auth-tab" type="button" data-auth-mode="login">Connexion</button>
+                <button class="auth-tab active" type="button" data-auth-mode="register">Créer un compte</button>
+            </div>
+            <form id="login-form" class="auth-form hidden">
+                <label for="login-email">Mail personnel du candidat</label>
+                <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
+                <label for="login-password">Mot de passe</label>
+                <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" required>
+                <p id="login-message" class="auth-message" role="alert"></p>
+                <button class="btn-main" type="submit">Se connecter</button>
+            </form>
+            <form id="register-form" class="auth-form">
+                <label for="register-name">Nom du candidat</label>
+                <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Nom et prénom" required>
+                <label for="register-email">Mail personnel du candidat</label>
+                <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
+                <label for="register-password">Mot de passe</label>
+                <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
+                <label for="register-specialty">Spécialité BM4</label>
+                <input id="register-specialty" name="specialty" type="text" placeholder="Ex. : RHL, PNF, INF, MMA, SIC..." required>
+                <p id="register-message" class="auth-message" role="alert"></p>
+                <button class="btn-main" type="submit">Créer mon compte</button>
+            </form>
+            <form id="admin-form" class="auth-form hidden">
+                <label for="admin-email">Identifiant administrateur</label>
+                <input id="admin-email" name="email" type="text" placeholder="admin" required>
+                <label for="admin-password">Mot de passe administrateur</label>
+                <input id="admin-password" name="password" type="password" placeholder="............" required>
+                <p id="admin-message" class="auth-message" role="alert"></p>
+                <button class="btn-main" type="submit">Ouvrir l’administration</button>
+            </form>
+            <section id="global-ranking-section" class="global-ranking hidden">
+                <h2>Classement campagne globale</h2>
+                <ol id="global-ranking-list"></ol>
+            </section>
+        </div>
+
+        <div id="admin-screen" class="screen">
+            <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Déconnexion</button></div>
+            <h1>Interface administrateur</h1>
+            <p class="subtitle">Gestion des comptes, des questions et des résultats</p>
+            <nav class="admin-nav" aria-label="Gestion administrateur">
+                <button class="admin-nav-btn active" type="button" data-admin-section="accounts">Gestion des comptes</button>
+                <button class="admin-nav-btn" type="button" data-admin-section="questions">Gestion des questions</button>
+                <button class="admin-nav-btn" type="button" data-admin-section="results">Gestion des résultats</button>
+            </nav>
+            <section id="admin-accounts-section" class="admin-panel">
+                <div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Nom du candidat</th><th>Mail personnel</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-list"></tbody></table></div>
+            </section>
+            <section id="admin-questions-section" class="admin-section admin-panel hidden">
+                <h2>Gestion des questions</h2>
+                <form id="question-form" class="auth-form">
+                    <label for="admin-question-theme">Thème</label>
+                    <select id="admin-question-theme" required><option value="0">1. Organisation et Commandement</option><option value="1">2. Matériels, Armements et Technologies</option><option value="2">3. Lois de Programmation Militaire</option><option value="3">4. Opérations Extérieures</option><option value="4">5. Histoire & Traditions</option></select>
+                    <label for="admin-question-text">Question</label><textarea id="admin-question-text" rows="3" required></textarea>
+                    <label for="admin-answer-1">Réponse 1</label><input id="admin-answer-1" type="text" required>
+                    <label for="admin-answer-2">Réponse 2</label><input id="admin-answer-2" type="text" required>
+                    <label for="admin-answer-3">Réponse 3</label><input id="admin-answer-3" type="text" required>
+                    <label for="admin-answer-4">Réponse 4</label><input id="admin-answer-4" type="text" required>
+                    <label for="admin-correct-answer">Bonne réponse</label><select id="admin-correct-answer" required><option value="0">Réponse 1</option><option value="1">Réponse 2</option><option value="2">Réponse 3</option><option value="3">Réponse 4</option></select>
+                    <div class="admin-actions"><button class="btn-main" type="submit" id="question-submit-btn">Ajouter la question</button><button class="auth-tab hidden" type="button" id="question-cancel-btn">Annuler la modification</button></div>
+                    <p id="question-message" class="auth-message" role="alert"></p>
+                </form>
+                <div class="admin-question-toolbar"><button id="cleanup-questions-btn" class="admin-delete-btn" type="button">Supprimer les doublons</button></div>
+                <div class="admin-table-wrapper"><table class="admin-table question-table"><thead><tr><th>Question</th><th>Réponses</th><th>Bonne réponse</th><th>Actions</th></tr></thead><tbody id="admin-questions-list"></tbody></table></div>
+            </section>
+            <section id="admin-results-section" class="admin-section admin-panel hidden">
+                <div class="admin-results-header"><h2>Gestion des résultats</h2><button id="clear-results-btn" class="admin-delete-btn" type="button">Effacer les résultats</button></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-results-list"></tbody></table></div>
+            </section>
+        </div>
+
+        <div id="theme-screen" class="screen">
+            <div class="account-bar"><button id="logout-btn" type="button">Déconnexion</button></div>
+            <div class="brand-lockup"><img src="public/images/logo2.png" width="100" alt=""><h1>Question pour un Major</h1></div>
+                <p class="subtitle">Préparation au combat du BM4</p>
+                <p id="account-summary" class="account-summary-under"> </p>
+            <div class="theme-grid">
+                <div class="theme-card global-card"><button class="btn-theme" data-theme="all">Campagne Globale</button><input type="number" id="qty-all" value="50" min="1" max="218"></div>
+                <div class="theme-card"><button class="btn-theme" data-theme="1">1. Organisation et Commandement</button><input type="number" id="qty-1" value="5" min="1" max="43"></div>
+                <div class="theme-card"><button class="btn-theme" data-theme="2">2. Matériels, Armements et Technologies</button><input type="number" id="qty-2" value="5" min="1" max="46"></div>
+                <div class="theme-card"><button class="btn-theme" data-theme="3">3. Lois de Programmation Militaire</button><input type="number" id="qty-3" value="5" min="1" max="24"></div>
+                <div class="theme-card"><button class="btn-theme" data-theme="4">4. Opérations Extérieures</button><input type="number" id="qty-4" value="5" min="1" max="35"></div>
+                <div class="theme-card"><button class="btn-theme" data-theme="5">5. Histoire & Traditions</button><input type="number" id="qty-5" value="5" min="1" max="70"></div>
+            </div>
+            <button id="start-btn" class="btn-main" disabled>Engager la Campagne</button>
+        </div>
+
+        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question">## Chargement...</div><div id="options" class="options-grid"></div></div>
+
+        <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</div><div id="score-display" class="score-large">00.00 / 20</div></div><div class="details-list"><div>• Correctes : <strong id="stat-correct">0</strong></div><div>• Fausses : <strong id="stat-wrong">0</strong></div><div>• Passées : <strong id="stat-skipped">0</strong></div><div>• Points Bruts : <span id="stat-brut">0</span> <span id="brut-max">/ 0</span></div></div><section id="review-section" class="review-section hidden"><h2>Rappel des réponses à revoir</h2><div id="review-list"></div></section><button class="btn-main" id="btn-new-mission">Nouvelle Mission</button></div>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>

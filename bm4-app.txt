@@ -1,0 +1,41 @@
+bm4-app/
+│
+├── index.html                 # Interface principale (3 écrans)
+├── app.js                     # Point d’entrée, coordination des modules
+│
+├── ui/
+│   └── style.css              # Style militaire (HUD, couleurs, animations)
+│
+├── public/
+│   ├── images/                # Logos, décor, icônes
+│   └── audio/                 # Sonar, sons tactiques
+│
+├── modules/
+│   │
+│   ├── questions-bank/        # Banque de questions (découpée par thèmes)
+│   │   ├── index.js           # Fusion des thèmes + accès global
+│   │   ├── theme-1.js
+│   │   ├── theme-2.js
+│   │   ├── theme-3.js
+│   │   ├── theme-4.js
+│   │   └── theme-5.js
+│   │
+│   ├── quiz-engine/           # Moteur tactique
+│   │   ├── index.js           # API du moteur
+│   │   ├── engine.js          # Logique pure (chargement, mélange)
+│   │   └── scoring.js         # Barème militaire (+4 / -1 / 0)
+│   │
+│   ├── ui-controller/         # Gestion de l’interface
+│   │   └── index.js           # Changement d’écran, marquage visuel
+│   │
+│   ├── core/
+│   │   ├── router.js          # Navigation interne (menu → mission → bilan)
+│   │   └── events.js          # Bus d’événements tactiques
+│   │
+│   └── stats/
+│       └── index.js           # Statistiques, historique, export
+
+
+
+git clone https://github.com/votre-repo/question-pour-un-major.git
+cd question-pour-un-major
