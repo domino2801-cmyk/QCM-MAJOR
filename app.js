@@ -26,9 +26,14 @@ const adminEmail = "admin@admin.fr";
 const adminPassword = "delemotte";
 const googleSheetEndpoint = "https://script.google.com/macros/s/AKfycbwljrsgofGfgUPpSvsBAKC3VL14VHrrquupvc6V2r9KwfBXDP-Gfh19LT9-w5s7paYJrQ/exec";
 let editingQuestionIndex = null;
-let waitingAudioContext = null;
-let waitingOscillator = null;
-let waitingGain = null;
+let authAudioRetry = null;
+const waitingConnectionAudio = new Audio("public/audio/ATTENTE%20CONNECTION.mp3");
+waitingConnectionAudio.loop = true;
+waitingConnectionAudio.preload = "auto";
+const correctAnswerAudio = new Audio("public/audio/BONNE%20REPONSE.mp3");
+correctAnswerAudio.preload = "auto";
+const incorrectAnswerAudio = new Audio("public/audio/MAUVAISE%20REPONSE.mp3");
+incorrectAnswerAudio.preload = "auto";
 
 function getAccounts() {
     try {
@@ -206,61 +211,35 @@ function setAuthMessage(id, message) {
 
 function setAuthAudioPlaying(playing) {
     if (playing) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return;
+        waitingConnectionAudio.play().catch(() => {
+            if (authAudioRetry) return;
 
-        if (waitingAudioContext) {
-            waitingAudioContext.resume().catch(() => {});
-            return;
-        }
-
-        waitingAudioContext = new AudioContextClass();
-        waitingOscillator = waitingAudioContext.createOscillator();
-        waitingGain = waitingAudioContext.createGain();
-        waitingOscillator.type = "sine";
-        waitingOscillator.frequency.value = 150;
-        waitingGain.gain.value = 0.035;
-        waitingOscillator.connect(waitingGain);
-        waitingGain.connect(waitingAudioContext.destination);
-        waitingOscillator.start();
-        waitingAudioContext.resume().catch(() => {});
+            const resumeAudio = () => {
+                authAudioRetry = null;
+                waitingConnectionAudio.play().catch(() => {});
+                document.removeEventListener("pointerdown", resumeAudio);
+                document.removeEventListener("keydown", resumeAudio);
+            };
+            authAudioRetry = resumeAudio;
+            document.addEventListener("pointerdown", resumeAudio, { once: true });
+            document.addEventListener("keydown", resumeAudio, { once: true });
+        });
         return;
     }
 
-    if (waitingOscillator) waitingOscillator.stop();
-    waitingOscillator?.disconnect();
-    waitingGain?.disconnect();
-    waitingAudioContext?.close().catch(() => {});
-    waitingOscillator = null;
-    waitingGain = null;
-    waitingAudioContext = null;
+    if (authAudioRetry) {
+        document.removeEventListener("pointerdown", authAudioRetry);
+        document.removeEventListener("keydown", authAudioRetry);
+        authAudioRetry = null;
+    }
+    waitingConnectionAudio.pause();
+    waitingConnectionAudio.currentTime = 0;
 }
 
 function playAnswerSound(isCorrect) {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-
-    const audioContext = new AudioContextClass();
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    const startTime = audioContext.currentTime;
-
-    oscillator.type = isCorrect ? "sine" : "sawtooth";
-    oscillator.frequency.setValueAtTime(isCorrect ? 660 : 220, startTime);
-    if (isCorrect) {
-        oscillator.frequency.linearRampToValueAtTime(880, startTime + 0.16);
-    } else {
-        oscillator.frequency.linearRampToValueAtTime(110, startTime + 0.22);
-    }
-
-    gain.gain.setValueAtTime(0.0001, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.18, startTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + (isCorrect ? 0.2 : 0.26));
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-    oscillator.start(startTime);
-    oscillator.stop(startTime + (isCorrect ? 0.2 : 0.26));
-    oscillator.addEventListener("ended", () => audioContext.close());
+    const answerAudio = isCorrect ? correctAnswerAudio : incorrectAnswerAudio;
+    answerAudio.currentTime = 0;
+    answerAudio.play().catch(() => {});
 }
 
 function showAuthenticatedApp(email) {
