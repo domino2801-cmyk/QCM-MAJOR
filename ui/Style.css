@@ -52,7 +52,7 @@ body {
     width: 32px;
     height: 32px;
     padding: 0;
-    background: transparent;
+    background: red;
     border: 1px solid var(--primary);
     border-radius: 4px;
     color: var(--accent);
@@ -89,12 +89,12 @@ body {
 
 .admin-access:hover,
 .admin-access:focus-visible {
-    background: var(--primary);
+    background: red;
     color: #000;
 }
 
 .app-closed {
-    color: var(--accent);
+    color: red;
     font-family: 'Courier New', Courier, monospace;
     text-align: center;
     padding-top: 20vh;
