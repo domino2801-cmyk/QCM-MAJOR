@@ -62,7 +62,7 @@ body {
 
 .close-app:hover,
 .close-app:focus-visible {
-    background: var(--incorrect);
+    background: red;
     border-color: #ff4d4d;
     color: #fff;
 }
@@ -76,7 +76,7 @@ body {
     height: 32px;
     box-sizing: border-box;
     padding: 0;
-    background: transparent;
+    background: red;
     border: 1px solid var(--primary);
     border-radius: 4px;
     color: var(--accent);
