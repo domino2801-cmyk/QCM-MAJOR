@@ -455,12 +455,12 @@ h1 {
     margin: 24px auto;
     padding: 16px 20px;
     max-width: 520px;
-    color: #000;
+    color: #FFF;
     text-align: center;
 }
 
 .global-ranking h2 {
-    color: #000;
+    color: #FFF;
     font-size: 1.1rem;
     margin: 0 0 12px;
 }
@@ -473,7 +473,7 @@ h1 {
 }
 
 .global-ranking li {
-    color: #000;
+    color: #FFF;
     font-weight: bold;
 }
 
