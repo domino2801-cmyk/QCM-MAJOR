@@ -2,60 +2,60 @@ export default [
     {
         "q": "Pourcentage de femmes militaires dans l'armée de terre en 2025 ?",
         "r": [
-            "0,12",
-            "0,15",
-            "0,08",
-            "0,1"
+            "12%",
+            "15%",
+            "8%",
+            "10%"
         ],
         "correct": 0
     },
     {
         "q": "Dans l'organisation des armes de l'armée de terre en 2025, hors forces spéciales, combien représente en pourcentage l'arme d'état-major ?",
         "r": [
-            "0,12",
-            "0,05",
-            "0,08",
-            "0,15"
+            "12%",
+            "5%",
+            "8%",
+            "15%"
         ],
         "correct": 2
     },
     {
         "q": "Dans l'organisation des armes de l'armée de terre en 2025, hors forces spéciales, combien représente en pourcentage l'arme de Soutien ?",
         "r": [
-            "0,2",
-            "0,1",
-            "0,07",
-            "0,16"
+            "20%",
+            "10%",
+            "7%",
+            "16%"
         ],
         "correct": 3
     },
     {
         "q": "Dans l'organisation des armes de l'armée de terre en 2025, hors forces spéciales, combien représente en pourcentage l'arme de l'appui ?",
         "r": [
-            "0,25",
-            "0,12",
-            "0,4",
-            "0,31"
+            "25%",
+            "12%",
+            "40%",
+            "31%"
         ],
         "correct": 3
     },
     {
         "q": "Dans l'organisation des armes de l'armée de terre en 2025, hors forces spéciales, combien représente en pourcentage l'arme de Mêlée ?",
         "r": [
-            "0,45",
-            "0,3",
-            "0,25",
-            "0,65"
+            "45%",
+            "30%",
+            "25%",
+            "65%"
         ],
         "correct": 0
     },
     {
         "q": "Quel est le pourcentage de femme dans la reserve operationnelle de l'armee de Terre en janvier 2025 ?",
         "r": [
-            "10",
-            "16",
-            "20",
-            "23"
+            "10%",
+            "16%",
+            "20%",
+            "23%"
         ],
         "correct": 0
     },
@@ -142,10 +142,10 @@ export default [
     {
         "q": "Quelle est la part de femmes militaires au sein de l'Armée de Terre française en 2025 ?",
         "r": [
-            "0,08",
-            "0,12",
-            "0,2",
-            "0,34"
+            "8%",
+            "12%",
+            "20%",
+            "34%"
         ],
         "correct": 1
     },
