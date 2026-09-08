@@ -1,13 +1,13 @@
 export default [
     {
-        "q": "En 2024, combien y a-t-il de regiment de l'aviation legere de l'armee de terre  ?",
+        "q": "En 2024, combien y a-t-il de regiment de l'aviation legere de l'armee de terre au sein de la 4BAC ?",
         "r": [
             "1",
             "2",
             "3",
             "4"
         ],
-        "correct": 3
+        "correct": 2
     },
     {
         "q": "En Afrique dans le cadre du partenariat, de combien de détachement de liaison interarmes (DLIA) la France dispose t'elle en 2025 ?",
