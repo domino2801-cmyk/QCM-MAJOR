@@ -1,6 +1,6 @@
 {
   "name": "Question pour un Major",
-  "short_name": "QPM",
+  "short_name": "QCM",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0b1f33",
