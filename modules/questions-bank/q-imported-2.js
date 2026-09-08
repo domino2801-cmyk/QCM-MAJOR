@@ -2,30 +2,30 @@ export default [
     {
         "q": "La LPM 2024-2030 prévoit de porter l'effort national de défense à ... du produit intérieur brut (PIB) à compter de 2025.",
         "r": [
-            "0,02",
-            "0,03",
-            "0,04",
-            "0,01"
+            "2%",
+            "5%",
+            "4%",
+            "1%"
         ],
         "correct": 0
     },
     {
         "q": "Quel est le pourcentage des terrains militaires classés dans le réseau européen de protection de la biodiversité ?",
         "r": [
-            "0,3",
-            "0,4",
-            "0,1",
-            "0,2"
+            "30%",
+            "40%",
+            "10%",
+            "20%"
         ],
         "correct": 3
     },
     {
         "q": "Complétez la phrase : Un des objectifs de la LPM 2019-2025 est de moderniser le combat de contact par la livraison de … % des cibles Scorpion d'ici 2025 (Griffon, Jaguar, VBMR légers).",
         "r": [
-            "0,5",
-            "0,3",
-            "0,6",
-            "0,75"
+            "50%",
+            "30%",
+            "60%",
+            "75%"
         ],
         "correct": 0
     },
