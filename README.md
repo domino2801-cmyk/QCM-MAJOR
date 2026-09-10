@@ -5,8 +5,6 @@
 
 Le site permet aux candidats de tester leurs connaissances à travers différentes thématiques clés de la culture militaire et offre aux administrateurs une interface dédiée pour gérer le contenu pédagogique.
 
-🔗 **Démo en ligne :** [Visiter le site](https://github.io)
-
 ---
 
 ## 🚀 Fonctionnalités
@@ -42,25 +40,43 @@ L'arborescence du projet est organisée de manière modulaire pour séparer les 
 
 ```text
 QCM-MAJOR/
-├── index.html              # Page principale (Portail, Quiz et Admin)
-├── README.md               # Documentation du projet
-├── assets/                 # Médias et ressources globales
-│   └── img/                # Logos, insignes, icônes tactiques
-│       └── logo.png
-├── css/                    # Styles de l'application
-│   ├── style.css           # Design global, variables et mise en page
-│   └── components/         # Architecture CSS modulaire
-│       ├── admin.css       # Style spécifique à l'interface admin
-│       └── quiz.css        # Style spécifique aux cartes de questions
-└── js/                     # Logique JavaScript
-    ├── app.js              # Point d'entrée principal (Initialisation et routage)
-    ├── data.js             # Base de données de questions par défaut (JSON/Tableaux)
-    ├── auth.js             # Gestion des sessions (Inscriptions, connexions Candidat & Admin)
-    ├── quiz.js             # Moteur du QCM (Navigation, chronomètre, calcul des notes sur 20)
-    └── admin.js            # Fonctions de gestion (CRUD questions, nettoyage des doublons)
-```
+│
+├── index.html                 # Interface principale (3 écrans)
+├── app.js                     # Point d’entrée, coordination des modules
+│
+├── ui/
+│   └── style.css              # Style militaire (HUD, couleurs, animations)
+│
+├── public/
+│   ├── images/                # Logos, décor, icônes
+│   └── audio/                 # Sonar, sons tactiques
+│
+├── modules/
+│   │
+│   ├── questions-bank/        # Banque de questions (découpée par thèmes)
+│   │   ├── index.js           # Fusion des thèmes + accès global
+│   │   ├── theme-1.js
+│   │   ├── theme-2.js
+│   │   ├── theme-3.js
+│   │   ├── theme-4.js
+│   │   └── theme-5.js
+│   │
+│   ├── quiz-engine/           # Moteur tactique
+│   │   ├── index.js           # API du moteur
+│   │   ├── engine.js          # Logique pure (chargement, mélange)
+│   │   └── scoring.js         # Barème militaire (+4 / -1 / 0)
+│   │
+│   ├── ui-controller/         # Gestion de l’interface
+│   │   └── index.js           # Changement d’écran, marquage visuel
+│   │
+│   ├── core/
+│   │   ├── router.js          # Navigation interne (menu → mission → bilan)
+│   │   └── events.js          # Bus d’événements tactiques
+│   │
+│   └── stats/
+│       └── index.js           # Statistiques, historique, export
 
----
+```
 
 ## 🛠️ Technologies Utilisées
 
@@ -88,13 +104,3 @@ Pour exécuter ce projet sur votre machine locale, aucune installation complexe 
    Ouvrez simplement le fichier `index.html` dans le navigateur de votre choix.
 
 ---
-
-## 🤝 Contribution
-
-Les contributions pour enrichir la base de questions ou améliorer l'interface sont les bienvenues !
-1. Créez un *Fork* du projet.
-2. Créez votre branche de fonctionnalité (`git checkout -b feature/AjoutQuestions`).
-3. Commitez vos modifications (`git commit -m 'Ajout de 20 questions OPEX'`).
-4. Poussez la branche (`git push origin feature/AjoutQuestions`).
-5. Ouvrez une *Pull Request*.
-
