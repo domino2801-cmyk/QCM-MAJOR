@@ -41,6 +41,7 @@ let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let cachedAccounts = {};
 let resultsCache = [];
+let publicRankingCache = [];
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -65,6 +66,82 @@ function getStoredJson(storage, key, fallback) {
         return JSON.parse(storage.getItem(key) || JSON.stringify(fallback));
     } catch {
         return fallback;
+    }
+}
+
+function buildPublicPseudo(candidateId) {
+    const source = String(candidateId || "candidat-inconnu");
+    let hash = 0;
+
+    for (let index = 0; index < source.length; index++) {
+        hash = ((hash << 5) - hash + source.charCodeAt(index)) >>> 0;
+    }
+
+    return `Pseudo-${hash.toString(16).toUpperCase().padStart(6, "0").slice(0, 6)}`;
+}
+
+function buildLocalPublicRanking(results) {
+    const bestScoresByCandidate = new Map();
+
+    results
+        .filter(result => result.theme === "all")
+        .forEach(result => {
+            const candidateId = result.candidateId || result.email || result.label || "candidat-inconnu";
+            const currentBest = bestScoresByCandidate.get(candidateId);
+            if (!currentBest || result.score > currentBest.score) {
+                bestScoresByCandidate.set(candidateId, result);
+            }
+        });
+
+    const medals = ["🥇 Or", "🥈 Argent", "🥉 Bronze"];
+
+    return [...bestScoresByCandidate.entries()]
+        .sort((first, second) => second[1].score - first[1].score)
+        .slice(0, 3)
+        .map(([candidateId, result], index) => ({
+            rang: index + 1,
+            medaille: medals[index],
+            pseudo: buildPublicPseudo(candidateId),
+            score: Number(result.score || 0)
+        }));
+}
+
+function setPublicRanking(entries) {
+    publicRankingCache = Array.isArray(entries) ? entries : [];
+}
+
+function getPublicRanking() {
+    return publicRankingCache;
+}
+
+async function loadPublicRankingFromSupabase() {
+    if (!supabase) {
+        setPublicRanking(buildLocalPublicRanking(getResults()));
+        return false;
+    }
+
+    try {
+        const data = await supabaseRestRequest(
+            "/global_ranking_public?select=rang,medaille,pseudo,score&order=rang.asc"
+        );
+
+        if (!Array.isArray(data)) {
+            setPublicRanking(buildLocalPublicRanking(getResults()));
+            return false;
+        }
+
+        setPublicRanking(
+            data.map(entry => ({
+                rang: Number(entry.rang || 0),
+                medaille: String(entry.medaille || ""),
+                pseudo: String(entry.pseudo || "Pseudo inconnu"),
+                score: Number(entry.score || 0)
+            }))
+        );
+        return true;
+    } catch {
+        setPublicRanking(buildLocalPublicRanking(getResults()));
+        return false;
     }
 }
 
@@ -1193,8 +1270,9 @@ function renderAdminResults() {
         deleteButton.innerText = "Supprimer";
         deleteButton.addEventListener("click", async () => {
             await deleteResult(result.id);
+            await loadPublicRankingFromSupabase();
             renderAdminResults();
-            renderGlobalRanking(getResults());
+            renderGlobalRanking();
         });
 
         actionCell.appendChild(deleteButton);
@@ -1203,33 +1281,17 @@ function renderAdminResults() {
     });
 }
 
-function renderGlobalRanking(results) {
+function renderGlobalRanking() {
     const section = document.getElementById("global-ranking-section");
     const list = document.getElementById("global-ranking-list");
-    const bestScoresByCandidate = new Map();
-
-    results
-        .filter(result => result.theme === "all")
-        .forEach(result => {
-            const candidate = result.candidateId || result.label || result.email || "Candidat inconnu";
-            const currentBest = bestScoresByCandidate.get(candidate);
-            if (!currentBest || result.score > currentBest.score) {
-                bestScoresByCandidate.set(candidate, result);
-            }
-        });
-
-    const ranking = [...bestScoresByCandidate.values()]
-        .sort((first, second) => second.score - first.score)
-        .slice(0, 3);
+    const ranking = getPublicRanking();
 
     list.innerHTML = "";
     section.classList.toggle("hidden", ranking.length === 0);
 
-    const rankingSymbols = ["🏆", "🥈", "🥉"];
-
-    ranking.forEach((result, index) => {
+    ranking.forEach(entry => {
         const item = document.createElement("li");
-        item.innerText = `${rankingSymbols[index]} ${result.label || result.name || result.email || "Candidat inconnu"} — ${result.score.toFixed(2)} / 20`;
+        item.innerText = `${entry.medaille} ${entry.pseudo} — ${entry.score.toFixed(2)} / 20`;
         list.appendChild(item);
     });
 }
@@ -1640,12 +1702,13 @@ async function initializeApp() {
     initializeAuth();
     const loadedFromSupabase = await loadQuestionsFromSupabase();
     if (!loadedFromSupabase) applyQuestionOverrides();
-    await loadResultsFromSupabase();
+    await loadPublicRankingFromSupabase();
     updateThemeQuestionCounts();
-    renderGlobalRanking(getResults());
+    renderGlobalRanking();
     initializeAppInteractions();
     await syncSupabaseSessionFromUrl();
     await restoreSupabaseSession();
+    await loadResultsFromSupabase();
 
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
@@ -1759,8 +1822,9 @@ async function initializeAppInteractions() {
             return;
         }
         await clearResults();
+        await loadPublicRankingFromSupabase();
         renderAdminResults();
-        renderGlobalRanking(getResults());
+        renderGlobalRanking();
     });
 
     document.getElementById("question-form").addEventListener("submit", async event => {
@@ -1961,7 +2025,7 @@ async function bilanFinal() {
     };
 
     await saveResult(resultRecord);
-    const results = getResults();
+    await loadPublicRankingFromSupabase();
 
     uiController.switchScreen("result-screen");
 
@@ -1975,7 +2039,7 @@ async function bilanFinal() {
     const maxPts = (total - quizEngine.stats.skipped) * 4;
     document.getElementById("stat-brut").innerText = quizEngine.stats.points;
     document.getElementById("brut-max").innerText = `/ ${maxPts}`;
-    renderGlobalRanking(results);
+    renderGlobalRanking();
     renderReview();
 }
 
