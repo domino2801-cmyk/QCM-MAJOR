@@ -531,7 +531,7 @@ async function upsertProfileForUser(user, profile = {}) {
     const account = buildAccountFromUser(user, profile);
 
     if (supabase && user?.id) {
-        await supabaseRestRequest("/profiles", {
+        await supabaseRestRequest("/profiles?on_conflict=id", {
             method: "POST",
             accessToken: getStoredSupabaseSession()?.access_token,
             prefer: "resolution=merge-duplicates,return=representation",

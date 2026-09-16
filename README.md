@@ -109,7 +109,7 @@ Pour exécuter ce projet sur votre machine locale, aucune installation complexe 
 
 ## 🔐 Configuration Supabase requise
 
-Avant utilisation de l’authentification, renseignez dans `/home/runner/work/QCM-MAJOR/QCM-MAJOR/index.html` :
+Avant utilisation de l’authentification, renseignez les balises meta de `index.html` à la racine du projet :
 
 ```html
 <meta name="supabase-url" content="https://<votre-projet>.supabase.co">
