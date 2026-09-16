@@ -131,7 +131,7 @@ async function fetchSupabaseUser(accessToken) {
     return supabaseAuthRequest("/user", { accessToken });
 }
 
-function storeSupabaseSessionFromAuthResponse(data, typeOverride) {
+function storeSupabaseSessionFromAuthResponse(data, typeOverride, { persist = true } = {}) {
     if (!data?.access_token) {
         return {
             user: data?.user || null,
@@ -149,7 +149,9 @@ function storeSupabaseSessionFromAuthResponse(data, typeOverride) {
         user: data.user || null
     };
 
-    setStoredSupabaseSession(session);
+    if (persist) {
+        setStoredSupabaseSession(session);
+    }
 
     return {
         user: session.user,
@@ -199,7 +201,7 @@ if (supabase) {
             }
         });
         const user = data?.user || (data?.access_token ? await fetchSupabaseUser(data.access_token).catch(() => null) : null);
-        const stored = storeSupabaseSessionFromAuthResponse({ ...data, user });
+        const stored = storeSupabaseSessionFromAuthResponse({ ...data, user }, undefined, { persist: false });
         return { data: stored, error: null };
     };
 
@@ -445,12 +447,6 @@ function hasSupabaseAuth() {
 
 function normalizeEmail(email) {
     return email.trim().toLowerCase();
-}
-
-async function hashIdentifier(value) {
-    const data = new TextEncoder().encode(value);
-    const hash = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function getCandidateLabel(account, candidateId) {
@@ -1191,6 +1187,7 @@ function initializeAuth() {
     if (hasSupabaseAuth()) {
         supabase.auth.onAuthStateChange(event => {
             if (event === "PASSWORD_RECOVERY") {
+                localStorage.removeItem(adminSessionStorageKey);
                 uiController.switchScreen("auth-screen");
                 currentAuthenticatedAccount = null;
                 clearAuthMessages();
@@ -1208,6 +1205,10 @@ async function initializeApp() {
     renderGlobalRanking(getResults());
     initializeAppInteractions();
     await syncSupabaseSessionFromUrl();
+
+    if (isRecoveryModeFromUrl()) {
+        localStorage.removeItem(adminSessionStorageKey);
+    }
 
     if (localStorage.getItem(adminSessionStorageKey) === "true") {
         showAdminApp();
@@ -1483,9 +1484,7 @@ async function bilanFinal() {
     const results = getResults();
     const email = currentAuthenticatedAccount?.email || "Candidat inconnu";
     const account = currentAuthenticatedAccount || getAccounts()[email];
-    const candidateId = email === "Candidat inconnu"
-        ? crypto.randomUUID()
-        : await hashIdentifier(email);
+    const candidateId = account?.id || crypto.randomUUID();
     const label = getCandidateLabel(account, candidateId);
 
     results.unshift({
