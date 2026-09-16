@@ -1094,23 +1094,22 @@ function getRegisterValidationMessage(field) {
     return field.validationMessage || "Vérifiez les informations saisies avant de créer le compte.";
 }
 
+function getFirstInvalidRegisterField(registerForm) {
+    return [...registerForm.elements]
+        .filter(element => element?.validity)
+        .find(element => !element.validity.valid) || null;
+}
+
 function initializeRegisterFormValidation() {
     const registerForm = document.getElementById("register-form");
     if (!registerForm) return;
+    registerForm.noValidate = true;
 
     const syncRegisterMessage = () => {
-        const hasInvalidField = [...registerForm.elements]
-            .filter(element => element?.validity)
-            .some(element => !element.validity.valid);
-
-        if (!hasInvalidField) {
+        if (!getFirstInvalidRegisterField(registerForm)) {
             setAuthMessage("register-message", "");
         }
     };
-
-    registerForm.addEventListener("invalid", event => {
-        setAuthMessage("register-message", getRegisterValidationMessage(event.target));
-    }, true);
 
     registerForm.addEventListener("input", syncRegisterMessage);
     registerForm.addEventListener("change", syncRegisterMessage);
@@ -1407,7 +1406,7 @@ function showAuthView(view, options = {}) {
 function ensureSupabaseConfigured(messageId) {
     const configMessage = document.getElementById("auth-config-message");
     const configIssue = getSupabaseConfigMessage();
-    const configured = !configIssue;
+    const configured = hasSupabaseAuth() && !configIssue;
     configMessage.innerText = configIssue || "Configuration Supabase prête.";
     configMessage.classList.toggle("hidden", configured);
 
@@ -1628,6 +1627,14 @@ function initializeAuth() {
     document.getElementById("register-form").addEventListener("submit", async event => {
         event.preventDefault();
         if (!ensureSupabaseConfigured("register-message")) return;
+
+        const registerForm = event.currentTarget;
+        const invalidField = getFirstInvalidRegisterField(registerForm);
+        if (invalidField) {
+            setAuthMessage("register-message", getRegisterValidationMessage(invalidField));
+            invalidField.focus?.();
+            return;
+        }
 
         const pseudoField = getRequiredElement(
             "register-pseudo",

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import vm from "node:vm";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
@@ -29,16 +30,185 @@ test("register markup keeps required ids and HTML5 constraints", () => {
 });
 
 test("signup flow still stores pending signup and switches to OTP", () => {
-    assert.match(js, /document\.getElementById\("register-form"\)\.addEventListener\("submit"/);
-    assert.match(js, /await supabase\.auth\.signUp\(\{/);
-    assert.match(js, /setPendingSignup\(\{ name, email, specialty \}\)/);
-    assert.match(js, /showAuthView\("otp", \{ email \}\)/);
+    const registerMessageField = { innerText: "" };
+    const form = { elements: [], noValidate: false };
+    const fields = {
+        "register-pseudo": { id: "register-pseudo", value: "Caporal", validity: { valid: true } },
+        "register-email": { id: "register-email", value: "Test@Example.com", validity: { valid: true } },
+        "register-password": { id: "register-password", value: "secret6", validity: { valid: true }, minLength: 6 },
+        "register-specialty": { id: "register-specialty", value: "INF", validity: { valid: true } },
+        "register-message": registerMessageField
+    };
+    form.elements = Object.values(fields).filter(field => field.id && field.id !== "register-message");
+
+    let pendingSignup = null;
+    let shownView = null;
+    let otpInputsCleared = false;
+    let signUpPayload = null;
+
+    const submitHandler = extractRegisterSubmitHandler();
+
+    return submitHandler({
+        preventDefault() {},
+        currentTarget: form
+    }, {
+        ensureSupabaseConfigured: () => true,
+        getFirstInvalidRegisterField: () => null,
+        getRegisterValidationMessage: () => "unused",
+        setAuthMessage: (id, message) => {
+            if (id === "register-message") registerMessageField.innerText = message;
+        },
+        getRequiredElement: id => fields[id],
+        normalizeEmail: email => email.trim().toLowerCase(),
+        supabase: {
+            auth: {
+                signUp: async payload => {
+                    signUpPayload = payload;
+                }
+            }
+        },
+        setPendingSignup: value => {
+            pendingSignup = value;
+        },
+        clearAuthMessages: () => {
+            registerMessageField.innerText = "";
+        },
+        clearOtpInputs: () => {
+            otpInputsCleared = true;
+        },
+        showAuthView: (view, options) => {
+            shownView = { view, options };
+        }
+    }).then(() => {
+        assert.deepEqual(signUpPayload, {
+            email: "test@example.com",
+            password: "secret6",
+            options: {
+                data: { name: "Caporal", specialty: "INF" }
+            }
+        });
+        assert.deepEqual(pendingSignup, {
+            name: "Caporal",
+            email: "test@example.com",
+            specialty: "INF"
+        });
+        assert.equal(registerMessageField.innerText, "");
+        assert.equal(otpInputsCleared, true);
+        assert.deepEqual(shownView, { view: "otp", options: { email: "test@example.com" } });
+    });
+});
+
+test("signup flow stops on invalid field and shows register-message", async () => {
+    const registerMessageField = { innerText: "" };
+    const invalidField = {
+        id: "register-specialty",
+        validity: { valid: false, valueMissing: true },
+        focusCalled: false,
+        focus() {
+            this.focusCalled = true;
+        }
+    };
+
+    const submitHandler = extractRegisterSubmitHandler();
+    await submitHandler({
+        preventDefault() {},
+        currentTarget: { elements: [invalidField] }
+    }, {
+        ensureSupabaseConfigured: () => true,
+        getFirstInvalidRegisterField: () => invalidField,
+        getRegisterValidationMessage: field => field.id === "register-specialty"
+            ? "Sélectionnez une spécialité BM4 avant de créer le compte."
+            : "unused",
+        setAuthMessage: (id, message) => {
+            if (id === "register-message") registerMessageField.innerText = message;
+        },
+        getRequiredElement: () => {
+            throw new Error("should not read fields when form is invalid");
+        },
+        normalizeEmail: email => email,
+        supabase: { auth: { signUp: async () => {
+            throw new Error("should not call signUp when form is invalid");
+        } } },
+        setPendingSignup: () => {
+            throw new Error("should not persist pending signup when form is invalid");
+        },
+        clearAuthMessages: () => {},
+        clearOtpInputs: () => {},
+        showAuthView: () => {
+            throw new Error("should not show OTP when form is invalid");
+        }
+    });
+
+    assert.equal(registerMessageField.innerText, "Sélectionnez une spécialité BM4 avant de créer le compte.");
+    assert.equal(invalidField.focusCalled, true);
+});
+
+test("register diagnostics mention Supabase connectivity problems", () => {
+    const getFriendlyAuthError = extractNamedFunction("getFriendlyAuthError", ["error", "fallbackMessage"]);
+    const message = getFriendlyAuthError(new Error("Failed to fetch"), "Impossible de créer le compte.");
+
+    assert.match(message, /Impossible de joindre Supabase/);
     assert.match(js, /initializeRegisterFormValidation\(\)/);
 });
 
 test("register diagnostics cover invalid form inputs and hidden view toggling", () => {
     assert.match(js, /function getRegisterValidationMessage/);
-    assert.match(js, /Impossible de joindre Supabase\./);
+    assert.match(js, /function getFirstInvalidRegisterField/);
     assert.match(css, /\.hidden\s*\{\s*display:\s*none;\s*\}/);
     assert.match(css, /#auth-screen \.auth-view/);
 });
+
+function extractNamedFunction(name, parameters) {
+    const start = js.indexOf(`function ${name}`);
+    assert.notEqual(start, -1, `Unable to find function ${name}`);
+
+    const bodyStart = js.indexOf("{", start);
+    let depth = 0;
+    let cursor = bodyStart;
+    while (cursor < js.length) {
+        const character = js[cursor];
+        if (character === "{") depth += 1;
+        if (character === "}") {
+            depth -= 1;
+            if (depth === 0) break;
+        }
+        cursor += 1;
+    }
+
+    const functionSource = js.slice(start, cursor + 1);
+    const script = new vm.Script(`(${functionSource})`);
+    return script.runInNewContext({});
+}
+
+function extractRegisterSubmitHandler() {
+    const marker = 'document.getElementById("register-form").addEventListener("submit", async event => {';
+    const start = js.indexOf(marker);
+    assert.notEqual(start, -1, "Unable to find register submit handler");
+
+    const bodyStart = js.indexOf("{", start) + 1;
+    const end = js.indexOf("\n    });", bodyStart);
+    assert.notEqual(end, -1, "Unable to find end of register submit handler");
+    const body = js.slice(bodyStart, end);
+
+    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+    return new AsyncFunction(
+        "event",
+        "deps",
+        `
+        const {
+            ensureSupabaseConfigured,
+            getFirstInvalidRegisterField,
+            getRegisterValidationMessage,
+            setAuthMessage,
+            getRequiredElement,
+            normalizeEmail,
+            supabase,
+            setPendingSignup,
+            clearAuthMessages,
+            clearOtpInputs,
+            showAuthView
+        } = deps;
+        ${body}
+        `
+    );
+}
