@@ -23,7 +23,6 @@ const resultsStorageKey = "bm4-results";
 const questionHistoryStorageKey = "bm4-question-history";
 const adminEmail = "admin@admin.fr";
 const adminPassword = "delemotte";
-const googleSheetEndpoint = "https://script.google.com/macros/s/AKfycbwljrsgofGfgUPpSvsBAKC3VL14VHrrquupvc6V2r9KwfBXDP-Gfh19LT9-w5s7paYJrQ/exec";
 const supabaseUrl = typeof document !== "undefined"
     ? document.querySelector('meta[name="supabase-url"]')?.content?.trim() || ""
     : "";
@@ -43,6 +42,7 @@ let currentAuthenticatedAccount = null;
 let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let cachedAccounts = {};
+let resultsCache = [];
 let successAction = () => {
     uiController.switchScreen("auth-screen");
     showAuthView("login");
@@ -342,8 +342,41 @@ function getQuestionOverrides() {
     return getStoredJson(localStorage, questionStorageKey, {});
 }
 
+function createRecordId(prefix = "record") {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return crypto.randomUUID();
+    }
+    return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeResultRecord(rawResult = {}) {
+    if (!rawResult || typeof rawResult !== "object") return null;
+
+    return {
+        id: rawResult.id || createRecordId("result"),
+        candidateId: rawResult.candidate_id || rawResult.candidateId || "candidat-inconnu",
+        label: rawResult.label || rawResult.name || rawResult.email || "Candidat inconnu",
+        email: rawResult.email || "",
+        name: rawResult.name || "",
+        theme: rawResult.theme || "all",
+        score: Number(rawResult.score || 0),
+        correct: Number(rawResult.correct || 0),
+        wrong: Number(rawResult.wrong || 0),
+        skipped: Number(rawResult.skipped || 0),
+        total: Number(rawResult.total || 0),
+        date: rawResult.date || new Date().toLocaleString("fr-FR")
+    };
+}
+
+function setResults(results) {
+    resultsCache = results
+        .map(normalizeResultRecord)
+        .filter(Boolean);
+    localStorage.setItem(resultsStorageKey, JSON.stringify(resultsCache));
+}
+
 function getResults() {
-    return getStoredJson(localStorage, resultsStorageKey, []);
+    return resultsCache;
 }
 
 function getQuestionHistory() {
@@ -384,28 +417,129 @@ function applyRemoteQuestions(questions) {
 }
 
 async function syncQuestionMutation(payload) {
-    if (!googleSheetEndpoint) return;
+    if (!supabase) return null;
 
     try {
-        await fetch(googleSheetEndpoint, {
-            method: "POST",
-            mode: "no-cors",
-            cache: "no-store",
-            body: JSON.stringify({ type: "questions", ...payload })
-        });
+        const accessToken = getStoredSupabaseSession()?.access_token;
+
+        if (payload.action === "seed") {
+            const questions = (payload.questions || []).map(question => ({
+                id: question.id,
+                theme_id: question.themeId,
+                q: question.q,
+                r: question.r,
+                correct: question.correct
+            }));
+            if (questions.length === 0) return { seeded: 0 };
+
+            await supabaseRestRequest("/questions?on_conflict=id", {
+                method: "POST",
+                accessToken,
+                prefer: "resolution=merge-duplicates,return=minimal",
+                body: questions
+            });
+            return { seeded: questions.length };
+        }
+
+        if (payload.action === "create") {
+            const question = payload.question;
+            await supabaseRestRequest("/questions", {
+                method: "POST",
+                accessToken,
+                prefer: "return=minimal",
+                body: [{
+                    id: question.id,
+                    theme_id: question.themeId,
+                    q: question.q,
+                    r: question.r,
+                    correct: question.correct
+                }]
+            });
+            return { created: true };
+        }
+
+        if (payload.action === "update") {
+            const question = payload.question;
+            await supabaseRestRequest(`/questions?id=eq.${encodeURIComponent(payload.id)}`, {
+                method: "PATCH",
+                accessToken,
+                body: {
+                    theme_id: question.themeId,
+                    q: question.q,
+                    r: question.r,
+                    correct: question.correct
+                }
+            });
+            return { updated: true };
+        }
+
+        if (payload.action === "delete") {
+            await supabaseRestRequest(`/questions?id=eq.${encodeURIComponent(payload.id)}`, {
+                method: "DELETE",
+                accessToken
+            });
+            return { deleted: true };
+        }
+
+        if (payload.action === "cleanup") {
+            const data = await fetchSupabaseQuestions();
+            if (!Array.isArray(data.questions)) return { removed: 0 };
+
+            const seen = new Set();
+            const duplicateIds = [];
+            data.questions.forEach(question => {
+                const key = String(question.q || "")
+                    .trim()
+                    .replace(/\s+/g, " ")
+                    .toLowerCase();
+                if (!key) return;
+                if (seen.has(key)) {
+                    duplicateIds.push(question.id);
+                    return;
+                }
+                seen.add(key);
+            });
+
+            for (const duplicateId of duplicateIds) {
+                await supabaseRestRequest(`/questions?id=eq.${encodeURIComponent(duplicateId)}`, {
+                    method: "DELETE",
+                    accessToken
+                });
+            }
+
+            return { removed: duplicateIds.length };
+        }
     } catch {
-        // La copie locale reste disponible si Google Sheets est temporairement indisponible.
+        // La copie locale reste disponible si Supabase est temporairement indisponible.
     }
+
+    return null;
 }
 
-async function fetchGoogleSheetQuestions() {
-    const url = `${googleSheetEndpoint}?type=questions&refresh=${Date.now()}`;
+async function fetchSupabaseQuestions() {
+    if (!supabase) return { questions: [] };
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    const query = "/questions?select=id,theme_id,q,r,correct";
 
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
-            const response = await fetch(url, { cache: "no-store" });
-            if (!response.ok) throw new Error(`Google Sheets HTTP ${response.status}`);
-            return await response.json();
+            const data = await supabaseRestRequest(query, { accessToken });
+            return {
+                questions: (Array.isArray(data) ? data : []).map(question => {
+                    const answers = Array.isArray(question.r)
+                        ? question.r
+                        : (typeof question.r === "string"
+                            ? JSON.parse(question.r)
+                            : []);
+                    return {
+                        id: String(question.id),
+                        themeId: String(question.theme_id),
+                        q: String(question.q || ""),
+                        r: [0, 1, 2, 3].map(index => String(answers[index] || "")),
+                        correct: Number(question.correct || 0)
+                    };
+                })
+            };
         } catch (error) {
             if (attempt === 2) throw error;
             await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
@@ -413,11 +547,11 @@ async function fetchGoogleSheetQuestions() {
     }
 }
 
-async function loadQuestionsFromGoogleSheet() {
-    if (!googleSheetEndpoint) return false;
+async function loadQuestionsFromSupabase() {
+    if (!supabase) return false;
 
     try {
-        const data = await fetchGoogleSheetQuestions();
+        const data = await fetchSupabaseQuestions();
 
         if (!Array.isArray(data.questions)) return false;
 
@@ -438,7 +572,7 @@ async function loadQuestionsFromGoogleSheet() {
         }
 
         await syncQuestionMutation({ action: "seed", force: true, questions: localQuestions });
-        const verifyData = await fetchGoogleSheetQuestions();
+        const verifyData = await fetchSupabaseQuestions();
         if (!Array.isArray(verifyData.questions) || verifyData.questions.length === 0) return false;
 
         applyRemoteQuestions(verifyData.questions);
@@ -446,6 +580,88 @@ async function loadQuestionsFromGoogleSheet() {
         return true;
     } catch {
         return false;
+    }
+}
+
+function toSupabaseResultPayload(result) {
+    return {
+        id: result.id,
+        candidate_id: result.candidateId,
+        label: result.label,
+        email: result.email,
+        name: result.name,
+        theme: result.theme,
+        score: result.score,
+        correct: result.correct,
+        wrong: result.wrong,
+        skipped: result.skipped,
+        total: result.total,
+        date: result.date
+    };
+}
+
+async function loadResultsFromSupabase() {
+    if (!supabase) return false;
+
+    try {
+        const accessToken = getStoredSupabaseSession()?.access_token;
+        const data = await supabaseRestRequest(
+            "/quiz_results?select=id,candidate_id,label,email,name,theme,score,correct,wrong,skipped,total,date,created_at&order=created_at.desc",
+            { accessToken }
+        );
+        if (!Array.isArray(data)) return false;
+        setResults(data);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function saveResult(result) {
+    const nextResults = [normalizeResultRecord(result), ...getResults()];
+    setResults(nextResults);
+
+    if (!supabase) return;
+
+    try {
+        await supabaseRestRequest("/quiz_results", {
+            method: "POST",
+            accessToken: getStoredSupabaseSession()?.access_token,
+            prefer: "return=minimal",
+            body: [toSupabaseResultPayload(result)]
+        });
+    } catch {
+        // Conserver la copie locale si la synchronisation Supabase échoue.
+    }
+}
+
+async function deleteResult(resultId) {
+    setResults(getResults().filter(result => result.id !== resultId));
+
+    if (!supabase || !resultId) return;
+
+    try {
+        await supabaseRestRequest(`/quiz_results?id=eq.${encodeURIComponent(resultId)}`, {
+            method: "DELETE",
+            accessToken: getStoredSupabaseSession()?.access_token
+        });
+    } catch {
+        // Conserver la copie locale si la suppression distante échoue.
+    }
+}
+
+async function clearResults() {
+    setResults([]);
+
+    if (!supabase) return;
+
+    try {
+        await supabaseRestRequest("/quiz_results?id=not.is.null", {
+            method: "DELETE",
+            accessToken: getStoredSupabaseSession()?.access_token
+        });
+    } catch {
+        // Conserver la copie locale si le nettoyage distant échoue.
     }
 }
 
@@ -794,10 +1010,10 @@ function renderAdminResults() {
         deleteButton.type = "button";
         deleteButton.className = "admin-delete-btn";
         deleteButton.innerText = "Supprimer";
-        deleteButton.addEventListener("click", () => {
-            results.splice(index, 1);
-            localStorage.setItem(resultsStorageKey, JSON.stringify(results));
+        deleteButton.addEventListener("click", async () => {
+            await deleteResult(result.id);
             renderAdminResults();
+            renderGlobalRanking(getResults());
         });
 
         actionCell.appendChild(deleteButton);
@@ -1238,9 +1454,12 @@ function initializeAuth() {
 }
 
 async function initializeApp() {
+    const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
+    setResults(Array.isArray(storedResults) ? storedResults : []);
     initializeAuth();
-    const loadedFromDrive = await loadQuestionsFromGoogleSheet();
-    if (!loadedFromDrive) applyQuestionOverrides();
+    const loadedFromSupabase = await loadQuestionsFromSupabase();
+    if (!loadedFromSupabase) applyQuestionOverrides();
+    await loadResultsFromSupabase();
     updateThemeQuestionCounts();
     renderGlobalRanking(getResults());
     initializeAppInteractions();
@@ -1334,9 +1553,10 @@ async function initializeAppInteractions() {
     document.getElementById("cleanup-questions-btn").addEventListener("click", async () => {
         if (!questionSourceReady) return;
 
-        await syncQuestionMutation({ action: "cleanup" });
-        setAuthMessage("question-message", "Doublons supprimés. Rechargez la liste pour actualiser les questions.");
-        const loaded = await loadQuestionsFromGoogleSheet();
+        const cleanupSummary = await syncQuestionMutation({ action: "cleanup" });
+        const removed = cleanupSummary?.removed || 0;
+        setAuthMessage("question-message", `${removed} doublon(s) supprimé(s).`);
+        const loaded = await loadQuestionsFromSupabase();
         if (loaded) renderAdminQuestions();
     });
 
@@ -1344,9 +1564,10 @@ async function initializeAppInteractions() {
         button.addEventListener("click", () => switchAdminSection(button.dataset.adminSection));
     });
 
-    document.getElementById("clear-results-btn").addEventListener("click", () => {
-        localStorage.removeItem(resultsStorageKey);
+    document.getElementById("clear-results-btn").addEventListener("click", async () => {
+        await clearResults();
         renderAdminResults();
+        renderGlobalRanking(getResults());
     });
 
     document.getElementById("question-form").addEventListener("submit", async event => {
@@ -1523,13 +1744,12 @@ function marquerBoutons(selected, correct) {
 async function bilanFinal() {
     const total = quizEngine.questions.length;
     const note = scoring.computeFinal(quizEngine.stats, total);
-    const results = getResults();
     const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
     const account = currentAuthenticatedAccount || getAccounts()[email];
     const candidateId = account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu");
     const label = getCandidateLabel(account, candidateId);
-
-    results.unshift({
+    const resultRecord = {
+        id: createRecordId("result"),
         candidateId,
         label,
         email: email === "Candidat inconnu" ? "" : email,
@@ -1541,8 +1761,10 @@ async function bilanFinal() {
         skipped: quizEngine.stats.skipped,
         total,
         date: new Date().toLocaleString("fr-FR")
-    });
-    localStorage.setItem(resultsStorageKey, JSON.stringify(results));
+    };
+
+    await saveResult(resultRecord);
+    const results = getResults();
 
     uiController.switchScreen("result-screen");
 

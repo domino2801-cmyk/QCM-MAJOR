@@ -83,7 +83,8 @@ QCM-MAJOR/
 
 * **Frontend :** HTML5, CSS3, JavaScript (Vanilla ES6)
 * **Authentification :** Supabase Auth (email/password, OTP signup, recovery)
-* **Persistance (Locale) :** `localStorage` (pour la sauvegarde des questions et résultats)
+* **Persistance principale :** Supabase (profils, questions, résultats)
+* **Repli local :** `localStorage` (copie de secours côté navigateur)
 * **Hébergement :** GitHub Pages
 
 ---
@@ -122,6 +123,8 @@ Prérequis côté Supabase :
 * Activer le fournisseur **Email** pour l’OTP d’inscription et la récupération de mot de passe.
 * Configurer les **Redirect URL(s)** Supabase Auth pour l’URL réelle de l’application (GitHub Pages ou environnement local).
 * Prévoir une table `profiles` avec au minimum `id`, `email`, `name`, `specialty`, et des politiques RLS permettant à l’utilisateur authentifié de lire/écrire son propre profil.
+* Prévoir une table `questions` (colonnes : `id`, `theme_id`, `q`, `r`, `correct`) avec règles de lecture/écriture adaptées à l’administration.
+* Prévoir une table `quiz_results` (colonnes : `id`, `candidate_id`, `label`, `email`, `name`, `theme`, `score`, `correct`, `wrong`, `skipped`, `total`, `date`, `created_at`) pour historiser les bilans.
 * Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
 
 Le flux candidat attendu est :
