@@ -1111,6 +1111,15 @@ function showAdminApp() {
     focusElement(".admin-nav-btn.active");
 }
 
+async function runAdminAction(action) {
+    if (!isCurrentUserAdmin()) {
+        showAdminApp();
+        return;
+    }
+
+    await action();
+}
+
 function renderAdminAccessView() {
     const sessionUser = getStoredSupabaseSession()?.user || null;
     const accessCopy = document.getElementById("admin-access-copy");
@@ -1721,7 +1730,7 @@ async function initializeApp() {
     initializeAuth();
     const loadedFromSupabase = await loadQuestionsFromSupabase();
     if (!loadedFromSupabase) applyQuestionOverrides();
-    const loadedPublicRanking = await loadPublicRankingFromSupabase();
+    await loadPublicRankingFromSupabase();
     updateThemeQuestionCounts();
     renderGlobalRanking();
     initializeAppInteractions();
@@ -1820,17 +1829,15 @@ async function initializeAppInteractions() {
     document.getElementById("question-cancel-btn").addEventListener("click", resetQuestionForm);
 
     document.getElementById("cleanup-questions-btn").addEventListener("click", async () => {
-        if (!isCurrentUserAdmin()) {
-            showAdminApp();
-            return;
-        }
-        if (!questionSourceReady) return;
+        await runAdminAction(async () => {
+            if (!questionSourceReady) return;
 
-        const cleanupSummary = await syncQuestionMutation({ action: "cleanup" });
-        const removed = cleanupSummary?.removed || 0;
-        setAuthMessage("question-message", `${removed} doublon(s) supprimé(s).`);
-        const loaded = await loadQuestionsFromSupabase();
-        if (loaded) renderAdminQuestions();
+            const cleanupSummary = await syncQuestionMutation({ action: "cleanup" });
+            const removed = cleanupSummary?.removed || 0;
+            setAuthMessage("question-message", `${removed} doublon(s) supprimé(s).`);
+            const loaded = await loadQuestionsFromSupabase();
+            if (loaded) renderAdminQuestions();
+        });
     });
 
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
@@ -1838,60 +1845,56 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("clear-results-btn").addEventListener("click", async () => {
-        if (!isCurrentUserAdmin()) {
-            showAdminApp();
-            return;
-        }
-        await clearResults();
-        await loadPublicRankingFromSupabase();
-        renderAdminResults();
-        renderGlobalRanking();
+        await runAdminAction(async () => {
+            await clearResults();
+            await loadPublicRankingFromSupabase();
+            renderAdminResults();
+            renderGlobalRanking();
+        });
     });
 
     document.getElementById("question-form").addEventListener("submit", async event => {
         event.preventDefault();
-        if (!isCurrentUserAdmin()) {
-            showAdminApp();
-            return;
-        }
-        const themeId = document.getElementById("admin-question-theme").value;
-        const question = {
-            id: editingQuestionIndex === null
-                ? createRecordId("question")
-                : questionsBank[themeId].questions[editingQuestionIndex].id,
-            q: document.getElementById("admin-question-text").value.trim(),
-            r: [1, 2, 3, 4].map(answerIndex =>
-                document.getElementById(`admin-answer-${answerIndex}`).value.trim()
-            ),
-            correct: parseInt(document.getElementById("admin-correct-answer").value, 10)
-        };
-        const questions = questionsBank[themeId].questions;
+        await runAdminAction(async () => {
+            const themeId = document.getElementById("admin-question-theme").value;
+            const question = {
+                id: editingQuestionIndex === null
+                    ? createRecordId("question")
+                    : questionsBank[themeId].questions[editingQuestionIndex].id,
+                q: document.getElementById("admin-question-text").value.trim(),
+                r: [1, 2, 3, 4].map(answerIndex =>
+                    document.getElementById(`admin-answer-${answerIndex}`).value.trim()
+                ),
+                correct: parseInt(document.getElementById("admin-correct-answer").value, 10)
+            };
+            const questions = questionsBank[themeId].questions;
 
-        if (editingQuestionIndex === null) {
-            questions.push(question);
-            if (questionSourceReady) {
-                await syncQuestionMutation({
-                    action: "create",
-                    question: { ...question, themeId }
-                });
+            if (editingQuestionIndex === null) {
+                questions.push(question);
+                if (questionSourceReady) {
+                    await syncQuestionMutation({
+                        action: "create",
+                        question: { ...question, themeId }
+                    });
+                }
+            } else {
+                questions[editingQuestionIndex] = question;
+                if (questionSourceReady) {
+                    await syncQuestionMutation({
+                        action: "update",
+                        id: question.id,
+                        question: { ...question, themeId }
+                    });
+                }
             }
-        } else {
-            questions[editingQuestionIndex] = question;
-            if (questionSourceReady) {
-                await syncQuestionMutation({
-                    action: "update",
-                    id: question.id,
-                    question: { ...question, themeId }
-                });
-            }
-        }
 
-        saveCurrentThemeQuestions(themeId);
-        document.getElementById("admin-question-theme").value = themeId;
-        setAuthMessage("question-message", "Question enregistrée.");
-        resetQuestionForm();
-        document.getElementById("admin-question-theme").value = themeId;
-        renderAdminQuestions();
+            saveCurrentThemeQuestions(themeId);
+            document.getElementById("admin-question-theme").value = themeId;
+            setAuthMessage("question-message", "Question enregistrée.");
+            resetQuestionForm();
+            document.getElementById("admin-question-theme").value = themeId;
+            renderAdminQuestions();
+        });
     });
 
     document.getElementById("close-app").addEventListener("click", () => {
