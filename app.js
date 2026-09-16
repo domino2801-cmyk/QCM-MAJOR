@@ -121,7 +121,13 @@ async function supabaseRestRequest(path, { method = "GET", body, accessToken, pr
     const data = response.status === 204 ? null : await response.json().catch(() => null);
 
     if (!response.ok) {
-        throw new Error(data?.message || data?.error || `Supabase REST HTTP ${response.status}`);
+        throw new Error(
+            data?.details
+            || data?.hint
+            || data?.message
+            || data?.error
+            || `Supabase REST HTTP ${response.status}`
+        );
     }
 
     return data;
@@ -227,6 +233,16 @@ if (supabase) {
         return { data: stored, error: null };
     };
 
+    supabase.auth.refreshSession = async refreshToken => {
+        const data = await supabaseAuthRequest("/token?grant_type=refresh_token", {
+            method: "POST",
+            body: { refresh_token: refreshToken }
+        });
+        const user = data?.user || (data?.access_token ? await fetchSupabaseUser(data.access_token).catch(() => null) : null);
+        const stored = storeSupabaseSessionFromAuthResponse({ ...data, user });
+        return { data: stored, error: null };
+    };
+
     supabase.auth.resetPasswordForEmail = async (email, { redirect_to } = {}) => {
         await supabaseAuthRequest("/recover", {
             method: "POST",
@@ -272,6 +288,14 @@ if (supabase) {
 
         const user = await fetchSupabaseUser(session.access_token).catch(() => null);
         if (!user) {
+            if (session.refresh_token) {
+                try {
+                    return await supabase.auth.refreshSession(session.refresh_token);
+                } catch {
+                    clearStoredSupabaseSession();
+                    return { data: { session: null }, error: null };
+                }
+            }
             clearStoredSupabaseSession();
             return { data: { session: null }, error: null };
         }
@@ -1484,7 +1508,7 @@ async function bilanFinal() {
     const results = getResults();
     const email = currentAuthenticatedAccount?.email || "Candidat inconnu";
     const account = currentAuthenticatedAccount || getAccounts()[email];
-    const candidateId = account?.id || crypto.randomUUID();
+    const candidateId = account?.id || "candidat-inconnu";
     const label = getCandidateLabel(account, candidateId);
 
     results.unshift({

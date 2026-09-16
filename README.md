@@ -112,8 +112,8 @@ Pour exécuter ce projet sur votre machine locale, aucune installation complexe 
 Avant utilisation de l’authentification, renseignez les balises meta de `index.html` à la racine du projet :
 
 ```html
-<meta name="supabase-url" content="https://<votre-projet>.supabase.co">
-<meta name="supabase-anon-key" content="<votre-anon-key>">
+<meta name="supabase-url" content="https://your-project.supabase.co">
+<meta name="supabase-anon-key" content="your-anon-key">
 <meta name="supabase-profiles-rls" content="verified">
 ```
 
