@@ -612,7 +612,6 @@ function toSupabaseResultPayload(result) {
         id: result.id,
         candidate_id: result.candidateId,
         label: result.label,
-        email: result.email,
         name: result.name,
         theme: result.theme,
         score: result.score,
@@ -699,19 +698,19 @@ async function loadResultsFromSupabase() {
                 .map(result => ({ ...result, synced: false }))
         ].filter(result => !pendingDeleteIds.has(result.id));
 
-        const deduplicated = [];
-        const seen = new Set();
+        const mergedById = new Map();
         mergedResults.forEach(result => {
-            if (seen.has(result.id)) return;
-            if (pendingUpsertIds.has(result.id) && remoteById.has(result.id)) {
-                deduplicated.push({ ...remoteById.get(result.id), synced: true });
-            } else {
-                deduplicated.push(result);
+            if (!mergedById.has(result.id)) {
+                mergedById.set(result.id, result);
             }
-            seen.add(result.id);
+        });
+        pendingUpsertIds.forEach(resultId => {
+            if (remoteById.has(resultId)) {
+                mergedById.set(resultId, { ...remoteById.get(resultId), synced: true });
+            }
         });
 
-        setResults(deduplicated);
+        setResults([...mergedById.values()]);
         await flushPendingResultSync();
         return true;
     } catch {
