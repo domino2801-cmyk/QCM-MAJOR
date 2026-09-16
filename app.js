@@ -1421,13 +1421,14 @@ function ensureSupabaseConfigured(messageId) {
     const configMessage = document.getElementById("auth-config-message");
     const configIssue = getSupabaseConfigMessage();
     const configured = hasSupabaseAuth() && !configIssue;
+    const fallbackConfigMessage = configIssue || "Configuration Supabase indisponible. Rechargez la page puis vérifiez la configuration avant de réessayer.";
     if (configMessage) {
-        configMessage.innerText = configIssue || "Configuration Supabase prête.";
+        configMessage.innerText = configured ? "Configuration Supabase prête." : fallbackConfigMessage;
         configMessage.classList.toggle("hidden", configured);
     }
 
     if (!configured && messageId) {
-        setAuthMessage(messageId, configIssue);
+        setAuthMessage(messageId, fallbackConfigMessage);
     }
 
     return configured;
