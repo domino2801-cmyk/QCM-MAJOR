@@ -791,14 +791,9 @@ function normalizeEmail(email) {
 function isAdminUser(user) {
     const appMetadata = user?.app_metadata || {};
     const role = String(appMetadata.role || "").trim().toLowerCase();
-    const roles = Array.isArray(appMetadata.roles)
-        ? appMetadata.roles.map(value => String(value).trim().toLowerCase())
-        : [];
 
     return appMetadata.bm4_admin === true
-        || appMetadata.is_admin === true
-        || role === "admin"
-        || roles.includes("admin");
+        || role === "admin";
 }
 
 function isCurrentUserAdmin() {
@@ -1686,18 +1681,12 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("admin-logout-btn").addEventListener("click", async () => {
-        if (supabase) {
-            try {
-                await supabase.auth.signOut();
-            } catch {
-                window.alert("La révocation de session a échoué. Réessayez.");
-                return;
-            }
+        if (!currentAuthenticatedAccount) {
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
+            return;
         }
-        currentAuthenticatedAccount = null;
-        currentCandidateEmail = "";
-        uiController.switchScreen("auth-screen");
-        showAuthView("login");
+        showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
     });
 
     document.getElementById("admin-question-theme").addEventListener("change", () => {
