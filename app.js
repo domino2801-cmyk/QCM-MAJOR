@@ -86,7 +86,14 @@ function buildLocalPublicRanking(results) {
     results
         .filter(result => result.theme === "all")
         .forEach(result => {
-            const candidateId = result.candidateId || result.email || result.label || "candidat-inconnu";
+            const candidateId = typeof result.candidateId === "string"
+                ? result.candidateId.trim()
+                : "";
+            const hasSafeIdentifier = candidateId
+                && candidateId !== "candidat-inconnu"
+                && !candidateId.includes("@");
+
+            if (!hasSafeIdentifier) return;
             const currentBest = bestScoresByCandidate.get(candidateId);
             if (!currentBest || result.score > currentBest.score) {
                 bestScoresByCandidate.set(candidateId, result);
@@ -868,8 +875,10 @@ function normalizeEmail(email) {
 function isAdminUser(user) {
     const appMetadata = user?.app_metadata || {};
     const role = String(appMetadata.role || "").trim().toLowerCase();
+    const bm4Admin = String(appMetadata.bm4_admin || "").trim().toLowerCase();
 
     return appMetadata.bm4_admin === true
+        || bm4Admin === "true"
         || role === "admin";
 }
 
@@ -1702,13 +1711,17 @@ async function initializeApp() {
     initializeAuth();
     const loadedFromSupabase = await loadQuestionsFromSupabase();
     if (!loadedFromSupabase) applyQuestionOverrides();
-    await loadPublicRankingFromSupabase();
+    const loadedPublicRanking = await loadPublicRankingFromSupabase();
     updateThemeQuestionCounts();
     renderGlobalRanking();
     initializeAppInteractions();
     await syncSupabaseSessionFromUrl();
     await restoreSupabaseSession();
     await loadResultsFromSupabase();
+    if (!loadedPublicRanking) {
+        await loadPublicRankingFromSupabase();
+        renderGlobalRanking();
+    }
 
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
