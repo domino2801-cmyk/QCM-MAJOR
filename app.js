@@ -971,7 +971,7 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     const adminButton = document.getElementById("theme-admin-btn");
     const isAdmin = account?.isAdmin === true || isCurrentUserAdmin();
     setAuthAudioPlaying(false);
-    adminButton.classList.toggle("hidden", !isAdmin);
+    adminButton?.classList.toggle("hidden", !isAdmin);
     document.getElementById("account-summary").innerText =
         `${account.name || "Candidat"} • ${email} • ${account.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
     uiController.switchScreen("theme-screen");
@@ -997,20 +997,20 @@ function renderAdminAccessView() {
     const accessCopy = document.getElementById("admin-access-copy");
     const submitButton = document.getElementById("admin-access-submit-btn");
 
+    if (isCurrentUserAdmin()) {
+        accessCopy.innerText = "Votre session Supabase est autorisée. Vous pouvez ouvrir l’interface administrateur.";
+        submitButton.innerText = "Ouvrir l’administration";
+        adminAccessAction = () => {
+            showAdminApp();
+        };
+        return;
+    }
+
     if (!sessionUser) {
         accessCopy.innerText = "Connectez-vous d’abord avec un compte administrateur autorisé pour ouvrir l’interface.";
         submitButton.innerText = "Retour à la connexion";
         adminAccessAction = () => {
             showAuthView("login");
-        };
-        return;
-    }
-
-    if (isAdminUser(sessionUser)) {
-        accessCopy.innerText = "Votre session Supabase est autorisée. Vous pouvez ouvrir l’interface administrateur.";
-        submitButton.innerText = "Ouvrir l’administration";
-        adminAccessAction = () => {
-            showAdminApp();
         };
         return;
     }
