@@ -372,7 +372,11 @@ function setResults(results) {
     resultsCache = results
         .map(normalizeResultRecord)
         .filter(Boolean);
-    localStorage.setItem(resultsStorageKey, JSON.stringify(resultsCache));
+    const localSafeResults = resultsCache.map(result => ({
+        ...result,
+        email: ""
+    }));
+    localStorage.setItem(resultsStorageKey, JSON.stringify(localSafeResults));
 }
 
 function getResults() {
@@ -618,7 +622,8 @@ async function loadResultsFromSupabase() {
 }
 
 async function saveResult(result) {
-    const nextResults = [normalizeResultRecord(result), ...getResults()];
+    const normalizedResult = normalizeResultRecord(result);
+    const nextResults = [normalizedResult, ...getResults()];
     setResults(nextResults);
 
     if (!supabase) return;
@@ -628,7 +633,7 @@ async function saveResult(result) {
             method: "POST",
             accessToken: getStoredSupabaseSession()?.access_token,
             prefer: "return=minimal",
-            body: [toSupabaseResultPayload(result)]
+            body: [toSupabaseResultPayload(normalizedResult)]
         });
     } catch {
         // Conserver la copie locale si la synchronisation Supabase échoue.
@@ -654,9 +659,11 @@ async function clearResults() {
     setResults([]);
 
     if (!supabase) return;
+    const candidateScope = currentAuthenticatedAccount?.id || currentCandidateEmail || null;
+    if (!candidateScope) return;
 
     try {
-        await supabaseRestRequest("/quiz_results?id=not.is.null", {
+        await supabaseRestRequest(`/quiz_results?candidate_id=eq.${encodeURIComponent(candidateScope)}`, {
             method: "DELETE",
             accessToken: getStoredSupabaseSession()?.access_token
         });
