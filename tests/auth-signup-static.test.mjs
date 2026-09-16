@@ -33,13 +33,15 @@ test("signup flow still stores pending signup and switches to OTP", () => {
     const registerMessageField = { innerText: "" };
     const form = { elements: [], noValidate: false };
     const fields = {
-        "register-pseudo": { id: "register-pseudo", value: "Caporal", validity: { valid: true } },
-        "register-email": { id: "register-email", value: "Test@Example.com", validity: { valid: true } },
-        "register-password": { id: "register-password", value: "secret6", validity: { valid: true }, minLength: 6 },
-        "register-specialty": { id: "register-specialty", value: "INF", validity: { valid: true } },
+        pseudo: { id: "register-pseudo", name: "pseudo", value: "Caporal", validity: { valid: true } },
+        email: { id: "register-email", name: "email", value: "Test@Example.com", validity: { valid: true } },
+        password: { id: "register-password", name: "password", value: "secret6", validity: { valid: true }, minLength: 6 },
+        specialty: { id: "register-specialty", name: "specialty", value: "INF", validity: { valid: true } },
         "register-message": registerMessageField
     };
-    form.elements = Object.values(fields).filter(field => field.id && field.id !== "register-message");
+    const controls = Object.values(fields).filter(field => field.id && field.id !== "register-message");
+    form.elements = controls;
+    form.elements.namedItem = name => fields[name] || null;
 
     let pendingSignup = null;
     let shownView = null;
@@ -53,7 +55,7 @@ test("signup flow still stores pending signup and switches to OTP", () => {
         setAuthMessage: (id, message) => {
             if (id === "register-message") registerMessageField.innerText = message;
         },
-        getRequiredElement: id => fields[id],
+        getRequiredFormElement: (_, name) => fields[name] || null,
         normalizeEmail: email => email.trim().toLowerCase(),
         supabase: {
             auth: {
@@ -118,7 +120,7 @@ test("signup flow stops on invalid field and shows register-message", async () =
         setAuthMessage: (id, message) => {
             if (id === "register-message") registerMessageField.innerText = message;
         },
-        getRequiredElement: () => {
+        getRequiredFormElement: () => {
             throw new Error("should not read fields when form is invalid");
         },
         normalizeEmail: email => email,

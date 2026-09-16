@@ -1125,6 +1125,20 @@ function getRequiredElement(id, messageId, errorMessage) {
     return null;
 }
 
+function getRequiredFormElement(form, fieldName, messageId, errorMessage) {
+    const directMatch = form?.elements?.namedItem?.(fieldName);
+    const fallbackMatch = [...(form?.elements || [])]
+        .find(element => element?.name === fieldName || element?.id === `register-${fieldName}`);
+    const element = directMatch || fallbackMatch || null;
+
+    if (element) return element;
+
+    if (messageId && errorMessage) {
+        setAuthMessage(messageId, errorMessage);
+    }
+    return null;
+}
+
 function setAuthAudioPlaying(playing) {
     if (playing) {
         waitingConnectionAudio.play().catch(() => {
@@ -1511,14 +1525,15 @@ async function handleRegisterSubmit(event) {
         return;
     }
 
-    const pseudoField = getRequiredElement(
-        "register-pseudo",
+    const pseudoField = getRequiredFormElement(
+        registerForm,
+        "pseudo",
         "register-message",
         "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
     );
-    const emailField = getRequiredElement("register-email", "register-message", "Le champ email est introuvable.");
-    const passwordField = getRequiredElement("register-password", "register-message", "Le champ mot de passe est introuvable.");
-    const specialtyField = getRequiredElement("register-specialty", "register-message", "Le champ spécialité est introuvable.");
+    const emailField = getRequiredFormElement(registerForm, "email", "register-message", "Le champ email est introuvable.");
+    const passwordField = getRequiredFormElement(registerForm, "password", "register-message", "Le champ mot de passe est introuvable.");
+    const specialtyField = getRequiredFormElement(registerForm, "specialty", "register-message", "Le champ spécialité est introuvable.");
 
     if (!pseudoField || !emailField || !passwordField || !specialtyField) {
         return;
