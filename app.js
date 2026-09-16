@@ -45,7 +45,7 @@ let currentSupabaseSession = null;
 let cachedAccounts = {};
 let resultsCache = [];
 let pendingResultSync = {
-    upserts: {},
+    upserts: [],
     deletes: []
 };
 let successAction = () => {
@@ -612,6 +612,7 @@ function toSupabaseResultPayload(result) {
         id: result.id,
         candidate_id: result.candidateId,
         label: result.label,
+        email: result.email,
         name: result.name,
         theme: result.theme,
         score: result.score,
@@ -628,13 +629,15 @@ function persistPendingResultSync() {
 }
 
 function queueResultUpsert(result) {
-    pendingResultSync.upserts[result.id] = toSupabaseResultPayload(result);
+    if (!pendingResultSync.upserts.includes(result.id)) {
+        pendingResultSync.upserts.push(result.id);
+    }
     pendingResultSync.deletes = pendingResultSync.deletes.filter(id => id !== result.id);
     persistPendingResultSync();
 }
 
 function queueResultDelete(resultId) {
-    delete pendingResultSync.upserts[resultId];
+    pendingResultSync.upserts = pendingResultSync.upserts.filter(id => id !== resultId);
     if (!pendingResultSync.deletes.includes(resultId)) {
         pendingResultSync.deletes.push(resultId);
     }
@@ -645,18 +648,24 @@ async function flushPendingResultSync() {
     if (!supabase) return;
     const accessToken = getStoredSupabaseSession()?.access_token;
 
-    if (pendingResultSync.deletes.length > 0) {
-        const idsFilter = pendingResultSync.deletes
+    const deleteIds = [...pendingResultSync.deletes];
+    if (deleteIds.length > 0) {
+        const idsFilter = deleteIds
             .map(resultId => `"${String(resultId).replace(/"/g, "")}"`)
             .join(",");
         await supabaseRestRequest(`/quiz_results?id=in.(${idsFilter})`, {
             method: "DELETE",
             accessToken
         });
-        pendingResultSync.deletes = [];
+        const deletedSet = new Set(deleteIds);
+        pendingResultSync.deletes = pendingResultSync.deletes.filter(id => !deletedSet.has(id));
     }
 
-    const upserts = Object.values(pendingResultSync.upserts);
+    const upsertIds = [...pendingResultSync.upserts];
+    const upserts = upsertIds
+        .map(resultId => getResults().find(result => result.id === resultId))
+        .filter(Boolean)
+        .map(toSupabaseResultPayload);
     if (upserts.length > 0) {
         await supabaseRestRequest("/quiz_results?on_conflict=id", {
             method: "POST",
@@ -664,11 +673,11 @@ async function flushPendingResultSync() {
             prefer: "resolution=merge-duplicates,return=minimal",
             body: upserts
         });
-        const upsertIds = new Set(upserts.map(result => result.id));
+        const syncedIds = new Set(upserts.map(result => result.id));
         setResults(getResults().map(result => (
-            upsertIds.has(result.id) ? { ...result, synced: true } : result
+            syncedIds.has(result.id) ? { ...result, synced: true } : result
         )));
-        pendingResultSync.upserts = {};
+        pendingResultSync.upserts = pendingResultSync.upserts.filter(id => !syncedIds.has(id));
     }
 
     persistPendingResultSync();
@@ -688,28 +697,21 @@ async function loadResultsFromSupabase() {
             .map(normalizeResultRecord)
             .filter(Boolean)
             .map(result => ({ ...result, synced: true }));
-        const remoteById = new Map(remoteResults.map(result => [result.id, result]));
         const pendingDeleteIds = new Set(pendingResultSync.deletes);
-        const pendingUpsertIds = new Set(Object.keys(pendingResultSync.upserts));
-        const mergedResults = [
-            ...remoteResults,
-            ...getResults()
-                .filter(result => pendingUpsertIds.has(result.id))
-                .map(result => ({ ...result, synced: false }))
-        ].filter(result => !pendingDeleteIds.has(result.id));
-
+        const pendingUpsertIds = new Set(pendingResultSync.upserts);
         const mergedById = new Map();
-        mergedResults.forEach(result => {
-            if (!mergedById.has(result.id)) {
+        remoteResults.forEach(result => {
+            if (!pendingDeleteIds.has(result.id)) {
                 mergedById.set(result.id, result);
             }
         });
-        pendingUpsertIds.forEach(resultId => {
-            if (remoteById.has(resultId)) {
-                mergedById.set(resultId, { ...remoteById.get(resultId), synced: true });
-            }
-        });
-
+        getResults()
+            .filter(result => pendingUpsertIds.has(result.id))
+            .forEach(result => {
+                if (!pendingDeleteIds.has(result.id)) {
+                    mergedById.set(result.id, { ...result, synced: false });
+                }
+            });
         setResults([...mergedById.values()]);
         await flushPendingResultSync();
         return true;
@@ -1549,9 +1551,9 @@ function initializeAuth() {
 
 async function initializeApp() {
     const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
-    const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: {}, deletes: [] });
+    const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
     pendingResultSync = {
-        upserts: storedSyncState?.upserts && typeof storedSyncState.upserts === "object" ? storedSyncState.upserts : {},
+        upserts: Array.isArray(storedSyncState?.upserts) ? storedSyncState.upserts : [],
         deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
     };
     setResults(Array.isArray(storedResults) ? storedResults : []);
