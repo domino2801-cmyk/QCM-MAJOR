@@ -136,3 +136,12 @@ Le flux candidat attendu est :
 3. Vérification OTP dans l’interface
 4. Finalisation du profil dans `profiles`
 5. Connexion email/mot de passe et récupération de mot de passe via email
+
+---
+
+## ✅ Campagne de tests manuels
+
+Les livrables de test manuel complet (candidat + admin + Supabase) sont disponibles ici :
+
+* `/home/runner/work/QCM-MAJOR/QCM-MAJOR/MANUAL_TEST_PLAN.md`
+* `/home/runner/work/QCM-MAJOR/QCM-MAJOR/supabase_manual_test_setup.sql`
