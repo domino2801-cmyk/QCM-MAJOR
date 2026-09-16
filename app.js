@@ -821,7 +821,14 @@ function updateThemeQuestionCounts() {
 }
 
 function hasSupabaseAuth() {
-    return Boolean(supabase);
+    if (!supabase) return false;
+
+    try {
+        const url = new URL(supabaseUrl);
+        return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+        return false;
+    }
 }
 
 function normalizeEmail(email) {
@@ -904,6 +911,23 @@ function clearRecoveryUrlState() {
     url.searchParams.delete("auth");
     url.hash = "";
     window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
+}
+
+function getSupabaseConfigMessage() {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        return "Configuration Supabase manquante. Renseignez les balises meta de connexion.";
+    }
+
+    try {
+        const url = new URL(supabaseUrl);
+        if (url.protocol !== "https:" && url.protocol !== "http:") {
+            throw new Error("invalid protocol");
+        }
+    } catch {
+        return "Configuration Supabase invalide. Vérifiez la balise meta `supabase-url` avant de réessayer.";
+    }
+
+    return "";
 }
 
 function buildAccountFromUser(user, fallback = {}) {
@@ -1043,8 +1067,70 @@ function setAuthMessage(id, message) {
     document.getElementById(id).innerText = message;
 }
 
+function getRegisterValidationMessage(field) {
+    if (!field?.validity) {
+        return "Vérifiez les champs du formulaire d’inscription.";
+    }
+
+    if (field.validity.valueMissing) {
+        if (field.id === "register-pseudo") return "Le pseudo candidat est requis.";
+        if (field.id === "register-email") return "L’adresse mail du candidat est requise.";
+        if (field.id === "register-password") return "Le mot de passe candidat est requis.";
+        if (field.id === "register-specialty") return "Sélectionnez une spécialité BM4 avant de créer le compte.";
+    }
+
+    if (field.validity.typeMismatch && field.id === "register-email") {
+        return "Renseignez une adresse mail valide.";
+    }
+
+    if (field.validity.tooShort && field.id === "register-password") {
+        return `Le mot de passe doit contenir au moins ${field.minLength || 6} caractères.`;
+    }
+
+    if (field.validity.badInput) {
+        return "Corrigez la valeur saisie avant de créer le compte.";
+    }
+
+    return field.validationMessage || "Vérifiez les informations saisies avant de créer le compte.";
+}
+
+function getFirstInvalidRegisterField(registerForm) {
+    return [...registerForm.elements]
+        .filter(element => element?.validity)
+        .find(element => !element.validity.valid) || null;
+}
+
+function initializeRegisterFormValidation() {
+    const registerForm = document.getElementById("register-form");
+    if (!registerForm) return;
+    registerForm.noValidate = true;
+
+    const syncRegisterMessage = () => {
+        if (!getFirstInvalidRegisterField(registerForm)) {
+            setAuthMessage("register-message", "");
+        }
+    };
+
+    registerForm.addEventListener("input", syncRegisterMessage);
+    registerForm.addEventListener("change", syncRegisterMessage);
+}
+
 function getRequiredElement(id, messageId, errorMessage) {
     const element = document.getElementById(id);
+    if (element) return element;
+
+    if (messageId && errorMessage) {
+        setAuthMessage(messageId, errorMessage);
+    }
+    return null;
+}
+
+function getRequiredFormElement(form, fieldName, messageId, errorMessage) {
+    const directMatch = form?.elements?.namedItem?.(fieldName);
+    const fallbackMatch = [...(form?.elements || [])]
+        .find(element => element?.name === fieldName || element?.id === `register-${fieldName}`);
+    const element = directMatch || fallbackMatch || null;
+
     if (element) return element;
 
     if (messageId && errorMessage) {
@@ -1333,11 +1419,16 @@ function showAuthView(view, options = {}) {
 
 function ensureSupabaseConfigured(messageId) {
     const configMessage = document.getElementById("auth-config-message");
-    const configured = hasSupabaseAuth();
-    configMessage.classList.toggle("hidden", configured);
+    const configIssue = getSupabaseConfigMessage();
+    const configured = hasSupabaseAuth() && !configIssue;
+    const fallbackConfigMessage = configIssue || "Configuration Supabase indisponible. Rechargez la page puis vérifiez la configuration avant de réessayer.";
+    if (configMessage) {
+        configMessage.innerText = configured ? "Configuration Supabase prête." : fallbackConfigMessage;
+        configMessage.classList.toggle("hidden", configured);
+    }
 
     if (!configured && messageId) {
-        setAuthMessage(messageId, "Configuration Supabase manquante. Renseignez les balises meta de connexion.");
+        setAuthMessage(messageId, fallbackConfigMessage);
     }
 
     return configured;
@@ -1364,8 +1455,14 @@ function getFriendlyAuthError(error, fallbackMessage) {
     if (message.includes("invalid token") || message.includes("token")) {
         return "Code OTP ou lien de récupération invalide.";
     }
-    if (message.includes("network")) {
-        return "Connexion impossible au service d’authentification.";
+    if (
+        message.includes("network")
+        || message.includes("failed to fetch")
+        || message.includes("fetch failed")
+        || message.includes("load failed")
+        || message.includes("networkerror")
+    ) {
+        return "Impossible de joindre Supabase. Vérifiez `supabase-url`, les Redirect URL Auth, la connectivité réseau et forcez un rechargement GitHub Pages si l’écran est en cache.";
     }
 
     return fallbackMessage;
@@ -1417,6 +1514,61 @@ function initializeOtpInputs() {
     });
 }
 
+async function handleRegisterSubmit(event) {
+    event.preventDefault();
+    if (!ensureSupabaseConfigured("register-message")) return;
+
+    const registerForm = event.currentTarget;
+    const invalidField = getFirstInvalidRegisterField(registerForm);
+    if (invalidField) {
+        setAuthMessage("register-message", getRegisterValidationMessage(invalidField));
+        invalidField.focus?.();
+        return;
+    }
+
+    const pseudoField = getRequiredFormElement(
+        registerForm,
+        "pseudo",
+        "register-message",
+        "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
+    );
+    const emailField = getRequiredFormElement(registerForm, "email", "register-message", "Le champ email est introuvable.");
+    const passwordField = getRequiredFormElement(registerForm, "password", "register-message", "Le champ mot de passe est introuvable.");
+    const specialtyField = getRequiredFormElement(registerForm, "specialty", "register-message", "Le champ spécialité est introuvable.");
+
+    if (!pseudoField || !emailField || !passwordField || !specialtyField) {
+        return;
+    }
+
+    const name = pseudoField.value.trim();
+    const email = normalizeEmail(emailField.value);
+    const password = passwordField.value;
+    const specialty = specialtyField.value.trim();
+
+    if (!name || !specialty) {
+        setAuthMessage("register-message", "Tous les champs du profil candidat sont requis.");
+        return;
+    }
+
+    try {
+        setAuthMessage("register-message", "");
+        await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { name, specialty }
+            }
+        });
+
+        setPendingSignup({ name, email, specialty });
+        clearAuthMessages();
+        clearOtpInputs();
+        showAuthView("otp", { email });
+    } catch (error) {
+        setAuthMessage("register-message", getFriendlyAuthError(error, "Impossible de créer le compte."));
+    }
+}
+
 async function restoreSupabaseSession() {
     if (!hasSupabaseAuth()) return;
 
@@ -1460,6 +1612,7 @@ function initializeAuth() {
     showAuthView("login");
     ensureSupabaseConfigured();
     initializeOtpInputs();
+    initializeRegisterFormValidation();
 
     document.querySelectorAll(".auth-tab").forEach(tab => {
         tab.addEventListener("click", () => {
@@ -1543,50 +1696,7 @@ function initializeAuth() {
         }
     });
 
-    document.getElementById("register-form").addEventListener("submit", async event => {
-        event.preventDefault();
-        if (!ensureSupabaseConfigured("register-message")) return;
-
-        const pseudoField = getRequiredElement(
-            "register-pseudo",
-            "register-message",
-            "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
-        );
-        const emailField = getRequiredElement("register-email", "register-message", "Le champ email est introuvable.");
-        const passwordField = getRequiredElement("register-password", "register-message", "Le champ mot de passe est introuvable.");
-        const specialtyField = getRequiredElement("register-specialty", "register-message", "Le champ spécialité est introuvable.");
-
-        if (!pseudoField || !emailField || !passwordField || !specialtyField) {
-            return;
-        }
-
-        const name = pseudoField.value.trim();
-        const email = normalizeEmail(emailField.value);
-        const password = passwordField.value;
-        const specialty = specialtyField.value.trim();
-
-        if (!name || !specialty) {
-            setAuthMessage("register-message", "Tous les champs du profil candidat sont requis.");
-            return;
-        }
-
-        try {
-            await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { name, specialty }
-                }
-            });
-
-            setPendingSignup({ name, email, specialty });
-            clearAuthMessages();
-            clearOtpInputs();
-            showAuthView("otp", { email });
-        } catch (error) {
-            setAuthMessage("register-message", getFriendlyAuthError(error, "Impossible de créer le compte."));
-        }
-    });
+    document.getElementById("register-form").addEventListener("submit", handleRegisterSubmit);
 
     document.getElementById("otp-form").addEventListener("submit", async event => {
         event.preventDefault();

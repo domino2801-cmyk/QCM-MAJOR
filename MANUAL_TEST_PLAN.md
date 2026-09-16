@@ -22,6 +22,8 @@
   - `meta[name="supabase-url"]`
   - `meta[name="supabase-anon-key"]`
   - `meta[name="supabase-profiles-rls"]` avec `verified`.
+- Ouvrir DevTools > Network/Console pour observer les appels `auth/v1/signup` et `auth/v1/verify`.
+- En cas de `Failed to fetch` ou d’absence de requête, vérifier aussi la valeur de `supabase-url`, les Redirect URL Supabase Auth et un éventuel cache GitHub Pages.
 
 ### 1.3 Jeux de comptes de test
 - `candidat-ok@qcm-major.test` (OTP validé)
@@ -61,6 +63,7 @@ Pour chaque cas, renseigner:
 | A2.2 | Écran register | Mot de passe < 6 | Message longueur mini |  |  |
 | A2.3 | Email déjà utilisé | Inscription avec email existant | Message “Un compte existe déjà...” |  |  |
 | A2.4 | Nouvel email | Inscription valide | Bascule écran OTP + email affiché |  |  |
+| A2.5 | Formulaire invalide ou Supabase indisponible | Laisser un champ requis vide, saisir un email invalide, ou couper l’accès réseau/Supabase | `register-message` affiche une cause exploitable (champ requis, email invalide, mot de passe trop court, spécialité manquante, ou diagnostic de connectivité/configuration Supabase) |  |  |
 
 ### A3 — OTP
 | ID | Précondition | Étapes | Résultat attendu | Résultat observé | Statut |
