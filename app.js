@@ -998,7 +998,7 @@ function renderAdminAccessView() {
     const submitButton = document.getElementById("admin-access-submit-btn");
 
     if (!sessionUser) {
-        accessCopy.innerText = "Connectez-vous d’abord avec un compte Supabase autorisé. L’accès administrateur exige un claim JWT `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.";
+        accessCopy.innerText = "Connectez-vous d’abord avec un compte administrateur autorisé pour ouvrir l’interface.";
         submitButton.innerText = "Retour à la connexion";
         adminAccessAction = () => {
             showAuthView("login");
@@ -1017,8 +1017,12 @@ function renderAdminAccessView() {
 
     accessCopy.innerText = "Votre session Supabase est active, mais ce compte ne possède pas les droits administrateur requis.";
     submitButton.innerText = "Retour à l’espace candidat";
-    adminAccessAction = () => {
-        showAuthenticatedApp(currentCandidateEmail || sessionUser.email || "", currentAuthenticatedAccount || buildAccountFromUser(sessionUser));
+    adminAccessAction = async () => {
+        await restoreSupabaseSession();
+        if (!currentAuthenticatedAccount) {
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
+        }
     };
 }
 
@@ -1569,10 +1573,10 @@ function initializeAuth() {
         }
     });
 
-    document.getElementById("admin-form").addEventListener("submit", event => {
+    document.getElementById("admin-form").addEventListener("submit", async event => {
         event.preventDefault();
         setAuthMessage("admin-message", "");
-        adminAccessAction();
+        await adminAccessAction();
     });
 
     if (hasSupabaseAuth()) {
@@ -1682,8 +1686,11 @@ async function initializeAppInteractions() {
 
     document.getElementById("admin-logout-btn").addEventListener("click", async () => {
         if (!currentAuthenticatedAccount) {
-            uiController.switchScreen("auth-screen");
-            showAuthView("login");
+            await restoreSupabaseSession();
+            if (!currentAuthenticatedAccount) {
+                uiController.switchScreen("auth-screen");
+                showAuthView("login");
+            }
             return;
         }
         showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
