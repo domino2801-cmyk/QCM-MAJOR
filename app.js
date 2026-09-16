@@ -83,13 +83,13 @@ function buildSupabaseHeaders({ accessToken, withJson = false, extraHeaders = {}
     return headers;
 }
 
-async function supabaseAuthRequest(path, { method = "GET", body, accessToken, redirectTo } = {}) {
+async function supabaseAuthRequest(path, { method = "GET", body, accessToken, redirect_to } = {}) {
     const response = await fetch(`${supabaseUrl}/auth/v1${path}`, {
         method,
         headers: buildSupabaseHeaders({
             accessToken,
             withJson: Boolean(body),
-            extraHeaders: redirectTo ? { redirectTo } : {}
+            extraHeaders: redirect_to ? { redirect_to } : {}
         }),
         body: body ? JSON.stringify(body) : undefined
     });
@@ -222,11 +222,11 @@ if (supabase) {
         return { data: stored, error: null };
     };
 
-    supabase.auth.resetPasswordForEmail = async (email, { redirectTo } = {}) => {
+    supabase.auth.resetPasswordForEmail = async (email, { redirect_to } = {}) => {
         await supabaseAuthRequest("/recover", {
             method: "POST",
             body: { email },
-            redirectTo
+            redirect_to
         });
         return { data: {}, error: null };
     };
@@ -548,16 +548,20 @@ async function upsertProfileForUser(user, profile = {}) {
     return account;
 }
 
-async function finalizeAuthenticatedUser(user, fallback = {}) {
+async function finalizeAuthenticatedUser(user, fallback = {}, { persistAccount = false } = {}) {
     const account = await fetchProfileForUser(user);
     const mergedAccount = {
         ...fallback,
         ...account,
-        email: normalizeEmail(account.email || fallback.email || user?.email || "")
+        email: normalizeEmail(fallback.email || account.email || user?.email || "")
     };
 
-    cacheAccount(mergedAccount);
-    localStorage.setItem(sessionStorageKey, mergedAccount.email);
+    if (persistAccount) {
+        cacheAccount(mergedAccount);
+    }
+    if (mergedAccount.email) {
+        localStorage.setItem(sessionStorageKey, mergedAccount.email);
+    }
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
 }
 
@@ -919,7 +923,9 @@ async function restoreSupabaseSession() {
         return;
     }
 
-    await finalizeAuthenticatedUser(session.user);
+    await finalizeAuthenticatedUser(session.user, {
+        email: localStorage.getItem(sessionStorageKey) || session.user?.email || ""
+    });
 }
 
 function initializeAuth() {
@@ -983,7 +989,7 @@ function initializeAuth() {
             }
 
             clearAuthMessages();
-            await finalizeAuthenticatedUser(data.user);
+            await finalizeAuthenticatedUser(data.user, { email });
         } catch (error) {
             setAuthMessage("login-message", getFriendlyAuthError(error, "Adresse mail ou mot de passe incorrect."));
         }
@@ -1069,7 +1075,7 @@ function initializeAuth() {
         const email = normalizeEmail(document.getElementById("reset-email").value);
         try {
             await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: getRecoveryRedirectUrl()
+                redirect_to: getRecoveryRedirectUrl()
             });
 
             clearAuthMessages();
