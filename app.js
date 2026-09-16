@@ -23,7 +23,7 @@ const resultsStorageKey = "bm4-results";
 const resultsSyncStorageKey = "bm4-results-sync-v1";
 const questionHistoryStorageKey = "bm4-question-history";
 const adminEmail = "admin@admin.fr";
-const adminPassword = "delemotte";
+const adminPassword = "CHANGE_ME_NOW";
 const supabaseUrl = typeof document !== "undefined"
     ? document.querySelector('meta[name="supabase-url"]')?.content?.trim() || ""
     : "";
@@ -1676,7 +1676,7 @@ async function initializeAppInteractions() {
         const themeId = document.getElementById("admin-question-theme").value;
         const question = {
             id: editingQuestionIndex === null
-                ? crypto.randomUUID()
+                ? createRecordId("question")
                 : questionsBank[themeId].questions[editingQuestionIndex].id,
             q: document.getElementById("admin-question-text").value.trim(),
             r: [1, 2, 3, 4].map(answerIndex =>
