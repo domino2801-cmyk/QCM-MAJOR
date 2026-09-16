@@ -18,7 +18,6 @@ let reviewItems = [];
 let questionSourceReady = false;
 const adminSessionStorageKey = "bm4-admin-session";
 const pendingSignupStorageKey = "bm4-pending-signup";
-const supabaseSessionStorageKey = "bm4-supabase-session";
 const questionStorageKey = "bm4-question-overrides-v2";
 const resultsStorageKey = "bm4-results";
 const questionHistoryStorageKey = "bm4-question-history";
@@ -41,6 +40,7 @@ const supabase = supabaseUrl && supabaseAnonKey
 let editingQuestionIndex = null;
 let authAudioRetry = null;
 let currentAuthenticatedAccount = null;
+let currentSupabaseSession = null;
 let cachedAccounts = {};
 let successAction = () => {
     uiController.switchScreen("auth-screen");
@@ -63,15 +63,15 @@ function getStoredJson(storage, key, fallback) {
 }
 
 function getStoredSupabaseSession() {
-    return getStoredJson(sessionStorage, supabaseSessionStorageKey, null);
+    return currentSupabaseSession;
 }
 
 function setStoredSupabaseSession(session) {
-    sessionStorage.setItem(supabaseSessionStorageKey, JSON.stringify(session));
+    currentSupabaseSession = session;
 }
 
 function clearStoredSupabaseSession() {
-    sessionStorage.removeItem(supabaseSessionStorageKey);
+    currentSupabaseSession = null;
 }
 
 function buildSupabaseHeaders({ accessToken, withJson = false, extraHeaders = {} } = {}) {
@@ -255,7 +255,7 @@ if (supabase) {
             await supabaseAuthRequest("/logout", {
                 method: "POST",
                 accessToken: session.access_token
-            }).catch(() => {});
+            });
         }
         clearStoredSupabaseSession();
         emitSupabaseAuthStateChange("SIGNED_OUT", null);
@@ -519,10 +519,13 @@ async function fetchProfileForUser(user) {
     if (!supabase || !user) return fallback;
 
     try {
-        const data = await supabaseRestRequest(
-            `/profiles?id=eq.${encodeURIComponent(user.id)}&select=id,email,name,specialty`,
-            { accessToken: getStoredSupabaseSession()?.access_token }
-        );
+        const query = new URLSearchParams({
+            id: `eq.${user.id}`,
+            select: "id,email,name,specialty"
+        });
+        const data = await supabaseRestRequest(`/profiles?${query.toString()}`, {
+            accessToken: getStoredSupabaseSession()?.access_token
+        });
         const profile = Array.isArray(data) ? data[0] : null;
 
         if (!profile) return fallback;
@@ -975,8 +978,14 @@ function initializeAuth() {
         });
     });
 
-    document.getElementById("success-action-btn").addEventListener("click", () => {
-        successAction();
+    document.getElementById("success-action-btn").addEventListener("click", async () => {
+        try {
+            await successAction();
+        } catch (error) {
+            setAuthMessage("login-message", getFriendlyAuthError(error, "Impossible de finaliser cette étape."));
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
+        }
     });
 
     document.getElementById("admin-access-btn").addEventListener("click", () => {
@@ -1250,7 +1259,14 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
-        if (supabase) await supabase.auth.signOut();
+        if (supabase) {
+            try {
+                await supabase.auth.signOut();
+            } catch {
+                window.alert("La révocation de session a échoué. Réessayez.");
+                return;
+            }
+        }
         currentAuthenticatedAccount = null;
         clearPendingSignup();
         uiController.switchScreen("auth-screen");
