@@ -16,14 +16,11 @@ let selectedTheme = null;
 let maxQuestions = 0;
 let reviewItems = [];
 let questionSourceReady = false;
-const adminSessionStorageKey = "bm4-admin-session";
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
 const resultsStorageKey = "bm4-results";
 const resultsSyncStorageKey = "bm4-results-sync-v1";
 const questionHistoryStorageKey = "bm4-question-history";
-const adminEmail = "admin@admin.fr";
-const adminPassword = "CHANGE_ME_NOW";
 const supabaseUrl = typeof document !== "undefined"
     ? document.querySelector('meta[name="supabase-url"]')?.content?.trim() || ""
     : "";
@@ -47,6 +44,9 @@ let resultsCache = [];
 let pendingResultSync = {
     upserts: [],
     deletes: []
+};
+let adminAccessAction = () => {
+    showAuthView("login");
 };
 let successAction = () => {
     uiController.switchScreen("auth-screen");
@@ -788,6 +788,24 @@ function normalizeEmail(email) {
     return email.trim().toLowerCase();
 }
 
+function isAdminUser(user) {
+    const appMetadata = user?.app_metadata || {};
+    const role = String(appMetadata.role || "").trim().toLowerCase();
+    const roles = Array.isArray(appMetadata.roles)
+        ? appMetadata.roles.map(value => String(value).trim().toLowerCase())
+        : [];
+
+    return appMetadata.bm4_admin === true
+        || appMetadata.is_admin === true
+        || role === "admin"
+        || roles.includes("admin");
+}
+
+function isCurrentUserAdmin() {
+    const sessionUser = getStoredSupabaseSession()?.user || null;
+    return isAdminUser(sessionUser) || currentAuthenticatedAccount?.isAdmin === true;
+}
+
 function getCandidateLabel(account, candidateId) {
     return account?.name || `Candidat ${candidateId.slice(0, 8)}`;
 }
@@ -844,7 +862,8 @@ function buildAccountFromUser(user, fallback = {}) {
         id: user?.id || fallback.id || null,
         email: normalizeEmail(user?.email || fallback.email || ""),
         name: user?.user_metadata?.name || fallback.name || "",
-        specialty: user?.user_metadata?.specialty || fallback.specialty || ""
+        specialty: user?.user_metadata?.specialty || fallback.specialty || "",
+        isAdmin: isAdminUser(user) || fallback.isAdmin === true
     };
 }
 
@@ -954,19 +973,58 @@ function playAnswerSound(isCorrect) {
 }
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
+    const adminButton = document.getElementById("theme-admin-btn");
+    const isAdmin = account?.isAdmin === true;
     setAuthAudioPlaying(false);
+    adminButton.classList.toggle("hidden", !isAdmin);
     document.getElementById("account-summary").innerText =
-        `${account.name || "Candidat"} • ${email} • ${account.specialty || "Spécialité non renseignée"}`;
+        `${account.name || "Candidat"} • ${email} • ${account.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
     uiController.switchScreen("theme-screen");
 }
 
 function showAdminApp() {
+    if (!isCurrentUserAdmin()) {
+        uiController.switchScreen("auth-screen");
+        showAuthView("admin");
+        setAuthMessage("admin-message", "Accès refusé. Connectez-vous avec un compte administrateur autorisé.");
+        return;
+    }
     setAuthAudioPlaying(false);
     renderAdminAccounts();
     renderAdminQuestions();
     renderAdminResults();
     switchAdminSection("accounts");
     uiController.switchScreen("admin-screen");
+}
+
+function renderAdminAccessView() {
+    const sessionUser = getStoredSupabaseSession()?.user || null;
+    const accessCopy = document.getElementById("admin-access-copy");
+    const submitButton = document.getElementById("admin-access-submit-btn");
+
+    if (!sessionUser) {
+        accessCopy.innerText = "Connectez-vous d’abord avec un compte Supabase autorisé. L’accès administrateur exige un claim JWT `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.";
+        submitButton.innerText = "Retour à la connexion";
+        adminAccessAction = () => {
+            showAuthView("login");
+        };
+        return;
+    }
+
+    if (isAdminUser(sessionUser)) {
+        accessCopy.innerText = "Votre session Supabase est autorisée. Vous pouvez ouvrir l’interface administrateur.";
+        submitButton.innerText = "Ouvrir l’administration";
+        adminAccessAction = () => {
+            showAdminApp();
+        };
+        return;
+    }
+
+    accessCopy.innerText = "Votre session Supabase est active, mais ce compte ne possède pas les droits administrateur requis.";
+    submitButton.innerText = "Retour à l’espace candidat";
+    adminAccessAction = () => {
+        showAuthenticatedApp(currentCandidateEmail || sessionUser.email || "", currentAuthenticatedAccount || buildAccountFromUser(sessionUser));
+    };
 }
 
 function switchAdminSection(section) {
@@ -1188,6 +1246,7 @@ function showAuthView(view, options = {}) {
     } else if (view === "register") {
         setTerminalState("MODE REGISTER");
     } else if (view === "admin") {
+        renderAdminAccessView();
         setTerminalState("MODE ADMIN");
     } else {
         setTerminalState("MODE LOGIN");
@@ -1326,6 +1385,10 @@ function initializeAuth() {
 
     document.getElementById("admin-access-btn").addEventListener("click", () => {
         clearAuthMessages();
+        if (isCurrentUserAdmin()) {
+            showAdminApp();
+            return;
+        }
         uiController.switchScreen("auth-screen");
         showAuthView("admin");
     });
@@ -1513,23 +1576,13 @@ function initializeAuth() {
 
     document.getElementById("admin-form").addEventListener("submit", event => {
         event.preventDefault();
-        const email = normalizeEmail(document.getElementById("admin-email").value);
-        const password = document.getElementById("admin-password").value;
-
-        if (email !== adminEmail || password !== adminPassword) {
-            setAuthMessage("admin-message", "Identifiant ou mot de passe administrateur incorrect.");
-            return;
-        }
-
-        localStorage.setItem(adminSessionStorageKey, "true");
         setAuthMessage("admin-message", "");
-        showAdminApp();
+        adminAccessAction();
     });
 
     if (hasSupabaseAuth()) {
         supabase.auth.onAuthStateChange(event => {
             if (event === "PASSWORD_RECOVERY") {
-                localStorage.removeItem(adminSessionStorageKey);
                 uiController.switchScreen("auth-screen");
                 currentAuthenticatedAccount = null;
                 currentCandidateEmail = "";
@@ -1565,16 +1618,7 @@ async function initializeApp() {
     renderGlobalRanking(getResults());
     initializeAppInteractions();
     await syncSupabaseSessionFromUrl();
-
-    if (isRecoveryModeFromUrl()) {
-        localStorage.removeItem(adminSessionStorageKey);
-    }
-
-    if (localStorage.getItem(adminSessionStorageKey) === "true") {
-        showAdminApp();
-    } else {
-        await restoreSupabaseSession();
-    }
+    await restoreSupabaseSession();
 
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
@@ -1637,10 +1681,22 @@ async function initializeAppInteractions() {
         showAuthView("login");
     });
 
-    document.getElementById("admin-logout-btn").addEventListener("click", () => {
-        localStorage.removeItem(adminSessionStorageKey);
+    document.getElementById("theme-admin-btn").addEventListener("click", () => {
+        showAdminApp();
+    });
+
+    document.getElementById("admin-logout-btn").addEventListener("click", async () => {
+        if (supabase) {
+            try {
+                await supabase.auth.signOut();
+            } catch {
+                window.alert("La révocation de session a échoué. Réessayez.");
+                return;
+            }
+        }
+        currentAuthenticatedAccount = null;
+        currentCandidateEmail = "";
         uiController.switchScreen("auth-screen");
-        document.getElementById("admin-form").reset();
         showAuthView("login");
     });
 
@@ -1652,6 +1708,10 @@ async function initializeAppInteractions() {
     document.getElementById("question-cancel-btn").addEventListener("click", resetQuestionForm);
 
     document.getElementById("cleanup-questions-btn").addEventListener("click", async () => {
+        if (!isCurrentUserAdmin()) {
+            showAdminApp();
+            return;
+        }
         if (!questionSourceReady) return;
 
         const cleanupSummary = await syncQuestionMutation({ action: "cleanup" });
@@ -1666,6 +1726,10 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("clear-results-btn").addEventListener("click", async () => {
+        if (!isCurrentUserAdmin()) {
+            showAdminApp();
+            return;
+        }
         await clearResults();
         renderAdminResults();
         renderGlobalRanking(getResults());
@@ -1673,6 +1737,10 @@ async function initializeAppInteractions() {
 
     document.getElementById("question-form").addEventListener("submit", async event => {
         event.preventDefault();
+        if (!isCurrentUserAdmin()) {
+            showAdminApp();
+            return;
+        }
         const themeId = document.getElementById("admin-question-theme").value;
         const question = {
             id: editingQuestionIndex === null
