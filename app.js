@@ -969,7 +969,7 @@ function playAnswerSound(isCorrect) {
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     const adminButton = document.getElementById("theme-admin-btn");
-    const isAdmin = account?.isAdmin === true;
+    const isAdmin = account?.isAdmin === true || isCurrentUserAdmin();
     setAuthAudioPlaying(false);
     adminButton.classList.toggle("hidden", !isAdmin);
     document.getElementById("account-summary").innerText =
@@ -1019,6 +1019,10 @@ function renderAdminAccessView() {
     submitButton.innerText = "Retour à l’espace candidat";
     adminAccessAction = async () => {
         await restoreSupabaseSession();
+        if (currentAuthenticatedAccount) {
+            showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
+            return;
+        }
         if (!currentAuthenticatedAccount) {
             uiController.switchScreen("auth-screen");
             showAuthView("login");
@@ -1687,10 +1691,12 @@ async function initializeAppInteractions() {
     document.getElementById("admin-logout-btn").addEventListener("click", async () => {
         if (!currentAuthenticatedAccount) {
             await restoreSupabaseSession();
-            if (!currentAuthenticatedAccount) {
-                uiController.switchScreen("auth-screen");
-                showAuthView("login");
+            if (currentAuthenticatedAccount) {
+                showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
+                return;
             }
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
             return;
         }
         showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
