@@ -115,9 +115,12 @@
                 </section>
                 <form id="admin-form" class="auth-form auth-view hidden">
                     <div class="terminal-panel-title">Accès administrateur</div>
-                    <p id="admin-access-copy" class="terminal-copy">Connectez-vous avec un compte Supabase autorisé pour ouvrir l’administration.</p>
+                    <label for="admin-email">Identifiant administrateur</label>
+                    <input id="admin-email" name="email" type="text" placeholder="admin" required>
+                    <label for="admin-password">Mot de passe administrateur</label>
+                    <input id="admin-password" name="password" type="password" placeholder="............" required>
                     <p id="admin-message" class="auth-message" role="alert"></p>
-                    <button id="admin-access-submit-btn" class="btn-main" type="submit">Retour à la connexion</button>
+                    <button class="btn-main" type="submit">Ouvrir l’administration</button>
                 </form>
             </div>
             <section id="global-ranking-section" class="global-ranking">
@@ -127,7 +130,7 @@
         </div>
 
         <div id="admin-screen" class="screen">
-            <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Retour à l’espace candidat</button></div>
+            <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Déconnexion</button></div>
             <h1>Interface administrateur</h1>
             <p class="subtitle">Gestion des comptes, des questions et des résultats</p>
             <nav class="admin-nav" aria-label="Gestion administrateur">
@@ -163,7 +166,7 @@
         </div>
 
         <div id="theme-screen" class="screen">
-            <div class="account-bar"><button id="theme-admin-btn" class="hidden" type="button">Administration</button><button id="logout-btn" type="button">Déconnexion</button></div>
+            <div class="account-bar"><button id="logout-btn" type="button">Déconnexion</button></div>
             <div class="brand-lockup"><img src="public/images/logo2.png" width="100" alt=""><h1>Question pour un Major</h1></div>
                 <p class="subtitle">Préparation au combat du BM4</p>
                 <p id="account-summary" class="account-summary-under"> </p>
