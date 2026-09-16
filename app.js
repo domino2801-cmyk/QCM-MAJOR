@@ -938,6 +938,14 @@ function clearRecoveryUrlState() {
     window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
 }
 
+function focusElement(selector) {
+    if (typeof document === "undefined") return;
+    const element = document.querySelector(selector);
+    if (element instanceof HTMLElement) {
+        element.focus();
+    }
+}
+
 function buildAccountFromUser(user, fallback = {}) {
     return {
         id: user?.id || fallback.id || null,
@@ -1084,6 +1092,7 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     document.getElementById("account-summary").innerText =
         `${authenticatedContext.account?.name || "Candidat"} • ${authenticatedContext.email} • ${authenticatedContext.account?.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
     uiController.switchScreen("theme-screen");
+    focusElement(".btn-theme");
 }
 
 function showAdminApp() {
@@ -1099,6 +1108,7 @@ function showAdminApp() {
     renderAdminResults();
     switchAdminSection("accounts");
     uiController.switchScreen("admin-screen");
+    focusElement(".admin-nav-btn.active");
 }
 
 function renderAdminAccessView() {
@@ -1718,10 +1728,8 @@ async function initializeApp() {
     await syncSupabaseSessionFromUrl();
     await restoreSupabaseSession();
     await loadResultsFromSupabase();
-    if (!loadedPublicRanking) {
-        await loadPublicRankingFromSupabase();
-        renderGlobalRanking();
-    }
+    await loadPublicRankingFromSupabase();
+    renderGlobalRanking();
 
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
