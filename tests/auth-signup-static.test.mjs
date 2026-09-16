@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = "/home/runner/work/QCM-MAJOR/QCM-MAJOR";
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
 const js = readFileSync(`${root}/app.js`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
