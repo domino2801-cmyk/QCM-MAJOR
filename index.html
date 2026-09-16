@@ -8,6 +8,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="public/icons/apple-touch-icon.png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1f33">
+    <meta name="supabase-url" content="">
+    <meta name="supabase-anon-key" content="">
+    <meta name="supabase-profiles-rls" content="">
     <link rel="stylesheet" href="ui/Style.css?v=ranking">
 </head>
 <body>
@@ -18,38 +21,108 @@
         <div id="auth-screen" class="screen active">
             <div class="brand-lockup"><img src="public/images/logo2.png" width="70" alt=""><h1>Question pour un Major</h1></div>
             <p class="subtitle">Créez votre profil ou connectez-vous pour accéder à la préparation.</p>
-            <div class="auth-tabs" role="tablist" aria-label="Authentification">
-                <button class="auth-tab active" type="button" data-auth-mode="login">Connexion</button>
-                <button class="auth-tab" type="button" data-auth-mode="register">Créer un compte</button>
+            <div class="terminal-shell">
+                <div class="terminal-header">
+                    <span>AUTH://BM4-TACTICAL-CONSOLE</span>
+                    <span id="auth-terminal-state">MODE LOGIN</span>
+                </div>
+                <div id="auth-config-message" class="terminal-note hidden">Configuration Supabase manquante. Renseignez les balises meta `supabase-url` et `supabase-anon-key`.</div>
+                <section id="login-view" class="auth-view">
+                    <div class="auth-tabs" role="tablist" aria-label="Authentification">
+                        <button class="auth-tab active" type="button" data-auth-mode="login">Connexion</button>
+                        <button class="auth-tab" type="button" data-auth-mode="register">Créer un compte</button>
+                    </div>
+                    <form id="login-form" class="auth-form">
+                        <label for="login-email">Mail personnel du candidat</label>
+                        <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
+                        <label for="login-password">Mot de passe</label>
+                        <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" required>
+                        <p id="login-message" class="auth-message" role="alert"></p>
+                        <button class="btn-main" type="submit">Entrer dans le combat BM4</button>
+                    </form>
+                    <div class="auth-actions">
+                        <button id="login-forgot-password-btn" class="auth-link" type="button">Mot de passe oublié</button>
+                    </div>
+                </section>
+                <section id="register-view" class="auth-view hidden">
+                    <div class="auth-tabs" role="tablist" aria-label="Création de compte">
+                        <button class="auth-tab" type="button" data-auth-mode="login">Connexion</button>
+                        <button class="auth-tab active" type="button" data-auth-mode="register">Créer un compte</button>
+                    </div>
+                    <form id="register-form" class="auth-form">
+                        <label for="register-name">Nom du candidat</label>
+                        <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Nom et prénom" required>
+                        <label for="register-email">Mail personnel du candidat</label>
+                        <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
+                        <label for="register-password">Mot de passe</label>
+                        <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
+                        <label for="register-specialty">Spécialité BM4</label>
+                        <input id="register-specialty" name="specialty" type="text" placeholder="Ex. : RHL, PBF, INF, MMA, SIC..." required>
+                        <p id="register-message" class="auth-message" role="alert"></p>
+                        <button class="btn-main" type="submit">Créer mon compte</button>
+                    </form>
+                    <div class="auth-actions">
+                        <button id="register-forgot-password-btn" class="auth-link" type="button">J’ai déjà un compte / mot de passe oublié</button>
+                    </div>
+                </section>
+                <section id="otp-view" class="auth-view hidden">
+                    <div class="terminal-panel-title">Vérification OTP</div>
+                    <p class="terminal-copy">Saisissez le code reçu par email pour finaliser l’inscription de <strong id="otp-email-display"></strong>.</p>
+                    <form id="otp-form" class="auth-form otp-form">
+                        <fieldset class="otp-fieldset">
+                            <legend>Code de vérification à 6 chiffres</legend>
+                            <div id="otp-inputs" class="otp-inputs">
+                                <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 1" required>
+                                <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 2" required>
+                                <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 3" required>
+                                <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 4" required>
+                                <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 5" required>
+                                <input class="otp-digit" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Chiffre 6" required>
+                            </div>
+                        </fieldset>
+                        <p id="otp-message" class="auth-message" role="alert"></p>
+                        <button class="btn-main" type="submit">Valider le code</button>
+                    </form>
+                    <div class="auth-actions">
+                        <button id="otp-back-btn" class="auth-link" type="button">Retour</button>
+                    </div>
+                </section>
+                <section id="reset-view" class="auth-view hidden">
+                    <div class="terminal-panel-title">Procédure mot de passe oublié</div>
+                    <p id="reset-copy" class="terminal-copy">Renseignez votre adresse email pour recevoir un lien de réinitialisation.</p>
+                    <form id="reset-request-form" class="auth-form">
+                        <label for="reset-email">Mail personnel du candidat</label>
+                        <input id="reset-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
+                        <p id="reset-request-message" class="auth-message" role="alert"></p>
+                        <button class="btn-main" type="submit">Envoyer le lien de récupération</button>
+                    </form>
+                    <form id="reset-password-form" class="auth-form hidden">
+                        <label for="reset-password">Nouveau mot de passe</label>
+                        <input id="reset-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
+                        <label for="reset-password-confirmation">Confirmation du mot de passe</label>
+                        <input id="reset-password-confirmation" name="password-confirmation" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
+                        <p id="reset-password-message" class="auth-message" role="alert"></p>
+                        <button class="btn-main" type="submit">Mettre à jour le mot de passe</button>
+                    </form>
+                    <div class="auth-actions">
+                        <button id="reset-back-btn" class="auth-link" type="button">Retour à la connexion</button>
+                    </div>
+                </section>
+                <section id="success-view" class="auth-view hidden">
+                    <div class="terminal-panel-title">Transmission réussie</div>
+                    <p id="success-copy" class="terminal-copy">Opération terminée avec succès.</p>
+                    <button id="success-action-btn" class="btn-main" type="button">Retour à la connexion</button>
+                </section>
+                <form id="admin-form" class="auth-form auth-view hidden">
+                    <div class="terminal-panel-title">Accès administrateur</div>
+                    <label for="admin-email">Identifiant administrateur</label>
+                    <input id="admin-email" name="email" type="text" placeholder="admin" required>
+                    <label for="admin-password">Mot de passe administrateur</label>
+                    <input id="admin-password" name="password" type="password" placeholder="............" required>
+                    <p id="admin-message" class="auth-message" role="alert"></p>
+                    <button class="btn-main" type="submit">Ouvrir l’administration</button>
+                </form>
             </div>
-            <form id="login-form" class="auth-form hidden">
-                <label for="login-email">Mail personnel du candidat</label>
-                <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
-                <label for="login-password">Mot de passe</label>
-                <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" required>
-                <p id="login-message" class="auth-message" role="alert"></p>
-                <button class="btn-main" type="submit">Entrer dans le combat BM4</button>
-            </form>
-            <form id="register-form" class="auth-form">
-                <label for="register-name">Nom du candidat</label>
-                <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Nom et prénom" required>
-                <label for="register-email">Mail personnel du candidat</label>
-                <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
-                <label for="register-password">Mot de passe</label>
-                <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
-                <label for="register-specialty">Spécialité BM4</label>
-                <input id="register-specialty" name="specialty" type="text" placeholder="Ex. : RHL, PBF, INF, MMA, SIC..." required>
-                <p id="register-message" class="auth-message" role="alert"></p>
-                <button class="btn-main" type="submit">Créer mon compte</button>
-            </form>
-            <form id="admin-form" class="auth-form hidden">
-                <label for="admin-email">Identifiant administrateur</label>
-                <input id="admin-email" name="email" type="text" placeholder="admin" required>
-                <label for="admin-password">Mot de passe administrateur</label>
-                <input id="admin-password" name="password" type="password" placeholder="............" required>
-                <p id="admin-message" class="auth-message" role="alert"></p>
-                <button class="btn-main" type="submit">Ouvrir l’administration</button>
-            </form>
             <section id="global-ranking-section" class="global-ranking">
                 <h2>Classement campagne globale</h2>
                 <ol id="global-ranking-list"></ol>

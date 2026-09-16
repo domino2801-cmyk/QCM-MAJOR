@@ -10,7 +10,8 @@ Le site permet aux candidats de tester leurs connaissances à travers différent
 ## 🚀 Fonctionnalités
 
 ### 👨‍🎓 Espace Candidat
-* **Inscription et Connexion :** Création d'un profil candidat avec suivi par spécialité.
+* **Inscription et Connexion :** Authentification Supabase avec vérification OTP email à l’inscription.
+* **Mot de passe oublié :** Envoi d’un lien de récupération puis définition d’un nouveau mot de passe au retour dans l’application.
 * **Campagnes de Révision :** Lancement d'une "Campagne Globale" ou entraînement par thématique ciblée.
 * **Système de Notation :** Évaluation dynamique avec un score final sur **20 points**.
 * **Bilan Pédagogique :** Résumé détaillé en fin de partie (réponses correctes, fausses, sautées) et rappel des questions à revoir.
@@ -81,6 +82,7 @@ QCM-MAJOR/
 ## 🛠️ Technologies Utilisées
 
 * **Frontend :** HTML5, CSS3, JavaScript (Vanilla ES6)
+* **Authentification :** Supabase Auth (email/password, OTP signup, recovery)
 * **Persistance (Locale) :** `localStorage` (pour la sauvegarde des questions et résultats)
 * **Hébergement :** GitHub Pages
 
@@ -104,3 +106,28 @@ Pour exécuter ce projet sur votre machine locale, aucune installation complexe 
    Ouvrez simplement le fichier `index.html` dans le navigateur de votre choix.
 
 ---
+
+## 🔐 Configuration Supabase requise
+
+Avant utilisation de l’authentification, renseignez les balises meta de `index.html` à la racine du projet :
+
+```html
+<meta name="supabase-url" content="https://your-project.supabase.co">
+<meta name="supabase-anon-key" content="your-anon-key">
+<meta name="supabase-profiles-rls" content="verified">
+```
+
+Prérequis côté Supabase :
+
+* Activer le fournisseur **Email** pour l’OTP d’inscription et la récupération de mot de passe.
+* Configurer les **Redirect URL(s)** Supabase Auth pour l’URL réelle de l’application (GitHub Pages ou environnement local).
+* Prévoir une table `profiles` avec au minimum `id`, `email`, `name`, `specialty`, et des politiques RLS permettant à l’utilisateur authentifié de lire/écrire son propre profil.
+* Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
+
+Le flux candidat attendu est :
+
+1. Inscription avec email + mot de passe + profil candidat
+2. Réception du code OTP par email
+3. Vérification OTP dans l’interface
+4. Finalisation du profil dans `profiles`
+5. Connexion email/mot de passe et récupération de mot de passe via email
