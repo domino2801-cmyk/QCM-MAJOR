@@ -504,8 +504,11 @@ async function syncQuestionMutation(payload) {
                 seen.add(key);
             });
 
-            for (const duplicateId of duplicateIds) {
-                await supabaseRestRequest(`/questions?id=eq.${encodeURIComponent(duplicateId)}`, {
+            if (duplicateIds.length > 0) {
+                const idsFilter = duplicateIds
+                    .map(duplicateId => `"${String(duplicateId).replace(/"/g, "")}"`)
+                    .join(",");
+                await supabaseRestRequest(`/questions?id=in.(${idsFilter})`, {
                     method: "DELETE",
                     accessToken
                 });
@@ -530,11 +533,20 @@ async function fetchSupabaseQuestions() {
             const data = await supabaseRestRequest(query, { accessToken });
             return {
                 questions: (Array.isArray(data) ? data : []).map(question => {
+                    let parsedAnswers = [];
+                    if (Array.isArray(question.r)) {
+                        parsedAnswers = question.r;
+                    } else if (typeof question.r === "string") {
+                        try {
+                            const parsed = JSON.parse(question.r);
+                            parsedAnswers = Array.isArray(parsed) ? parsed : [];
+                        } catch {
+                            parsedAnswers = [];
+                        }
+                    }
                     const answers = Array.isArray(question.r)
                         ? question.r
-                        : (typeof question.r === "string"
-                            ? JSON.parse(question.r)
-                            : []);
+                        : parsedAnswers;
                     return {
                         id: String(question.id),
                         themeId: String(question.theme_id),
@@ -656,11 +668,14 @@ async function deleteResult(resultId) {
 }
 
 async function clearResults() {
-    setResults([]);
-
-    if (!supabase) return;
     const candidateScope = currentAuthenticatedAccount?.id || currentCandidateEmail || null;
-    if (!candidateScope) return;
+    if (!candidateScope) {
+        setResults([]);
+        return;
+    }
+
+    setResults(getResults().filter(result => result.candidateId !== candidateScope));
+    if (!supabase) return;
 
     try {
         await supabaseRestRequest(`/quiz_results?candidate_id=eq.${encodeURIComponent(candidateScope)}`, {
