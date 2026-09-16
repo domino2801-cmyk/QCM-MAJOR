@@ -57,7 +57,28 @@
                         <label for="register-password">Mot de passe</label>
                         <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
                         <label for="register-specialty">Spécialité BM4</label>
-                        <input id="register-specialty" name="specialty" type="text" placeholder="Ex. : RHL, PBF, INF, MMA, SIC..." required>
+                        <select id="register-specialty" name="specialty" required>
+                            <option value="">Sélectionner une spécialité</option>
+                            <option value="INF">INF - Infanterie</option>
+                            <option value="BLD">BLD - Combat des blindés</option>
+                            <option value="ART">ART - Artillerie</option>
+                            <option value="GEN">GEN - Génie</option>
+                            <option value="AER">AER - Aéromobilité (ALAT)</option>
+                            <option value="EMP">EMP - Emploi des forces</option>
+                            <option value="SIC">SIC - Systèmes d'information et de communication</option>
+                            <option value="CYB">CYB - Cybersécurité et cyberdéfense</option>
+                            <option value="RENS">RENS - Renseignement</option>
+                            <option value="ADM">ADM - Administration et gestion de soutien</option>
+                            <option value="GRH">GRH - Gestion des ressources humaines</option>
+                            <option value="PBF">PBF - Pilotage, budget et finances</option>
+                            <option value="MVT">MVT - Logistique et transport</option>
+                            <option value="MAI">MAI - Maintenance</option>
+                            <option value="COM">COM - Communication</option>
+                            <option value="RHL">RHL - Restauration, hôtellerie et loisirs</option>
+                            <option value="EPS">EPS - Entraînement physique, militaire et sportif</option>
+                            <option value="SAN">SAN - Santé</option>
+                            <option value="FSP">FSP - Forces spéciales</option>
+                        </select>
                         <p id="register-message" class="auth-message" role="alert"></p>
                         <button class="btn-main" type="submit">Créer mon compte</button>
                     </form>
@@ -115,8 +136,8 @@
                 </section>
                 <form id="admin-form" class="auth-form auth-view hidden">
                     <div class="terminal-panel-title">Accès administrateur</div>
-                    <label for="admin-email">Identifiant administrateur</label>
-                    <input id="admin-email" name="email" type="text" placeholder="admin" required>
+                    <label for="admin-email">Email administrateur</label>
+                    <input id="admin-email" name="email" type="email" autocomplete="email" placeholder="admin@unite.fr" required>
                     <label for="admin-password">Mot de passe administrateur</label>
                     <input id="admin-password" name="password" type="password" placeholder="............" required>
                     <p id="admin-message" class="auth-message" role="alert"></p>
