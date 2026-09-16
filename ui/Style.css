@@ -1097,7 +1097,7 @@ body {
     transform: translateY(-1px);
 }
 
-#auth-screen .auth-tab:hover {
+#auth-screen .auth-tab:not(.active):hover {
     background: rgba(159, 170, 132, 0.1);
     color: #f8fafc;
 }
