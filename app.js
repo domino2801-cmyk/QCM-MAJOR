@@ -827,8 +827,27 @@ function normalizeEmail(email) {
     return email.trim().toLowerCase();
 }
 
-function isAdminUser(user) {
-    return user?.app_metadata?.role === "admin" || user?.app_metadata?.bm4_admin === true;
+function decodeJwtClaims(accessToken) {
+    try {
+        const encodedPayload = accessToken?.split(".")?.[1];
+        if (!encodedPayload) return null;
+
+        const normalizedPayload = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
+        const paddedPayload = normalizedPayload.padEnd(normalizedPayload.length + ((4 - normalizedPayload.length % 4) % 4), "=");
+        return JSON.parse(atob(paddedPayload));
+    } catch {
+        return null;
+    }
+}
+
+function isAdminSession(session) {
+    const claims = decodeJwtClaims(session?.access_token);
+    const appMetadata = claims?.app_metadata || {};
+    return claims?.role === "admin" || appMetadata.role === "admin" || appMetadata.bm4_admin === true;
+}
+
+function isAdminUser(user, session = getStoredSupabaseSession()) {
+    return isAdminSession(session) || user?.app_metadata?.role === "admin" || user?.app_metadata?.bm4_admin === true;
 }
 
 function formatSpecialtyLabel(specialty) {
@@ -901,7 +920,7 @@ async function fetchProfileForUser(user) {
     if (!supabase || !user) {
         return {
             account: fallback,
-            hasProfile: false
+            profileStatus: "missing"
         };
     }
 
@@ -918,7 +937,7 @@ async function fetchProfileForUser(user) {
         if (!profile) {
             return {
                 account: fallback,
-                hasProfile: false
+                profileStatus: "missing"
             };
         }
 
@@ -930,12 +949,12 @@ async function fetchProfileForUser(user) {
                 name: profile.name || fallback.name,
                 specialty: profile.specialty || fallback.specialty
             },
-            hasProfile: true
+            profileStatus: "present"
         };
     } catch {
         return {
             account: fallback,
-            hasProfile: false
+            profileStatus: "unavailable"
         };
     }
 }
@@ -966,8 +985,8 @@ async function upsertProfileForUser(user, profile = {}) {
 }
 
 async function finalizeAuthenticatedUser(user, fallback = {}) {
-    const { account, hasProfile } = await fetchProfileForUser(user);
-    if (!hasProfile) {
+    const { account, profileStatus } = await fetchProfileForUser(user);
+    if (profileStatus === "missing") {
         const error = new Error("Profil candidat non finalisé.");
         error.code = profileNotReadyErrorCode;
         throw error;
@@ -984,10 +1003,10 @@ async function finalizeAuthenticatedUser(user, fallback = {}) {
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
 }
 
-async function handleProfileNotReady(messageId, user = getStoredSupabaseSession()?.user) {
+async function handleProfileNotReady(messageId, user = getStoredSupabaseSession()?.user, session = getStoredSupabaseSession()) {
     currentAuthenticatedAccount = null;
     currentCandidateEmail = "";
-    if (!isAdminUser(user)) {
+    if (!isAdminUser(user, session)) {
         await supabase?.auth.signOut().catch(() => {});
     }
     showAuthView("login");
@@ -1378,7 +1397,7 @@ async function restoreSupabaseSession() {
         return;
     }
 
-    if (isAdminUser(session.user)) {
+    if (isAdminSession(session)) {
         currentAuthenticatedAccount = buildAccountFromUser(session.user);
         currentCandidateEmail = "";
         showAdminApp();
@@ -1391,7 +1410,7 @@ async function restoreSupabaseSession() {
         });
     } catch (error) {
         if (error?.code === profileNotReadyErrorCode) {
-            await handleProfileNotReady("login-message", session.user);
+            await handleProfileNotReady("login-message", session.user, session);
             return;
         }
         throw error;
@@ -1459,9 +1478,11 @@ function initializeAuth() {
         const email = normalizeEmail(document.getElementById("login-email").value);
         const password = document.getElementById("login-password").value;
         let signedInUser = null;
+        let signedInSession = null;
         try {
             const { data } = await supabase.auth.signInWithPassword({ email, password });
             signedInUser = data.user || null;
+            signedInSession = data.session || null;
 
             if (!data.user) {
                 setAuthMessage("login-message", "Adresse mail ou mot de passe incorrect.");
@@ -1472,7 +1493,7 @@ function initializeAuth() {
             await finalizeAuthenticatedUser(data.user, { email });
         } catch (error) {
             if (error?.code === profileNotReadyErrorCode) {
-                await handleProfileNotReady("login-message", signedInUser);
+                await handleProfileNotReady("login-message", signedInUser, signedInSession);
                 return;
             }
             setAuthMessage("login-message", getFriendlyAuthError(error, "Adresse mail ou mot de passe incorrect."));
@@ -1619,16 +1640,18 @@ function initializeAuth() {
 
         const email = normalizeEmail(document.getElementById("admin-email").value);
         const password = document.getElementById("admin-password").value;
+        let adminSession = null;
 
         try {
             const { data } = await supabase.auth.signInWithPassword({ email, password });
+            adminSession = data.session || null;
 
             if (!data.user) {
                 setAuthMessage("admin-message", "Identifiant ou mot de passe administrateur incorrect.");
                 return;
             }
 
-            if (!isAdminUser(data.user)) {
+            if (!isAdminSession(adminSession || getStoredSupabaseSession())) {
                 await supabase.auth.signOut();
                 setAuthMessage("admin-message", "Compte authentifié mais non autorisé pour l’administration.");
                 return;
