@@ -984,10 +984,12 @@ async function finalizeAuthenticatedUser(user, fallback = {}) {
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
 }
 
-async function handleProfileNotReady(messageId) {
+async function handleProfileNotReady(messageId, user = getStoredSupabaseSession()?.user) {
     currentAuthenticatedAccount = null;
     currentCandidateEmail = "";
-    await supabase?.auth.signOut().catch(() => {});
+    if (!isAdminUser(user)) {
+        await supabase?.auth.signOut().catch(() => {});
+    }
     showAuthView("login");
     setAuthMessage(
         messageId,
@@ -1389,7 +1391,7 @@ async function restoreSupabaseSession() {
         });
     } catch (error) {
         if (error?.code === profileNotReadyErrorCode) {
-            await handleProfileNotReady("login-message");
+            await handleProfileNotReady("login-message", session.user);
             return;
         }
         throw error;
@@ -1456,8 +1458,10 @@ function initializeAuth() {
 
         const email = normalizeEmail(document.getElementById("login-email").value);
         const password = document.getElementById("login-password").value;
+        let signedInUser = null;
         try {
             const { data } = await supabase.auth.signInWithPassword({ email, password });
+            signedInUser = data.user || null;
 
             if (!data.user) {
                 setAuthMessage("login-message", "Adresse mail ou mot de passe incorrect.");
@@ -1468,7 +1472,7 @@ function initializeAuth() {
             await finalizeAuthenticatedUser(data.user, { email });
         } catch (error) {
             if (error?.code === profileNotReadyErrorCode) {
-                await handleProfileNotReady("login-message");
+                await handleProfileNotReady("login-message", signedInUser);
                 return;
             }
             setAuthMessage("login-message", getFriendlyAuthError(error, "Adresse mail ou mot de passe incorrect."));
