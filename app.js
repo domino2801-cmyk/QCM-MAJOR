@@ -63,6 +63,7 @@ let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let cachedAccounts = {};
 let resultsCache = [];
+const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -897,7 +898,12 @@ function buildAccountFromUser(user, fallback = {}) {
 async function fetchProfileForUser(user) {
     const fallback = buildAccountFromUser(user);
 
-    if (!supabase || !user) return fallback;
+    if (!supabase || !user) {
+        return {
+            account: fallback,
+            hasProfile: false
+        };
+    }
 
     try {
         const query = new URLSearchParams({
@@ -909,17 +915,28 @@ async function fetchProfileForUser(user) {
         });
         const profile = Array.isArray(data) ? data[0] : null;
 
-        if (!profile) return fallback;
+        if (!profile) {
+            return {
+                account: fallback,
+                hasProfile: false
+            };
+        }
 
         return {
-            ...fallback,
-            id: profile.id || fallback.id,
-            email: normalizeEmail(profile.email || fallback.email || ""),
-            name: profile.name || fallback.name,
-            specialty: profile.specialty || fallback.specialty
+            account: {
+                ...fallback,
+                id: profile.id || fallback.id,
+                email: normalizeEmail(profile.email || fallback.email || ""),
+                name: profile.name || fallback.name,
+                specialty: profile.specialty || fallback.specialty
+            },
+            hasProfile: true
         };
     } catch {
-        return fallback;
+        return {
+            account: fallback,
+            hasProfile: false
+        };
     }
 }
 
@@ -949,7 +966,12 @@ async function upsertProfileForUser(user, profile = {}) {
 }
 
 async function finalizeAuthenticatedUser(user, fallback = {}) {
-    const account = await fetchProfileForUser(user);
+    const { account, hasProfile } = await fetchProfileForUser(user);
+    if (!hasProfile) {
+        const error = new Error("Profil candidat non finalisé.");
+        error.code = profileNotReadyErrorCode;
+        throw error;
+    }
     const mergedAccount = {
         ...fallback,
         ...account,
@@ -960,6 +982,17 @@ async function finalizeAuthenticatedUser(user, fallback = {}) {
     currentAuthenticatedAccount = mergedAccount;
     cacheAccount(mergedAccount);
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
+}
+
+async function handleProfileNotReady(messageId) {
+    currentAuthenticatedAccount = null;
+    currentCandidateEmail = "";
+    await supabase?.auth.signOut().catch(() => {});
+    showAuthView("login");
+    setAuthMessage(
+        messageId,
+        "Votre profil candidat n’est pas encore finalisé. Terminez d’abord l’inscription et la vérification OTP."
+    );
 }
 
 function setAuthMessage(id, message) {
@@ -1350,9 +1383,17 @@ async function restoreSupabaseSession() {
         return;
     }
 
-    await finalizeAuthenticatedUser(session.user, {
-        email: currentAuthenticatedAccount?.email || session.user?.email || ""
-    });
+    try {
+        await finalizeAuthenticatedUser(session.user, {
+            email: currentAuthenticatedAccount?.email || session.user?.email || ""
+        });
+    } catch (error) {
+        if (error?.code === profileNotReadyErrorCode) {
+            await handleProfileNotReady("login-message");
+            return;
+        }
+        throw error;
+    }
 }
 
 function initializeAuth() {
@@ -1426,6 +1467,10 @@ function initializeAuth() {
             clearAuthMessages();
             await finalizeAuthenticatedUser(data.user, { email });
         } catch (error) {
+            if (error?.code === profileNotReadyErrorCode) {
+                await handleProfileNotReady("login-message");
+                return;
+            }
             setAuthMessage("login-message", getFriendlyAuthError(error, "Adresse mail ou mot de passe incorrect."));
         }
     });
