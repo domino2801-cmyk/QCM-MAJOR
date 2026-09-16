@@ -862,6 +862,27 @@ function buildAccountFromUser(user, fallback = {}) {
     };
 }
 
+function resolveAuthenticatedAccountContext(email = "", account = {}) {
+    const sessionUser = getStoredSupabaseSession()?.user || null;
+    const resolvedAccount = account?.email
+        ? account
+        : currentAuthenticatedAccount?.email
+            ? currentAuthenticatedAccount
+            : buildAccountFromUser(sessionUser, account);
+    const resolvedEmail = normalizeEmail(
+        email
+        || resolvedAccount?.email
+        || currentCandidateEmail
+        || sessionUser?.email
+        || ""
+    );
+
+    return {
+        email: resolvedEmail,
+        account: resolvedAccount
+    };
+}
+
 async function fetchProfileForUser(user) {
     const fallback = buildAccountFromUser(user);
 
@@ -968,12 +989,14 @@ function playAnswerSound(isCorrect) {
 }
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
+    const authenticatedContext = resolveAuthenticatedAccountContext(email, account);
     const adminButton = document.getElementById("theme-admin-btn");
-    const isAdmin = account?.isAdmin === true || isCurrentUserAdmin();
+    const isAdmin = authenticatedContext.account?.isAdmin === true || isCurrentUserAdmin();
+    currentCandidateEmail = authenticatedContext.email;
     setAuthAudioPlaying(false);
     adminButton?.classList.toggle("hidden", !isAdmin);
     document.getElementById("account-summary").innerText =
-        `${account.name || "Candidat"} • ${email} • ${account.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
+        `${authenticatedContext.account?.name || "Candidat"} • ${authenticatedContext.email} • ${authenticatedContext.account?.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
     uiController.switchScreen("theme-screen");
 }
 
@@ -1020,7 +1043,8 @@ function renderAdminAccessView() {
     adminAccessAction = async () => {
         await restoreSupabaseSession();
         if (currentAuthenticatedAccount) {
-            showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
+            const authenticatedContext = resolveAuthenticatedAccountContext("", currentAuthenticatedAccount);
+            showAuthenticatedApp(authenticatedContext.email, authenticatedContext.account);
             return;
         }
         if (!currentAuthenticatedAccount) {
@@ -1692,14 +1716,16 @@ async function initializeAppInteractions() {
         if (!currentAuthenticatedAccount) {
             await restoreSupabaseSession();
             if (currentAuthenticatedAccount) {
-                showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
+                const authenticatedContext = resolveAuthenticatedAccountContext("", currentAuthenticatedAccount);
+                showAuthenticatedApp(authenticatedContext.email, authenticatedContext.account);
                 return;
             }
             uiController.switchScreen("auth-screen");
             showAuthView("login");
             return;
         }
-        showAuthenticatedApp(currentCandidateEmail || currentAuthenticatedAccount.email || "", currentAuthenticatedAccount);
+        const authenticatedContext = resolveAuthenticatedAccountContext("", currentAuthenticatedAccount);
+        showAuthenticatedApp(authenticatedContext.email, authenticatedContext.account);
     });
 
     document.getElementById("admin-question-theme").addEventListener("change", () => {
