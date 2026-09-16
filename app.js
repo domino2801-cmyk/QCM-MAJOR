@@ -952,7 +952,7 @@ async function fetchProfileForUser(user) {
     try {
         const query = new URLSearchParams({
             id: `eq.${user.id}`,
-            select: "id,email,name,specialty"
+            select: "id,email,name,speciality"
         });
         const data = await supabaseRestRequest(`/profiles?${query.toString()}`, {
             accessToken: getStoredSupabaseSession()?.access_token
@@ -972,7 +972,7 @@ async function fetchProfileForUser(user) {
                 id: profile.id || fallback.id,
                 email: normalizeEmail(profile.email || fallback.email || ""),
                 name: profile.name || fallback.name,
-                specialty: profile.specialty || fallback.specialty
+                specialty: profile.speciality || fallback.specialty
             },
             profileMissing: false
         };
@@ -1000,7 +1000,7 @@ async function upsertProfileForUser(user, profile = {}) {
                 id: user.id,
                 email: account.email,
                 name: account.name,
-                specialty: account.specialty
+                speciality: account.specialty
             }]
         });
     }
