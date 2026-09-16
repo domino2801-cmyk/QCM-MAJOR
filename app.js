@@ -33,6 +33,9 @@ const supabaseUrl = typeof document !== "undefined"
 const supabaseAnonKey = typeof document !== "undefined"
     ? document.querySelector('meta[name="supabase-anon-key"]')?.content?.trim() || ""
     : "";
+const supabaseProfilesRlsVerified = typeof document !== "undefined"
+    ? document.querySelector('meta[name="supabase-profiles-rls"]')?.content?.trim() === "verified"
+    : false;
 const supabaseAuthListeners = new Set();
 const supabase = supabaseUrl && supabaseAnonKey
     ? { auth: {} }
@@ -60,15 +63,15 @@ function getStoredJson(storage, key, fallback) {
 }
 
 function getStoredSupabaseSession() {
-    return getStoredJson(localStorage, supabaseSessionStorageKey, null);
+    return getStoredJson(sessionStorage, supabaseSessionStorageKey, null);
 }
 
 function setStoredSupabaseSession(session) {
-    localStorage.setItem(supabaseSessionStorageKey, JSON.stringify(session));
+    sessionStorage.setItem(supabaseSessionStorageKey, JSON.stringify(session));
 }
 
 function clearStoredSupabaseSession() {
-    localStorage.removeItem(supabaseSessionStorageKey);
+    sessionStorage.removeItem(supabaseSessionStorageKey);
 }
 
 function buildSupabaseHeaders({ accessToken, withJson = false, extraHeaders = {} } = {}) {
@@ -265,14 +268,15 @@ if (supabase) {
             return { data: { session: null }, error: null };
         }
 
-        if (!session.user) {
-            const user = await fetchSupabaseUser(session.access_token).catch(() => null);
-            const updatedSession = { ...session, user };
-            setStoredSupabaseSession(updatedSession);
-            return { data: { session: updatedSession }, error: null };
+        const user = await fetchSupabaseUser(session.access_token).catch(() => null);
+        if (!user) {
+            clearStoredSupabaseSession();
+            return { data: { session: null }, error: null };
         }
 
-        return { data: { session }, error: null };
+        const updatedSession = { ...session, user };
+        setStoredSupabaseSession(updatedSession);
+        return { data: { session: updatedSession }, error: null };
     };
 
     supabase.auth.onAuthStateChange = callback => {
@@ -290,7 +294,7 @@ if (supabase) {
 }
 
 function getAccounts() {
-    return getStoredJson(localStorage, accountsStorageKey, {});
+    return getStoredJson(sessionStorage, accountsStorageKey, {});
 }
 
 function getPendingSignup() {
@@ -443,6 +447,16 @@ function normalizeEmail(email) {
     return email.trim().toLowerCase();
 }
 
+async function hashIdentifier(value) {
+    const data = new TextEncoder().encode(value);
+    const hash = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function getCandidateLabel(account, candidateId) {
+    return account?.name || `Candidat ${candidateId.slice(0, 8)}`;
+}
+
 function clearAuthMessages() {
     [
         "login-message",
@@ -464,7 +478,7 @@ function cacheAccount(account) {
         name: account.name || "",
         specialty: account.specialty || ""
     };
-    localStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
+    sessionStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
 }
 
 function getRecoveryRedirectUrl() {
@@ -531,6 +545,10 @@ async function upsertProfileForUser(user, profile = {}) {
     const account = buildAccountFromUser(user, profile);
 
     if (supabase && user?.id) {
+        if (!supabaseProfilesRlsVerified) {
+            throw new Error("Configuration Supabase incomplète : confirmez la protection RLS du profil avant l’activation.");
+        }
+
         await supabaseRestRequest("/profiles?on_conflict=id", {
             method: "POST",
             accessToken: getStoredSupabaseSession()?.access_token,
@@ -560,7 +578,7 @@ async function finalizeAuthenticatedUser(user, fallback = {}, { persistAccount =
         cacheAccount(mergedAccount);
     }
     if (mergedAccount.email) {
-        localStorage.setItem(sessionStorageKey, mergedAccount.email);
+        sessionStorage.setItem(sessionStorageKey, mergedAccount.email);
     }
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
 }
@@ -648,9 +666,9 @@ function renderAdminAccounts() {
         deleteButton.innerText = "Retirer du cache";
         deleteButton.addEventListener("click", () => {
             delete accounts[email];
-            localStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
-            if (localStorage.getItem(sessionStorageKey) === email) {
-                localStorage.removeItem(sessionStorageKey);
+            sessionStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
+            if (sessionStorage.getItem(sessionStorageKey) === email) {
+                sessionStorage.removeItem(sessionStorageKey);
             }
             renderAdminAccounts();
         });
@@ -749,7 +767,7 @@ function renderAdminResults() {
         const actionCell = document.createElement("td");
         const deleteButton = document.createElement("button");
 
-        candidateCell.innerText = result.email;
+        candidateCell.innerText = result.label || result.name || result.email || "Candidat inconnu";
         scoreCell.innerText = `${result.score.toFixed(2)} / 20`;
         answersCell.innerText = `${result.correct} correcte(s), ${result.wrong} fausse(s), ${result.skipped} passée(s)`;
         dateCell.innerText = result.date;
@@ -776,7 +794,7 @@ function renderGlobalRanking(results) {
     results
         .filter(result => result.theme === "all")
         .forEach(result => {
-            const candidate = result.email || "Candidat inconnu";
+            const candidate = result.candidateId || result.label || result.email || "Candidat inconnu";
             const currentBest = bestScoresByCandidate.get(candidate);
             if (!currentBest || result.score > currentBest.score) {
                 bestScoresByCandidate.set(candidate, result);
@@ -794,7 +812,7 @@ function renderGlobalRanking(results) {
 
     ranking.forEach((result, index) => {
         const item = document.createElement("li");
-        item.innerText = `${rankingSymbols[index]} ${result.name || result.email} — ${result.score.toFixed(2)} / 20`;
+        item.innerText = `${rankingSymbols[index]} ${result.label || result.name || result.email || "Candidat inconnu"} — ${result.score.toFixed(2)} / 20`;
         list.appendChild(item);
     });
 }
@@ -861,7 +879,31 @@ function ensureSupabaseConfigured(messageId) {
 }
 
 function getFriendlyAuthError(error, fallbackMessage) {
-    return error?.message || fallbackMessage;
+    const message = error?.message?.toLowerCase?.() || "";
+
+    if (message.includes("invalid login credentials")) {
+        return "Adresse mail ou mot de passe incorrect.";
+    }
+    if (message.includes("email not confirmed")) {
+        return "Adresse mail non confirmée. Validez d’abord le code OTP reçu par email.";
+    }
+    if (message.includes("already registered") || message.includes("already been registered")) {
+        return "Un compte existe déjà avec cette adresse mail.";
+    }
+    if (message.includes("password should be at least")) {
+        return "Le mot de passe doit contenir au moins 6 caractères.";
+    }
+    if (message.includes("token has expired") || message.includes("otp expired")) {
+        return "Le code ou le lien de vérification a expiré. Demandez une nouvelle procédure.";
+    }
+    if (message.includes("invalid token") || message.includes("token")) {
+        return "Code OTP ou lien de récupération invalide.";
+    }
+    if (message.includes("network")) {
+        return "Connexion impossible au service d’authentification.";
+    }
+
+    return fallbackMessage;
 }
 
 function clearOtpInputs() {
@@ -924,7 +966,7 @@ async function restoreSupabaseSession() {
     }
 
     await finalizeAuthenticatedUser(session.user, {
-        email: localStorage.getItem(sessionStorageKey) || session.user?.email || ""
+        email: sessionStorage.getItem(sessionStorageKey) || session.user?.email || ""
     });
 }
 
@@ -1111,7 +1153,7 @@ function initializeAuth() {
         try {
             await supabase.auth.updateUser({ password });
             await supabase.auth.signOut();
-            localStorage.removeItem(sessionStorageKey);
+            sessionStorage.removeItem(sessionStorageKey);
             clearPendingSignup();
             clearRecoveryUrlState();
             document.getElementById("reset-password-form").reset();
@@ -1213,7 +1255,7 @@ async function initializeAppInteractions() {
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
         if (supabase) await supabase.auth.signOut();
-        localStorage.removeItem(sessionStorageKey);
+        sessionStorage.removeItem(sessionStorageKey);
         clearPendingSignup();
         uiController.switchScreen("auth-screen");
         document.getElementById("login-form").reset();
@@ -1305,7 +1347,7 @@ async function initializeAppInteractions() {
 // =========================================================
 
 function startQuiz() {
-    const email = localStorage.getItem(sessionStorageKey) || "anonymous";
+    const email = sessionStorage.getItem(sessionStorageKey) || "anonymous";
     const history = getQuestionHistory();
     const themeHistory = history[email]?.[selectedTheme] || [];
     const pool = getQuestionPool(selectedTheme);
@@ -1423,16 +1465,20 @@ function marquerBoutons(selected, correct) {
 // BILAN FINAL
 // =========================================================
 
-function bilanFinal() {
+async function bilanFinal() {
     const total = quizEngine.questions.length;
     const note = scoring.computeFinal(quizEngine.stats, total);
     const results = getResults();
-    const email = localStorage.getItem(sessionStorageKey) || "Candidat inconnu";
+    const email = sessionStorage.getItem(sessionStorageKey) || "Candidat inconnu";
     const account = getAccounts()[email];
+    const candidateId = email === "Candidat inconnu"
+        ? crypto.randomUUID()
+        : await hashIdentifier(email);
+    const label = getCandidateLabel(account, candidateId);
 
     results.unshift({
-        email,
-        name: account?.name || email,
+        candidateId,
+        label,
         theme: selectedTheme,
         score: note,
         correct: quizEngine.stats.correct,

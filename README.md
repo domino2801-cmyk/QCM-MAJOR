@@ -114,6 +114,7 @@ Avant utilisation de l’authentification, renseignez les balises meta de `index
 ```html
 <meta name="supabase-url" content="https://<votre-projet>.supabase.co">
 <meta name="supabase-anon-key" content="<votre-anon-key>">
+<meta name="supabase-profiles-rls" content="verified">
 ```
 
 Prérequis côté Supabase :
@@ -121,6 +122,7 @@ Prérequis côté Supabase :
 * Activer le fournisseur **Email** pour l’OTP d’inscription et la récupération de mot de passe.
 * Configurer les **Redirect URL(s)** Supabase Auth pour l’URL réelle de l’application (GitHub Pages ou environnement local).
 * Prévoir une table `profiles` avec au minimum `id`, `email`, `name`, `specialty`, et des politiques RLS permettant à l’utilisateur authentifié de lire/écrire son propre profil.
+* Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
 
 Le flux candidat attendu est :
 
