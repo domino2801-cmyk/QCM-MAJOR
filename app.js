@@ -40,6 +40,7 @@ const supabase = supabaseUrl && supabaseAnonKey
 let editingQuestionIndex = null;
 let authAudioRetry = null;
 let currentAuthenticatedAccount = null;
+let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let cachedAccounts = {};
 let successAction = () => {
@@ -179,6 +180,8 @@ async function syncSupabaseSessionFromUrl() {
     const accessToken = hashParams.get("access_token");
 
     if (!accessToken) return;
+
+    window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
 
     const type = hashParams.get("type");
     const user = await fetchSupabaseUser(accessToken).catch(() => null);
@@ -595,6 +598,7 @@ async function finalizeAuthenticatedUser(user, fallback = {}) {
         email: normalizeEmail(fallback.email || account.email || user?.email || "")
     };
 
+    currentCandidateEmail = mergedAccount.email;
     currentAuthenticatedAccount = mergedAccount;
     cacheAccount(mergedAccount);
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
@@ -1035,6 +1039,7 @@ function initializeAuth() {
     document.getElementById("reset-back-btn").addEventListener("click", () => {
         clearAuthMessages();
         currentAuthenticatedAccount = null;
+        currentCandidateEmail = "";
         clearRecoveryUrlState();
         showAuthView("login");
     });
@@ -1177,6 +1182,7 @@ function initializeAuth() {
             await supabase.auth.updateUser({ password });
             await supabase.auth.signOut();
             currentAuthenticatedAccount = null;
+            currentCandidateEmail = "";
             clearPendingSignup();
             clearRecoveryUrlState();
             document.getElementById("reset-password-form").reset();
@@ -1214,8 +1220,18 @@ function initializeAuth() {
                 localStorage.removeItem(adminSessionStorageKey);
                 uiController.switchScreen("auth-screen");
                 currentAuthenticatedAccount = null;
+                currentCandidateEmail = "";
                 clearAuthMessages();
                 showAuthView("reset", { resetMode: "update" });
+                return;
+            }
+
+            if (event === "SIGNED_OUT") {
+                currentAuthenticatedAccount = null;
+                currentCandidateEmail = "";
+                uiController.switchScreen("auth-screen");
+                clearAuthMessages();
+                showAuthView("login");
             }
         });
     }
@@ -1243,6 +1259,7 @@ async function initializeApp() {
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
         currentAuthenticatedAccount = null;
+        currentCandidateEmail = "";
         showAuthView("reset", { resetMode: "update" });
     }
 }
@@ -1293,6 +1310,7 @@ async function initializeAppInteractions() {
             }
         }
         currentAuthenticatedAccount = null;
+        currentCandidateEmail = "";
         clearPendingSignup();
         uiController.switchScreen("auth-screen");
         document.getElementById("login-form").reset();
@@ -1506,14 +1524,16 @@ async function bilanFinal() {
     const total = quizEngine.questions.length;
     const note = scoring.computeFinal(quizEngine.stats, total);
     const results = getResults();
-    const email = currentAuthenticatedAccount?.email || "Candidat inconnu";
+    const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
     const account = currentAuthenticatedAccount || getAccounts()[email];
-    const candidateId = account?.id || "candidat-inconnu";
+    const candidateId = account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu");
     const label = getCandidateLabel(account, candidateId);
 
     results.unshift({
         candidateId,
         label,
+        email: email === "Candidat inconnu" ? "" : email,
+        name: account?.name || "",
         theme: selectedTheme,
         score: note,
         correct: quizEngine.stats.correct,
