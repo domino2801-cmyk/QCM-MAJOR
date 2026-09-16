@@ -1407,8 +1407,10 @@ function ensureSupabaseConfigured(messageId) {
     const configMessage = document.getElementById("auth-config-message");
     const configIssue = getSupabaseConfigMessage();
     const configured = hasSupabaseAuth() && !configIssue;
-    configMessage.innerText = configIssue || "Configuration Supabase prête.";
-    configMessage.classList.toggle("hidden", configured);
+    if (configMessage) {
+        configMessage.innerText = configIssue || "Configuration Supabase prête.";
+        configMessage.classList.toggle("hidden", configured);
+    }
 
     if (!configured && messageId) {
         setAuthMessage(messageId, configIssue);
