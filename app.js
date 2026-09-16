@@ -69,50 +69,6 @@ function getStoredJson(storage, key, fallback) {
     }
 }
 
-function buildPublicPseudo(candidateId) {
-    const source = String(candidateId || "candidat-inconnu");
-    let hash = 0;
-
-    for (let index = 0; index < source.length; index++) {
-        hash = ((hash << 5) - hash + source.charCodeAt(index)) >>> 0;
-    }
-
-    return `Pseudo-${hash.toString(16).toUpperCase().padStart(6, "0").slice(0, 6)}`;
-}
-
-function buildLocalPublicRanking(results) {
-    const bestScoresByCandidate = new Map();
-
-    results
-        .filter(result => result.theme === "all")
-        .forEach(result => {
-            const candidateId = typeof result.candidateId === "string"
-                ? result.candidateId.trim()
-                : "";
-            const hasSafeIdentifier = candidateId
-                && candidateId !== "candidat-inconnu"
-                && !candidateId.includes("@");
-
-            if (!hasSafeIdentifier) return;
-            const currentBest = bestScoresByCandidate.get(candidateId);
-            if (!currentBest || result.score > currentBest.score) {
-                bestScoresByCandidate.set(candidateId, result);
-            }
-        });
-
-    const medals = ["🥇 Or", "🥈 Argent", "🥉 Bronze"];
-
-    return [...bestScoresByCandidate.entries()]
-        .sort((first, second) => second[1].score - first[1].score)
-        .slice(0, 3)
-        .map(([candidateId, result], index) => ({
-            rang: index + 1,
-            medaille: medals[index],
-            pseudo: buildPublicPseudo(candidateId),
-            score: Number(result.score || 0)
-        }));
-}
-
 function setPublicRanking(entries) {
     publicRankingCache = Array.isArray(entries) ? entries : [];
 }
@@ -123,7 +79,7 @@ function getPublicRanking() {
 
 async function loadPublicRankingFromSupabase() {
     if (!supabase) {
-        setPublicRanking(buildLocalPublicRanking(getResults()));
+        setPublicRanking([]);
         return false;
     }
 
@@ -133,7 +89,7 @@ async function loadPublicRankingFromSupabase() {
         );
 
         if (!Array.isArray(data)) {
-            setPublicRanking(buildLocalPublicRanking(getResults()));
+            setPublicRanking([]);
             return false;
         }
 
@@ -147,7 +103,7 @@ async function loadPublicRankingFromSupabase() {
         );
         return true;
     } catch {
-        setPublicRanking(buildLocalPublicRanking(getResults()));
+        setPublicRanking([]);
         return false;
     }
 }
@@ -1131,6 +1087,7 @@ function renderAdminAccessView() {
         adminAccessAction = () => {
             showAdminApp();
         };
+        focusElement("#admin-access-submit-btn");
         return;
     }
 
@@ -1140,6 +1097,7 @@ function renderAdminAccessView() {
         adminAccessAction = () => {
             showAuthView("login");
         };
+        focusElement("#admin-access-submit-btn");
         return;
     }
 
@@ -1157,6 +1115,7 @@ function renderAdminAccessView() {
             showAuthView("login");
         }
     };
+    focusElement("#admin-access-submit-btn");
 }
 
 function switchAdminSection(section) {
