@@ -1497,6 +1497,60 @@ function initializeOtpInputs() {
     });
 }
 
+async function handleRegisterSubmit(event) {
+    event.preventDefault();
+    if (!ensureSupabaseConfigured("register-message")) return;
+
+    const registerForm = event.currentTarget;
+    const invalidField = getFirstInvalidRegisterField(registerForm);
+    if (invalidField) {
+        setAuthMessage("register-message", getRegisterValidationMessage(invalidField));
+        invalidField.focus?.();
+        return;
+    }
+
+    const pseudoField = getRequiredElement(
+        "register-pseudo",
+        "register-message",
+        "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
+    );
+    const emailField = getRequiredElement("register-email", "register-message", "Le champ email est introuvable.");
+    const passwordField = getRequiredElement("register-password", "register-message", "Le champ mot de passe est introuvable.");
+    const specialtyField = getRequiredElement("register-specialty", "register-message", "Le champ spécialité est introuvable.");
+
+    if (!pseudoField || !emailField || !passwordField || !specialtyField) {
+        return;
+    }
+
+    const name = pseudoField.value.trim();
+    const email = normalizeEmail(emailField.value);
+    const password = passwordField.value;
+    const specialty = specialtyField.value.trim();
+
+    if (!name || !specialty) {
+        setAuthMessage("register-message", "Tous les champs du profil candidat sont requis.");
+        return;
+    }
+
+    try {
+        setAuthMessage("register-message", "");
+        await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { name, specialty }
+            }
+        });
+
+        setPendingSignup({ name, email, specialty });
+        clearAuthMessages();
+        clearOtpInputs();
+        showAuthView("otp", { email });
+    } catch (error) {
+        setAuthMessage("register-message", getFriendlyAuthError(error, "Impossible de créer le compte."));
+    }
+}
+
 async function restoreSupabaseSession() {
     if (!hasSupabaseAuth()) return;
 
@@ -1624,59 +1678,7 @@ function initializeAuth() {
         }
     });
 
-    document.getElementById("register-form").addEventListener("submit", async event => {
-        event.preventDefault();
-        if (!ensureSupabaseConfigured("register-message")) return;
-
-        const registerForm = event.currentTarget;
-        const invalidField = getFirstInvalidRegisterField(registerForm);
-        if (invalidField) {
-            setAuthMessage("register-message", getRegisterValidationMessage(invalidField));
-            invalidField.focus?.();
-            return;
-        }
-
-        const pseudoField = getRequiredElement(
-            "register-pseudo",
-            "register-message",
-            "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
-        );
-        const emailField = getRequiredElement("register-email", "register-message", "Le champ email est introuvable.");
-        const passwordField = getRequiredElement("register-password", "register-message", "Le champ mot de passe est introuvable.");
-        const specialtyField = getRequiredElement("register-specialty", "register-message", "Le champ spécialité est introuvable.");
-
-        if (!pseudoField || !emailField || !passwordField || !specialtyField) {
-            return;
-        }
-
-        const name = pseudoField.value.trim();
-        const email = normalizeEmail(emailField.value);
-        const password = passwordField.value;
-        const specialty = specialtyField.value.trim();
-
-        if (!name || !specialty) {
-            setAuthMessage("register-message", "Tous les champs du profil candidat sont requis.");
-            return;
-        }
-
-        try {
-            setAuthMessage("register-message", "");
-            await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: { name, specialty }
-                }
-            });
-
-            setPendingSignup({ name, email, specialty });
-            clearAuthMessages();
-            clearOtpInputs();
-            showAuthView("otp", { email });
-        } catch (error) {
-            setAuthMessage("register-message", getFriendlyAuthError(error, "Impossible de créer le compte."));
-        }
-    });
+    document.getElementById("register-form").addEventListener("submit", handleRegisterSubmit);
 
     document.getElementById("otp-form").addEventListener("submit", async event => {
         event.preventDefault();

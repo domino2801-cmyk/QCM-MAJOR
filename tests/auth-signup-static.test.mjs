@@ -46,12 +46,7 @@ test("signup flow still stores pending signup and switches to OTP", () => {
     let otpInputsCleared = false;
     let signUpPayload = null;
 
-    const submitHandler = extractRegisterSubmitHandler();
-
-    return submitHandler({
-        preventDefault() {},
-        currentTarget: form
-    }, {
+    const submitHandler = extractNamedFunction("handleRegisterSubmit", {
         ensureSupabaseConfigured: () => true,
         getFirstInvalidRegisterField: () => null,
         getRegisterValidationMessage: () => "unused",
@@ -79,22 +74,27 @@ test("signup flow still stores pending signup and switches to OTP", () => {
         showAuthView: (view, options) => {
             shownView = { view, options };
         }
+    });
+
+    return submitHandler({
+        preventDefault() {},
+        currentTarget: form
     }).then(() => {
-        assert.deepEqual(signUpPayload, {
+        assert.deepEqual(toPlainJson(signUpPayload), {
             email: "test@example.com",
             password: "secret6",
             options: {
                 data: { name: "Caporal", specialty: "INF" }
             }
         });
-        assert.deepEqual(pendingSignup, {
+        assert.deepEqual(toPlainJson(pendingSignup), {
             name: "Caporal",
             email: "test@example.com",
             specialty: "INF"
         });
         assert.equal(registerMessageField.innerText, "");
         assert.equal(otpInputsCleared, true);
-        assert.deepEqual(shownView, { view: "otp", options: { email: "test@example.com" } });
+        assert.deepEqual(toPlainJson(shownView), { view: "otp", options: { email: "test@example.com" } });
     });
 });
 
@@ -109,11 +109,7 @@ test("signup flow stops on invalid field and shows register-message", async () =
         }
     };
 
-    const submitHandler = extractRegisterSubmitHandler();
-    await submitHandler({
-        preventDefault() {},
-        currentTarget: { elements: [invalidField] }
-    }, {
+    const submitHandler = extractNamedFunction("handleRegisterSubmit", {
         ensureSupabaseConfigured: () => true,
         getFirstInvalidRegisterField: () => invalidField,
         getRegisterValidationMessage: field => field.id === "register-specialty"
@@ -138,13 +134,17 @@ test("signup flow stops on invalid field and shows register-message", async () =
             throw new Error("should not show OTP when form is invalid");
         }
     });
+    await submitHandler({
+        preventDefault() {},
+        currentTarget: { elements: [invalidField] }
+    });
 
     assert.equal(registerMessageField.innerText, "Sélectionnez une spécialité BM4 avant de créer le compte.");
     assert.equal(invalidField.focusCalled, true);
 });
 
 test("register diagnostics mention Supabase connectivity problems", () => {
-    const getFriendlyAuthError = extractNamedFunction("getFriendlyAuthError", ["error", "fallbackMessage"]);
+    const getFriendlyAuthError = extractNamedFunction("getFriendlyAuthError");
     const message = getFriendlyAuthError(new Error("Failed to fetch"), "Impossible de créer le compte.");
 
     assert.match(message, /Impossible de joindre Supabase/);
@@ -158,8 +158,12 @@ test("register diagnostics cover invalid form inputs and hidden view toggling", 
     assert.match(css, /#auth-screen \.auth-view/);
 });
 
-function extractNamedFunction(name, parameters) {
-    const start = js.indexOf(`function ${name}`);
+function extractNamedFunction(name, globals = {}) {
+    const asyncSignature = `async function ${name}`;
+    const plainSignature = `function ${name}`;
+    const start = js.includes(asyncSignature)
+        ? js.indexOf(asyncSignature)
+        : js.indexOf(plainSignature);
     assert.notEqual(start, -1, `Unable to find function ${name}`);
 
     const bodyStart = js.indexOf("{", start);
@@ -177,38 +181,9 @@ function extractNamedFunction(name, parameters) {
 
     const functionSource = js.slice(start, cursor + 1);
     const script = new vm.Script(`(${functionSource})`);
-    return script.runInNewContext({});
+    return script.runInNewContext(globals);
 }
 
-function extractRegisterSubmitHandler() {
-    const marker = 'document.getElementById("register-form").addEventListener("submit", async event => {';
-    const start = js.indexOf(marker);
-    assert.notEqual(start, -1, "Unable to find register submit handler");
-
-    const bodyStart = js.indexOf("{", start) + 1;
-    const end = js.indexOf("\n    });", bodyStart);
-    assert.notEqual(end, -1, "Unable to find end of register submit handler");
-    const body = js.slice(bodyStart, end);
-
-    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-    return new AsyncFunction(
-        "event",
-        "deps",
-        `
-        const {
-            ensureSupabaseConfigured,
-            getFirstInvalidRegisterField,
-            getRegisterValidationMessage,
-            setAuthMessage,
-            getRequiredElement,
-            normalizeEmail,
-            supabase,
-            setPendingSignup,
-            clearAuthMessages,
-            clearOtpInputs,
-            showAuthView
-        } = deps;
-        ${body}
-        `
-    );
+function toPlainJson(value) {
+    return JSON.parse(JSON.stringify(value));
 }
