@@ -20,6 +20,7 @@ const adminSessionStorageKey = "bm4-admin-session";
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
 const resultsStorageKey = "bm4-results";
+const resultsSyncStorageKey = "bm4-results-sync-v1";
 const questionHistoryStorageKey = "bm4-question-history";
 const adminEmail = "admin@admin.fr";
 const adminPassword = "delemotte";
@@ -43,6 +44,10 @@ let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let cachedAccounts = {};
 let resultsCache = [];
+let pendingResultSync = {
+    upserts: {},
+    deletes: []
+};
 let successAction = () => {
     uiController.switchScreen("auth-screen");
     showAuthView("login");
@@ -364,14 +369,17 @@ function normalizeResultRecord(rawResult = {}) {
         wrong: Number(rawResult.wrong || 0),
         skipped: Number(rawResult.skipped || 0),
         total: Number(rawResult.total || 0),
-        date: rawResult.date || new Date().toLocaleString("fr-FR")
+        date: rawResult.date || new Date().toLocaleString("fr-FR"),
+        createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString(),
+        synced: rawResult.synced !== false
     };
 }
 
 function setResults(results) {
     resultsCache = results
         .map(normalizeResultRecord)
-        .filter(Boolean);
+        .filter(Boolean)
+        .sort((first, second) => String(second.createdAt).localeCompare(String(first.createdAt)));
     const localSafeResults = resultsCache.map(result => ({
         ...result,
         email: ""
@@ -616,6 +624,57 @@ function toSupabaseResultPayload(result) {
     };
 }
 
+function persistPendingResultSync() {
+    localStorage.setItem(resultsSyncStorageKey, JSON.stringify(pendingResultSync));
+}
+
+function queueResultUpsert(result) {
+    pendingResultSync.upserts[result.id] = toSupabaseResultPayload(result);
+    pendingResultSync.deletes = pendingResultSync.deletes.filter(id => id !== result.id);
+    persistPendingResultSync();
+}
+
+function queueResultDelete(resultId) {
+    delete pendingResultSync.upserts[resultId];
+    if (!pendingResultSync.deletes.includes(resultId)) {
+        pendingResultSync.deletes.push(resultId);
+    }
+    persistPendingResultSync();
+}
+
+async function flushPendingResultSync() {
+    if (!supabase) return;
+    const accessToken = getStoredSupabaseSession()?.access_token;
+
+    if (pendingResultSync.deletes.length > 0) {
+        const idsFilter = pendingResultSync.deletes
+            .map(resultId => `"${String(resultId).replace(/"/g, "")}"`)
+            .join(",");
+        await supabaseRestRequest(`/quiz_results?id=in.(${idsFilter})`, {
+            method: "DELETE",
+            accessToken
+        });
+        pendingResultSync.deletes = [];
+    }
+
+    const upserts = Object.values(pendingResultSync.upserts);
+    if (upserts.length > 0) {
+        await supabaseRestRequest("/quiz_results?on_conflict=id", {
+            method: "POST",
+            accessToken,
+            prefer: "resolution=merge-duplicates,return=minimal",
+            body: upserts
+        });
+        const upsertIds = new Set(upserts.map(result => result.id));
+        setResults(getResults().map(result => (
+            upsertIds.has(result.id) ? { ...result, synced: true } : result
+        )));
+        pendingResultSync.upserts = {};
+    }
+
+    persistPendingResultSync();
+}
+
 async function loadResultsFromSupabase() {
     if (!supabase) return false;
 
@@ -626,7 +685,34 @@ async function loadResultsFromSupabase() {
             { accessToken }
         );
         if (!Array.isArray(data)) return false;
-        setResults(data);
+        const remoteResults = data
+            .map(normalizeResultRecord)
+            .filter(Boolean)
+            .map(result => ({ ...result, synced: true }));
+        const remoteById = new Map(remoteResults.map(result => [result.id, result]));
+        const pendingDeleteIds = new Set(pendingResultSync.deletes);
+        const pendingUpsertIds = new Set(Object.keys(pendingResultSync.upserts));
+        const mergedResults = [
+            ...remoteResults,
+            ...getResults()
+                .filter(result => pendingUpsertIds.has(result.id))
+                .map(result => ({ ...result, synced: false }))
+        ].filter(result => !pendingDeleteIds.has(result.id));
+
+        const deduplicated = [];
+        const seen = new Set();
+        mergedResults.forEach(result => {
+            if (seen.has(result.id)) return;
+            if (pendingUpsertIds.has(result.id) && remoteById.has(result.id)) {
+                deduplicated.push({ ...remoteById.get(result.id), synced: true });
+            } else {
+                deduplicated.push(result);
+            }
+            seen.add(result.id);
+        });
+
+        setResults(deduplicated);
+        await flushPendingResultSync();
         return true;
     } catch {
         return false;
@@ -634,54 +720,41 @@ async function loadResultsFromSupabase() {
 }
 
 async function saveResult(result) {
-    const normalizedResult = normalizeResultRecord(result);
+    const normalizedResult = normalizeResultRecord({ ...result, synced: false });
     const nextResults = [normalizedResult, ...getResults()];
     setResults(nextResults);
+    queueResultUpsert(normalizedResult);
 
     if (!supabase) return;
 
     try {
-        await supabaseRestRequest("/quiz_results", {
-            method: "POST",
-            accessToken: getStoredSupabaseSession()?.access_token,
-            prefer: "return=minimal",
-            body: [toSupabaseResultPayload(normalizedResult)]
-        });
+        await flushPendingResultSync();
     } catch {
         // Conserver la copie locale si la synchronisation Supabase échoue.
     }
 }
 
 async function deleteResult(resultId) {
+    if (!resultId) return;
     setResults(getResults().filter(result => result.id !== resultId));
-
-    if (!supabase || !resultId) return;
+    queueResultDelete(resultId);
+    if (!supabase) return;
 
     try {
-        await supabaseRestRequest(`/quiz_results?id=eq.${encodeURIComponent(resultId)}`, {
-            method: "DELETE",
-            accessToken: getStoredSupabaseSession()?.access_token
-        });
+        await flushPendingResultSync();
     } catch {
         // Conserver la copie locale si la suppression distante échoue.
     }
 }
 
 async function clearResults() {
-    const candidateScope = currentAuthenticatedAccount?.id || currentCandidateEmail || null;
-    if (!candidateScope) {
-        setResults([]);
-        return;
-    }
-
-    setResults(getResults().filter(result => result.candidateId !== candidateScope));
+    const allIds = getResults().map(result => result.id).filter(Boolean);
+    setResults([]);
+    allIds.forEach(queueResultDelete);
     if (!supabase) return;
 
     try {
-        await supabaseRestRequest(`/quiz_results?candidate_id=eq.${encodeURIComponent(candidateScope)}`, {
-            method: "DELETE",
-            accessToken: getStoredSupabaseSession()?.access_token
-        });
+        await flushPendingResultSync();
     } catch {
         // Conserver la copie locale si le nettoyage distant échoue.
     }
@@ -1477,6 +1550,11 @@ function initializeAuth() {
 
 async function initializeApp() {
     const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
+    const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: {}, deletes: [] });
+    pendingResultSync = {
+        upserts: storedSyncState?.upserts && typeof storedSyncState.upserts === "object" ? storedSyncState.upserts : {},
+        deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
+    };
     setResults(Array.isArray(storedResults) ? storedResults : []);
     initializeAuth();
     const loadedFromSupabase = await loadQuestionsFromSupabase();
