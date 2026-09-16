@@ -920,7 +920,7 @@ async function fetchProfileForUser(user) {
     if (!supabase || !user) {
         return {
             account: fallback,
-            profileStatus: "missing"
+            profileMissing: true
         };
     }
 
@@ -937,7 +937,7 @@ async function fetchProfileForUser(user) {
         if (!profile) {
             return {
                 account: fallback,
-                profileStatus: "missing"
+                profileMissing: true
             };
         }
 
@@ -949,12 +949,12 @@ async function fetchProfileForUser(user) {
                 name: profile.name || fallback.name,
                 specialty: profile.specialty || fallback.specialty
             },
-            profileStatus: "present"
+            profileMissing: false
         };
     } catch {
         return {
             account: fallback,
-            profileStatus: "unavailable"
+            profileMissing: false
         };
     }
 }
@@ -984,9 +984,16 @@ async function upsertProfileForUser(user, profile = {}) {
     return account;
 }
 
-async function finalizeAuthenticatedUser(user, fallback = {}) {
-    const { account, profileStatus } = await fetchProfileForUser(user);
-    if (profileStatus === "missing") {
+async function finalizeAuthenticatedUser(user, fallback = {}, session = getStoredSupabaseSession()) {
+    if (isAdminSession(session)) {
+        currentAuthenticatedAccount = buildAccountFromUser(user, fallback);
+        currentCandidateEmail = "";
+        showAdminApp();
+        return;
+    }
+
+    const { account, profileMissing } = await fetchProfileForUser(user);
+    if (profileMissing) {
         const error = new Error("Profil candidat non finalisé.");
         error.code = profileNotReadyErrorCode;
         throw error;
@@ -1405,9 +1412,11 @@ async function restoreSupabaseSession() {
     }
 
     try {
-        await finalizeAuthenticatedUser(session.user, {
-            email: currentAuthenticatedAccount?.email || session.user?.email || ""
-        });
+        await finalizeAuthenticatedUser(
+            session.user,
+            { email: currentAuthenticatedAccount?.email || session.user?.email || "" },
+            session
+        );
     } catch (error) {
         if (error?.code === profileNotReadyErrorCode) {
             await handleProfileNotReady("login-message", session.user, session);
@@ -1490,7 +1499,7 @@ function initializeAuth() {
             }
 
             clearAuthMessages();
-            await finalizeAuthenticatedUser(data.user, { email });
+            await finalizeAuthenticatedUser(data.user, { email }, signedInSession);
         } catch (error) {
             if (error?.code === profileNotReadyErrorCode) {
                 await handleProfileNotReady("login-message", signedInUser, signedInSession);
@@ -1565,7 +1574,7 @@ function initializeAuth() {
                 message: "Compte vérifié. Votre profil Supabase est maintenant actif.",
                 actionLabel: "Accéder à la préparation",
                 onAction: async () => {
-                    await finalizeAuthenticatedUser(data.user, account);
+                    await finalizeAuthenticatedUser(data.user, account, data.session);
                 }
             });
         } catch (error) {
