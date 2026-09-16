@@ -16,14 +16,11 @@ let selectedTheme = null;
 let maxQuestions = 0;
 let reviewItems = [];
 let questionSourceReady = false;
-const adminSessionStorageKey = "bm4-admin-session";
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
 const resultsStorageKey = "bm4-results";
 const resultsSyncStorageKey = "bm4-results-sync-v1";
 const questionHistoryStorageKey = "bm4-question-history";
-const adminEmail = "admin@admin.fr";
-const adminPassword = "CHANGE_ME_NOW";
 const supabaseUrl = typeof document !== "undefined"
     ? document.querySelector('meta[name="supabase-url"]')?.content?.trim() || ""
     : "";
@@ -44,9 +41,13 @@ let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let cachedAccounts = {};
 let resultsCache = [];
+let publicRankingCache = [];
 let pendingResultSync = {
     upserts: [],
     deletes: []
+};
+let adminAccessAction = () => {
+    showAuthView("login");
 };
 let successAction = () => {
     uiController.switchScreen("auth-screen");
@@ -65,6 +66,42 @@ function getStoredJson(storage, key, fallback) {
         return JSON.parse(storage.getItem(key) || JSON.stringify(fallback));
     } catch {
         return fallback;
+    }
+}
+
+function setPublicRanking(entries) {
+    publicRankingCache = Array.isArray(entries) ? entries : [];
+}
+
+function getPublicRanking() {
+    return publicRankingCache;
+}
+
+async function loadPublicRankingFromSupabase() {
+    if (!supabase) {
+        return false;
+    }
+
+    try {
+        const data = await supabaseRestRequest(
+            "/global_ranking_public?select=rang,medaille,pseudo,score&order=rang.asc"
+        );
+
+        if (!Array.isArray(data)) {
+            return false;
+        }
+
+        setPublicRanking(
+            data.map(entry => ({
+                rang: Number(entry.rang || 0),
+                medaille: String(entry.medaille || ""),
+                pseudo: String(entry.pseudo || "Pseudo inconnu"),
+                score: Number(entry.score || 0)
+            }))
+        );
+        return true;
+    } catch {
+        return false;
     }
 }
 
@@ -788,6 +825,21 @@ function normalizeEmail(email) {
     return email.trim().toLowerCase();
 }
 
+function isAdminUser(user) {
+    const appMetadata = user?.app_metadata || {};
+    const role = String(appMetadata.role || "").trim().toLowerCase();
+    const bm4Admin = String(appMetadata.bm4_admin || "").trim().toLowerCase();
+
+    return appMetadata.bm4_admin === true
+        || bm4Admin === "true"
+        || role === "admin";
+}
+
+function isCurrentUserAdmin() {
+    const sessionUser = getStoredSupabaseSession()?.user || null;
+    return isAdminUser(sessionUser) || currentAuthenticatedAccount?.isAdmin === true;
+}
+
 function getCandidateLabel(account, candidateId) {
     return account?.name || `Candidat ${candidateId.slice(0, 8)}`;
 }
@@ -839,12 +891,42 @@ function clearRecoveryUrlState() {
     window.history.replaceState({}, document.title, `${url.pathname}${url.search}`);
 }
 
+function focusElement(selector) {
+    if (typeof document === "undefined") return;
+    const element = document.querySelector(selector);
+    if (element instanceof HTMLElement) {
+        element.focus();
+    }
+}
+
 function buildAccountFromUser(user, fallback = {}) {
     return {
         id: user?.id || fallback.id || null,
         email: normalizeEmail(user?.email || fallback.email || ""),
         name: user?.user_metadata?.name || fallback.name || "",
-        specialty: user?.user_metadata?.specialty || fallback.specialty || ""
+        specialty: user?.user_metadata?.specialty || fallback.specialty || "",
+        isAdmin: isAdminUser(user) || fallback.isAdmin === true
+    };
+}
+
+function resolveAuthenticatedAccountContext(email = "", account = {}) {
+    const sessionUser = getStoredSupabaseSession()?.user || null;
+    const resolvedAccount = account?.email
+        ? account
+        : currentAuthenticatedAccount?.email
+            ? currentAuthenticatedAccount
+            : buildAccountFromUser(sessionUser, account);
+    const resolvedEmail = normalizeEmail(
+        email
+        || resolvedAccount?.email
+        || currentCandidateEmail
+        || sessionUser?.email
+        || ""
+    );
+
+    return {
+        email: resolvedEmail,
+        account: resolvedAccount
     };
 }
 
@@ -954,19 +1036,83 @@ function playAnswerSound(isCorrect) {
 }
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
+    const authenticatedContext = resolveAuthenticatedAccountContext(email, account);
+    const adminButton = document.getElementById("theme-admin-btn");
+    const isAdmin = authenticatedContext.account?.isAdmin === true || isCurrentUserAdmin();
+    currentCandidateEmail = authenticatedContext.email;
     setAuthAudioPlaying(false);
+    adminButton?.classList.toggle("hidden", !isAdmin);
     document.getElementById("account-summary").innerText =
-        `${account.name || "Candidat"} • ${email} • ${account.specialty || "Spécialité non renseignée"}`;
+        `${authenticatedContext.account?.name || "Candidat"} • ${authenticatedContext.email} • ${authenticatedContext.account?.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
     uiController.switchScreen("theme-screen");
+    focusElement(isAdmin ? "#theme-admin-btn" : ".btn-theme");
 }
 
 function showAdminApp() {
+    if (!isCurrentUserAdmin()) {
+        uiController.switchScreen("auth-screen");
+        showAuthView("admin");
+        setAuthMessage("admin-message", "Accès refusé. Connectez-vous avec un compte administrateur autorisé.");
+        return;
+    }
     setAuthAudioPlaying(false);
     renderAdminAccounts();
     renderAdminQuestions();
     renderAdminResults();
     switchAdminSection("accounts");
     uiController.switchScreen("admin-screen");
+    focusElement(".admin-nav-btn.active");
+}
+
+async function runAdminAction(action) {
+    if (!isCurrentUserAdmin()) {
+        showAdminApp();
+        return;
+    }
+
+    await action();
+}
+
+function renderAdminAccessView() {
+    const sessionUser = getStoredSupabaseSession()?.user || null;
+    const accessCopy = document.getElementById("admin-access-copy");
+    const submitButton = document.getElementById("admin-access-submit-btn");
+
+    if (isCurrentUserAdmin()) {
+        accessCopy.innerText = "Votre session Supabase est autorisée. Vous pouvez ouvrir l’interface administrateur.";
+        submitButton.innerText = "Ouvrir l’administration";
+        adminAccessAction = () => {
+            showAdminApp();
+        };
+        focusElement("#admin-access-submit-btn");
+        return;
+    }
+
+    if (!sessionUser) {
+        accessCopy.innerText = "Connectez-vous d’abord avec un compte administrateur autorisé pour ouvrir l’interface.";
+        submitButton.innerText = "Retour à la connexion";
+        adminAccessAction = () => {
+            showAuthView("login");
+        };
+        focusElement("#admin-access-submit-btn");
+        return;
+    }
+
+    accessCopy.innerText = "Votre session Supabase est active, mais ce compte ne possède pas les droits administrateur requis.";
+    submitButton.innerText = "Retour à l’espace candidat";
+    adminAccessAction = async () => {
+        await restoreSupabaseSession();
+        if (currentAuthenticatedAccount) {
+            const authenticatedContext = resolveAuthenticatedAccountContext("", currentAuthenticatedAccount);
+            showAuthenticatedApp(authenticatedContext.email, authenticatedContext.account);
+            return;
+        }
+        if (!currentAuthenticatedAccount) {
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
+        }
+    };
+    focusElement("#admin-access-submit-btn");
 }
 
 function switchAdminSection(section) {
@@ -1108,8 +1254,9 @@ function renderAdminResults() {
         deleteButton.innerText = "Supprimer";
         deleteButton.addEventListener("click", async () => {
             await deleteResult(result.id);
+            await loadPublicRankingFromSupabase();
             renderAdminResults();
-            renderGlobalRanking(getResults());
+            renderGlobalRanking();
         });
 
         actionCell.appendChild(deleteButton);
@@ -1118,33 +1265,18 @@ function renderAdminResults() {
     });
 }
 
-function renderGlobalRanking(results) {
+function renderGlobalRanking() {
     const section = document.getElementById("global-ranking-section");
     const list = document.getElementById("global-ranking-list");
-    const bestScoresByCandidate = new Map();
-
-    results
-        .filter(result => result.theme === "all")
-        .forEach(result => {
-            const candidate = result.candidateId || result.label || result.email || "Candidat inconnu";
-            const currentBest = bestScoresByCandidate.get(candidate);
-            if (!currentBest || result.score > currentBest.score) {
-                bestScoresByCandidate.set(candidate, result);
-            }
-        });
-
-    const ranking = [...bestScoresByCandidate.values()]
-        .sort((first, second) => second.score - first.score)
-        .slice(0, 3);
+    const ranking = getPublicRanking();
 
     list.innerHTML = "";
     section.classList.toggle("hidden", ranking.length === 0);
 
-    const rankingSymbols = ["🏆", "🥈", "🥉"];
-
-    ranking.forEach((result, index) => {
+    ranking.forEach(entry => {
         const item = document.createElement("li");
-        item.innerText = `${rankingSymbols[index]} ${result.label || result.name || result.email || "Candidat inconnu"} — ${result.score.toFixed(2)} / 20`;
+        const positionLabel = entry.rang === 1 ? "1er" : `${entry.rang}e`;
+        item.innerText = `${positionLabel} — ${entry.medaille} ${entry.pseudo} — ${entry.score.toFixed(2)} / 20`;
         list.appendChild(item);
     });
 }
@@ -1188,6 +1320,7 @@ function showAuthView(view, options = {}) {
     } else if (view === "register") {
         setTerminalState("MODE REGISTER");
     } else if (view === "admin") {
+        renderAdminAccessView();
         setTerminalState("MODE ADMIN");
     } else {
         setTerminalState("MODE LOGIN");
@@ -1326,6 +1459,10 @@ function initializeAuth() {
 
     document.getElementById("admin-access-btn").addEventListener("click", () => {
         clearAuthMessages();
+        if (isCurrentUserAdmin()) {
+            showAdminApp();
+            return;
+        }
         uiController.switchScreen("auth-screen");
         showAuthView("admin");
     });
@@ -1511,25 +1648,15 @@ function initializeAuth() {
         }
     });
 
-    document.getElementById("admin-form").addEventListener("submit", event => {
+    document.getElementById("admin-form").addEventListener("submit", async event => {
         event.preventDefault();
-        const email = normalizeEmail(document.getElementById("admin-email").value);
-        const password = document.getElementById("admin-password").value;
-
-        if (email !== adminEmail || password !== adminPassword) {
-            setAuthMessage("admin-message", "Identifiant ou mot de passe administrateur incorrect.");
-            return;
-        }
-
-        localStorage.setItem(adminSessionStorageKey, "true");
         setAuthMessage("admin-message", "");
-        showAdminApp();
+        await adminAccessAction();
     });
 
     if (hasSupabaseAuth()) {
         supabase.auth.onAuthStateChange(event => {
             if (event === "PASSWORD_RECOVERY") {
-                localStorage.removeItem(adminSessionStorageKey);
                 uiController.switchScreen("auth-screen");
                 currentAuthenticatedAccount = null;
                 currentCandidateEmail = "";
@@ -1560,21 +1687,15 @@ async function initializeApp() {
     initializeAuth();
     const loadedFromSupabase = await loadQuestionsFromSupabase();
     if (!loadedFromSupabase) applyQuestionOverrides();
-    await loadResultsFromSupabase();
+    await loadPublicRankingFromSupabase();
     updateThemeQuestionCounts();
-    renderGlobalRanking(getResults());
+    renderGlobalRanking();
     initializeAppInteractions();
     await syncSupabaseSessionFromUrl();
-
-    if (isRecoveryModeFromUrl()) {
-        localStorage.removeItem(adminSessionStorageKey);
-    }
-
-    if (localStorage.getItem(adminSessionStorageKey) === "true") {
-        showAdminApp();
-    } else {
-        await restoreSupabaseSession();
-    }
+    await restoreSupabaseSession();
+    await loadResultsFromSupabase();
+    await loadPublicRankingFromSupabase();
+    renderGlobalRanking();
 
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
@@ -1637,11 +1758,24 @@ async function initializeAppInteractions() {
         showAuthView("login");
     });
 
-    document.getElementById("admin-logout-btn").addEventListener("click", () => {
-        localStorage.removeItem(adminSessionStorageKey);
-        uiController.switchScreen("auth-screen");
-        document.getElementById("admin-form").reset();
-        showAuthView("login");
+    document.getElementById("theme-admin-btn").addEventListener("click", () => {
+        showAdminApp();
+    });
+
+    document.getElementById("admin-logout-btn").addEventListener("click", async () => {
+        if (!currentAuthenticatedAccount) {
+            await restoreSupabaseSession();
+            if (currentAuthenticatedAccount) {
+                const authenticatedContext = resolveAuthenticatedAccountContext("", currentAuthenticatedAccount);
+                showAuthenticatedApp(authenticatedContext.email, authenticatedContext.account);
+                return;
+            }
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
+            return;
+        }
+        const authenticatedContext = resolveAuthenticatedAccountContext("", currentAuthenticatedAccount);
+        showAuthenticatedApp(authenticatedContext.email, authenticatedContext.account);
     });
 
     document.getElementById("admin-question-theme").addEventListener("change", () => {
@@ -1652,13 +1786,15 @@ async function initializeAppInteractions() {
     document.getElementById("question-cancel-btn").addEventListener("click", resetQuestionForm);
 
     document.getElementById("cleanup-questions-btn").addEventListener("click", async () => {
-        if (!questionSourceReady) return;
+        await runAdminAction(async () => {
+            if (!questionSourceReady) return;
 
-        const cleanupSummary = await syncQuestionMutation({ action: "cleanup" });
-        const removed = cleanupSummary?.removed || 0;
-        setAuthMessage("question-message", `${removed} doublon(s) supprimé(s).`);
-        const loaded = await loadQuestionsFromSupabase();
-        if (loaded) renderAdminQuestions();
+            const cleanupSummary = await syncQuestionMutation({ action: "cleanup" });
+            const removed = cleanupSummary?.removed || 0;
+            setAuthMessage("question-message", `${removed} doublon(s) supprimé(s).`);
+            const loaded = await loadQuestionsFromSupabase();
+            if (loaded) renderAdminQuestions();
+        });
     });
 
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
@@ -1666,51 +1802,56 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("clear-results-btn").addEventListener("click", async () => {
-        await clearResults();
-        renderAdminResults();
-        renderGlobalRanking(getResults());
+        await runAdminAction(async () => {
+            await clearResults();
+            await loadPublicRankingFromSupabase();
+            renderAdminResults();
+            renderGlobalRanking();
+        });
     });
 
     document.getElementById("question-form").addEventListener("submit", async event => {
         event.preventDefault();
-        const themeId = document.getElementById("admin-question-theme").value;
-        const question = {
-            id: editingQuestionIndex === null
-                ? createRecordId("question")
-                : questionsBank[themeId].questions[editingQuestionIndex].id,
-            q: document.getElementById("admin-question-text").value.trim(),
-            r: [1, 2, 3, 4].map(answerIndex =>
-                document.getElementById(`admin-answer-${answerIndex}`).value.trim()
-            ),
-            correct: parseInt(document.getElementById("admin-correct-answer").value, 10)
-        };
-        const questions = questionsBank[themeId].questions;
+        await runAdminAction(async () => {
+            const themeId = document.getElementById("admin-question-theme").value;
+            const question = {
+                id: editingQuestionIndex === null
+                    ? createRecordId("question")
+                    : questionsBank[themeId].questions[editingQuestionIndex].id,
+                q: document.getElementById("admin-question-text").value.trim(),
+                r: [1, 2, 3, 4].map(answerIndex =>
+                    document.getElementById(`admin-answer-${answerIndex}`).value.trim()
+                ),
+                correct: parseInt(document.getElementById("admin-correct-answer").value, 10)
+            };
+            const questions = questionsBank[themeId].questions;
 
-        if (editingQuestionIndex === null) {
-            questions.push(question);
-            if (questionSourceReady) {
-                await syncQuestionMutation({
-                    action: "create",
-                    question: { ...question, themeId }
-                });
+            if (editingQuestionIndex === null) {
+                questions.push(question);
+                if (questionSourceReady) {
+                    await syncQuestionMutation({
+                        action: "create",
+                        question: { ...question, themeId }
+                    });
+                }
+            } else {
+                questions[editingQuestionIndex] = question;
+                if (questionSourceReady) {
+                    await syncQuestionMutation({
+                        action: "update",
+                        id: question.id,
+                        question: { ...question, themeId }
+                    });
+                }
             }
-        } else {
-            questions[editingQuestionIndex] = question;
-            if (questionSourceReady) {
-                await syncQuestionMutation({
-                    action: "update",
-                    id: question.id,
-                    question: { ...question, themeId }
-                });
-            }
-        }
 
-        saveCurrentThemeQuestions(themeId);
-        document.getElementById("admin-question-theme").value = themeId;
-        setAuthMessage("question-message", "Question enregistrée.");
-        resetQuestionForm();
-        document.getElementById("admin-question-theme").value = themeId;
-        renderAdminQuestions();
+            saveCurrentThemeQuestions(themeId);
+            document.getElementById("admin-question-theme").value = themeId;
+            setAuthMessage("question-message", "Question enregistrée.");
+            resetQuestionForm();
+            document.getElementById("admin-question-theme").value = themeId;
+            renderAdminQuestions();
+        });
     });
 
     document.getElementById("close-app").addEventListener("click", () => {
@@ -1865,7 +2006,7 @@ async function bilanFinal() {
     };
 
     await saveResult(resultRecord);
-    const results = getResults();
+    await loadPublicRankingFromSupabase();
 
     uiController.switchScreen("result-screen");
 
@@ -1879,7 +2020,7 @@ async function bilanFinal() {
     const maxPts = (total - quizEngine.stats.skipped) * 4;
     document.getElementById("stat-brut").innerText = quizEngine.stats.points;
     document.getElementById("brut-max").innerText = `/ ${maxPts}`;
-    renderGlobalRanking(results);
+    renderGlobalRanking();
     renderReview();
 }
 
