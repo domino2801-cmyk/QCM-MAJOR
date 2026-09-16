@@ -64,6 +64,7 @@ let currentSupabaseSession = null;
 let cachedAccounts = {};
 let resultsCache = [];
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
+const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -954,7 +955,7 @@ async function fetchProfileForUser(user) {
     } catch {
         return {
             account: fallback,
-            profileMissing: false
+            profileStatus: "error"
         };
     }
 }
@@ -992,7 +993,12 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
         return;
     }
 
-    const { account, profileMissing } = await fetchProfileForUser(user);
+    const { account, profileMissing, profileStatus } = await fetchProfileForUser(user);
+    if (profileStatus === "error") {
+        const error = new Error("Lecture du profil candidat indisponible.");
+        error.code = profileLookupErrorCode;
+        throw error;
+    }
     if (profileMissing) {
         const error = new Error("Profil candidat non finalisé.");
         error.code = profileNotReadyErrorCode;
@@ -1020,6 +1026,16 @@ async function handleProfileNotReady(messageId, user = getStoredSupabaseSession(
     setAuthMessage(
         messageId,
         "Votre profil candidat n’est pas encore finalisé. Terminez d’abord l’inscription et la vérification OTP."
+    );
+}
+
+function handleProfileLookupFailure(messageId) {
+    currentAuthenticatedAccount = null;
+    currentCandidateEmail = "";
+    showAuthView("login");
+    setAuthMessage(
+        messageId,
+        "Impossible de vérifier votre profil candidat pour le moment. Réessayez dans quelques instants."
     );
 }
 
@@ -1422,6 +1438,10 @@ async function restoreSupabaseSession() {
             await handleProfileNotReady("login-message", session.user, session);
             return;
         }
+        if (error?.code === profileLookupErrorCode) {
+            handleProfileLookupFailure("login-message");
+            return;
+        }
         throw error;
     }
 }
@@ -1503,6 +1523,10 @@ function initializeAuth() {
         } catch (error) {
             if (error?.code === profileNotReadyErrorCode) {
                 await handleProfileNotReady("login-message", signedInUser, signedInSession);
+                return;
+            }
+            if (error?.code === profileLookupErrorCode) {
+                handleProfileLookupFailure("login-message");
                 return;
             }
             setAuthMessage("login-message", getFriendlyAuthError(error, "Adresse mail ou mot de passe incorrect."));
