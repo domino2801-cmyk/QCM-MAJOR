@@ -133,12 +133,12 @@ function buildSupabaseHeaders({ accessToken, withJson = false, extraHeaders = {}
 }
 
 async function supabaseAuthRequest(path, { method = "GET", body, accessToken, redirect_to } = {}) {
-    const response = await fetch(`${supabaseUrl}/auth/v1${path}`, {
+const response = await fetch(`${supabaseUrl}/auth/v1${path}${redirect_to ? (path.includes("?") ? "&" : "?") + "redirect_to=" + encodeURIComponent(redirect_to) : ""}`, {
         method,
         headers: buildSupabaseHeaders({
             accessToken,
             withJson: Boolean(body),
-            extraHeaders: redirect_to ? { redirect_to } : {}
+            extraHeaders: {}
         }),
         body: body ? JSON.stringify(body) : undefined
     });
