@@ -934,7 +934,7 @@ h1 {
     }
 }
 
-/* --- REfonte SOBRE DE L'ÉCRAN D'AUTHENTIFICATION --- */
+/* --- Refonte sobre de l'écran d'authentification --- */
 
 :root {
     --bg-color: #08111b;
@@ -1090,13 +1090,22 @@ body {
     transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-#auth-screen .auth-tab.active,
-#auth-screen .auth-tab:hover,
-#auth-screen .auth-tab:focus-visible {
+#auth-screen .auth-tab.active {
     background: linear-gradient(135deg, #adb98f, #8a9b68);
     color: #09111b;
     box-shadow: 0 10px 24px rgba(138, 155, 104, 0.22);
     transform: translateY(-1px);
+}
+
+#auth-screen .auth-tab:hover {
+    background: rgba(159, 170, 132, 0.1);
+    color: #f8fafc;
+}
+
+#auth-screen .auth-tab:focus-visible {
+    outline: 3px solid rgba(180, 191, 150, 0.72);
+    outline-offset: 2px;
+    color: #f8fafc;
 }
 
 #auth-screen .auth-form {
@@ -1146,12 +1155,18 @@ body {
 #auth-screen .auth-form input:focus,
 #auth-screen .auth-form select:focus,
 #auth-screen .auth-form textarea:focus {
-    outline: none;
     border-color: rgba(159, 170, 132, 0.9);
-    box-shadow:
-        0 0 0 4px rgba(159, 170, 132, 0.16),
-        0 12px 28px rgba(0, 0, 0, 0.18);
     background: rgba(10, 18, 29, 0.98);
+}
+
+#auth-screen .auth-form input:focus-visible,
+#auth-screen .auth-form select:focus-visible,
+#auth-screen .auth-form textarea:focus-visible {
+    outline: 3px solid rgba(180, 191, 150, 0.72);
+    outline-offset: 2px;
+    box-shadow:
+        0 0 0 4px rgba(159, 170, 132, 0.2),
+        0 12px 28px rgba(0, 0, 0, 0.18);
 }
 
 #auth-screen .auth-form .btn-main,
