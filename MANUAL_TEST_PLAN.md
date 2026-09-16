@@ -1,15 +1,24 @@
 # Plan de tests manuels complet — QCM-MAJOR
 
+## Portée de la campagne
+- Cible: branche courante du dépôt `QCM-MAJOR` contenant les flux Supabase (auth, admin, résultats, recovery).
+- Fonctionnalités requises pour exécuter les cas C2 à C7:
+  - stockage local `bm4-results`,
+  - synchronisation différée des résultats offline/online,
+  - flux recovery avec paramètre `auth=recovery`.
+- Le script SQL est à exécuter dans Supabase SQL Editor avec un rôle privilégié (lecture `auth.users`).
+
 ## 1) Préparation (pré-requis)
 
 ### 1.1 Environnement
-- Exécuter `/home/runner/work/QCM-MAJOR/QCM-MAJOR/supabase_manual_test_setup.sql` dans Supabase SQL Editor.
+- Exécuter `supabase_manual_test_setup.sql` dans Supabase SQL Editor.
 - Vérifier que les tables `profiles`, `questions`, `quiz_results` existent et que RLS est actif.
 - Vérifier la présence des 2 doublons volontaires dans `questions` (`seed-dup-a`, `seed-dup-b`).
-- Vérifier que `quiz_results` est vide.
+- Vérifier qu’il n’y a plus de résultats pour les 4 comptes de test (`@qcm-major.test`).
+- Note: `quiz_results` n’est pas pré-rempli; les résultats de référence sont générés pendant l’exécution des cas quiz.
 
 ### 1.2 Configuration application
-- Renseigner dans `/home/runner/work/QCM-MAJOR/QCM-MAJOR/index.html`:
+- Renseigner dans `index.html`:
   - `meta[name="supabase-url"]`
   - `meta[name="supabase-anon-key"]`
   - `meta[name="supabase-profiles-rls"]` avec `verified`.
@@ -19,6 +28,7 @@
 - `candidat-pending@qcm-major.test` (OTP non validé)
 - `admin-ok@qcm-major.test` (claim admin)
 - `user-noadmin@qcm-major.test` (authentifié sans claim admin)
+- Après création des comptes dans Supabase Auth, relancer le script SQL pour (re)générer automatiquement les lignes `profiles` de ces 4 comptes.
 
 ---
 
@@ -64,7 +74,7 @@ Pour chaque cas, renseigner:
 | ID | Précondition | Étapes | Résultat attendu | Résultat observé | Statut |
 |---|---|---|---|---|---|
 | A4.1 | Utilisateur authentifié sans profil lisible | Login | Refus accès + message profil non finalisé |  |  |
-| A4.2 | Simuler erreur RLS/lecture profile | Login | Message indisponibilité profil |  |  |
+| A4.2 | Simuler erreur RLS/lecture profil | Login | Message indisponibilité profil |  |  |
 
 ### A5 — Mot de passe oublié / recovery
 | ID | Précondition | Étapes | Résultat attendu | Résultat observé | Statut |
@@ -132,13 +142,25 @@ Pour chaque cas, renseigner:
 | B5.1 | Admin connecté | Déconnexion admin | Retour écran login |  |  |
 
 ## C. Intégration Supabase + robustesse
+
+Méthode d’observation recommandée pour C2 à C7 :
+- Supabase Table Editor/SQL :
+  - `select id, candidate_id, email, score, created_at from quiz_results order by created_at desc;`
+  - `select id, theme_id, q from questions order by created_at desc nulls last;`
+  - Avant C2, noter un horodatage de départ (`T0`) puis filtrer `quiz_results` avec `created_at >= T0` pour isoler la tentative.
+- Navigateur (DevTools) :
+  - `Application > Local Storage` clé `bm4-results` pour vérifier l’email masqué.
+  - Barre d’adresse pour vérifier l’ajout/retrait de `auth=recovery`.
+- Test offline/online :
+  - Couper puis rétablir le réseau via DevTools Network (Offline / Online) avant relance.
+
 | ID | Précondition | Étapes | Résultat attendu | Résultat observé | Statut |
 |---|---|---|---|---|---|
-| C1 | Supabase partiellement rempli | Démarrer app | Seed automatique puis rechargement questions |  |  |
-| C2 | Quiz terminé en ligne | Vérifier `quiz_results` | Upsert présent et cohérent |  |  |
-| C3 | Résultat supprimé en UI | Vérifier `quiz_results` | Suppression distante effective |  |  |
-| C4 | Réseau coupé | Jouer quiz puis finir | Résultat gardé localement (non perdu) |  |  |
-| C5 | Après C4, réseau rétabli | Relancer app / attendre sync | Sync différée effectuée |  |  |
+| C1 | Supabase provisionné via script | Démarrer app | Questions chargées depuis Supabase et visibles dans l’application |  |  |
+| C2 | Candidat connecté, finir un quiz en ligne | Noter l’`id` du résultat en UI (fallback: ligne SQL du candidat avec `created_at >= T0`) | Une ligne cohérente existe dans `quiz_results` (`candidate_id`, `score`, `theme`) |  |  |
+| C3 | Résultat visible côté admin | Supprimer le résultat en UI puis relancer la requête SQL sur l’`id` (ou la ligne `created_at >= T0`) | La ligne ciblée n’existe plus dans `quiz_results` |  |  |
+| C4 | DevTools en mode Offline avant fin de quiz | Finir un quiz hors ligne puis vérifier Local Storage | Le résultat est présent dans `bm4-results` malgré l’absence réseau |  |  |
+| C5 | Cas C4 réussi, repasser Online | Recharger l’app, attendre la synchro, relancer SQL sur `quiz_results` | Le résultat offline apparaît en base après reprise réseau |  |  |
 | C6 | Résultat local stocké | Vérifier localStorage `bm4-results` | Champ email masqué (vide) |  |  |
 | C7 | Flux recovery | Inspecter URL avant/après | `auth=recovery` ajouté puis nettoyé |  |  |
 

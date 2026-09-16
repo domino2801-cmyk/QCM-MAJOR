@@ -143,5 +143,5 @@ Le flux candidat attendu est :
 
 Les livrables de test manuel complet (candidat + admin + Supabase) sont disponibles ici :
 
-* `/home/runner/work/QCM-MAJOR/QCM-MAJOR/MANUAL_TEST_PLAN.md`
-* `/home/runner/work/QCM-MAJOR/QCM-MAJOR/supabase_manual_test_setup.sql`
+* [MANUAL_TEST_PLAN.md](./MANUAL_TEST_PLAN.md)
+* [supabase_manual_test_setup.sql](./supabase_manual_test_setup.sql)
