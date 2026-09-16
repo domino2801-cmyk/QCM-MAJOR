@@ -21,6 +21,7 @@ Une zone d'administration sécurisée est intégrée pour centraliser la gestion
 * **Gestion des comptes :** Visualisation et suivi des candidats inscrits.
 * **Gestion des questions :** Ajout, modification, suppression et dédoublonnage automatique des QCM.
 * **Gestion des résultats :** Suivi des notes, des réponses fournies et des dates de passage des candidats, avec option de réinitialisation.
+* **Accès admin sécurisé :** Connexion avec un compte Supabase autorisé via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
 ---
 
@@ -126,6 +127,7 @@ Prérequis côté Supabase :
 * Prévoir une table `questions` (colonnes : `id` unique, `theme_id`, `q`, `r`, `correct`) avec `r` stocké comme tableau JSON/JSONB et règles de lecture/écriture adaptées à l’administration.
 * Prévoir une table `quiz_results` (colonnes : `id` unique, `candidate_id`, `label`, `email`, `name`, `theme`, `score`, `correct`, `wrong`, `skipped`, `total`, `date`, `created_at`) avec `created_at` alimenté automatiquement (timestamp par défaut) pour l’ordre d’affichage.
 * Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
+* Les comptes administrateurs doivent aussi être couverts par des règles RLS côté Supabase, cohérentes avec les claims `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
 Le flux candidat attendu est :
 

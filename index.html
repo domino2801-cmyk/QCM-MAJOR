@@ -58,7 +58,7 @@
                         <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
                         <label for="register-specialty">Spécialité BM4</label>
                         <select id="register-specialty" name="specialty" required>
-                            <option value="" disabled selected>Choisir une spécialité</option>
+                            <option value="">Sélectionner une spécialité</option>
                             <option value="INF">INF - Infanterie</option>
                             <option value="BLD">BLD - Combat des blindés</option>
                             <option value="ART">ART - Artillerie</option>
@@ -136,8 +136,8 @@
                 </section>
                 <form id="admin-form" class="auth-form auth-view hidden">
                     <div class="terminal-panel-title">Accès administrateur</div>
-                    <label for="admin-email">Identifiant administrateur</label>
-                    <input id="admin-email" name="email" type="text" placeholder="admin" required>
+                    <label for="admin-email">Email administrateur</label>
+                    <input id="admin-email" name="email" type="email" autocomplete="email" placeholder="admin@unite.fr" required>
                     <label for="admin-password">Mot de passe administrateur</label>
                     <input id="admin-password" name="password" type="password" placeholder="............" required>
                     <p id="admin-message" class="auth-message" role="alert"></p>
