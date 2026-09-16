@@ -50,8 +50,8 @@
                         <button class="auth-tab active" type="button" data-auth-mode="register">Créer un compte</button>
                     </div>
                     <form id="register-form" class="auth-form">
-                        <label for="register-name">Nom du candidat</label>
-                        <input id="register-name" name="name" type="text" autocomplete="name" placeholder="Nom et prénom" required>
+                        <label for="register-pseudo">Pseudo</label>
+                        <input id="register-pseudo" name="pseudo" type="text" autocomplete="nickname" placeholder="Pseudo de guerre" required>
                         <label for="register-email">Mail personnel du candidat</label>
                         <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <label for="register-password">Mot de passe</label>
@@ -202,9 +202,9 @@
             <button id="start-btn" class="btn-main" disabled>Engager la Campagne</button>
         </div>
 
-        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question">## Chargement...</div><div id="options" class="options-grid"></div></div>
+        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question" class="question-box"></div><div id="options" class="options-grid"></div><div id="review-section" class="review-section hidden"><h2>Revue des situations tactiques</h2><div id="review-list" class="review-list"></div></div></div>
 
-        <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</div><div id="score-display" class="score-large">00.00 / 20</div></div><div class="details-list"><div>• Correctes : <strong id="stat-correct">0</strong></div><div>• Fausses : <strong id="stat-wrong">0</strong></div><div>• Passées : <strong id="stat-skipped">0</strong></div><div>• Points Bruts : <span id="stat-brut">0</span> <span id="brut-max">/ 0</span></div></div><section id="review-section" class="review-section hidden"><h2>Rappel des réponses à revoir</h2><div id="review-list"></div></section><button class="btn-main" id="btn-new-mission">Nouvelle Mission</button></div>
+        <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</div><div id="score-display" class="score-display">0 / 20</div><div class="result-stats"><div><strong id="stat-correct">0</strong><span>Bonnes réponses</span></div><div><strong id="stat-wrong">0</strong><span>Réponses fausses</span></div><div><strong id="stat-skipped">0</strong><span>Questions passées</span></div><div><strong id="stat-brut">0</strong><span id="brut-max">/ 0</span></div></div></div><button id="btn-new-mission" class="btn-main">Nouvelle mission</button></div>
     </div>
     <script type="module" src="app.js"></script>
 </body>

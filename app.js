@@ -1043,6 +1043,16 @@ function setAuthMessage(id, message) {
     document.getElementById(id).innerText = message;
 }
 
+function getRequiredElement(id, messageId, errorMessage) {
+    const element = document.getElementById(id);
+    if (element) return element;
+
+    if (messageId && errorMessage) {
+        setAuthMessage(messageId, errorMessage);
+    }
+    return null;
+}
+
 function setAuthAudioPlaying(playing) {
     if (playing) {
         waitingConnectionAudio.play().catch(() => {
@@ -1537,10 +1547,23 @@ function initializeAuth() {
         event.preventDefault();
         if (!ensureSupabaseConfigured("register-message")) return;
 
-        const name = document.getElementById("register-name").value.trim();
-        const email = normalizeEmail(document.getElementById("register-email").value);
-        const password = document.getElementById("register-password").value;
-        const specialty = document.getElementById("register-specialty").value.trim();
+        const pseudoField = getRequiredElement(
+            "register-pseudo",
+            "register-message",
+            "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
+        );
+        const emailField = getRequiredElement("register-email", "register-message", "Le champ email est introuvable.");
+        const passwordField = getRequiredElement("register-password", "register-message", "Le champ mot de passe est introuvable.");
+        const specialtyField = getRequiredElement("register-specialty", "register-message", "Le champ spécialité est introuvable.");
+
+        if (!pseudoField || !emailField || !passwordField || !specialtyField) {
+            return;
+        }
+
+        const name = pseudoField.value.trim();
+        const email = normalizeEmail(emailField.value);
+        const password = passwordField.value;
+        const specialty = specialtyField.value.trim();
 
         if (!name || !specialty) {
             setAuthMessage("register-message", "Tous les champs du profil candidat sont requis.");
