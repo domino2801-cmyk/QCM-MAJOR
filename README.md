@@ -137,6 +137,15 @@ Le flux candidat attendu est :
 4. Finalisation du profil dans `profiles`
 5. Connexion email/mot de passe et récupération de mot de passe via email
 
+### Diagnostic rapide si le bouton « Créer mon compte » semble ne rien faire
+
+- Si un champ requis est vide ou invalide (email, mot de passe < 6 caractères, spécialité non choisie), l’application doit maintenant afficher la cause directement dans `register-message`.
+- Si le message indique qu’il est impossible de joindre Supabase, vérifier :
+  - la valeur de `meta[name="supabase-url"]`,
+  - l’activation du fournisseur Email et des Redirect URL Supabase Auth,
+  - un éventuel cache GitHub Pages côté navigateur (forcer le rechargement),
+  - l’absence de blocage réseau/extension navigateur sur les appels `.../auth/v1/signup` et `.../auth/v1/verify`.
+
 ---
 
 ## ✅ Campagne de tests manuels
