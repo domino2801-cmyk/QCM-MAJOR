@@ -1155,6 +1155,7 @@ body {
 #auth-screen .auth-form input:focus,
 #auth-screen .auth-form select:focus,
 #auth-screen .auth-form textarea:focus {
+    outline: none;
     border-color: rgba(159, 170, 132, 0.9);
     background: rgba(10, 18, 29, 0.98);
 }
@@ -1278,17 +1279,32 @@ body {
 }
 
 #global-ranking-section ol {
+    counter-reset: ranking;
     display: grid;
     gap: 10px;
+    list-style: none;
 }
 
 #global-ranking-section li {
+    counter-increment: ranking;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
     padding: 14px 16px;
     border: 1px solid rgba(159, 170, 132, 0.14);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.03);
     color: #e6ecf4;
     font-weight: 600;
+}
+
+#global-ranking-section li::before {
+    content: counter(ranking, decimal-leading-zero);
+    color: #9faa84;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
 }
 
 @media (max-width: 600px) {
