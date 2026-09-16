@@ -79,7 +79,6 @@ function getPublicRanking() {
 
 async function loadPublicRankingFromSupabase() {
     if (!supabase) {
-        setPublicRanking([]);
         return false;
     }
 
@@ -89,7 +88,6 @@ async function loadPublicRankingFromSupabase() {
         );
 
         if (!Array.isArray(data)) {
-            setPublicRanking([]);
             return false;
         }
 
@@ -103,7 +101,6 @@ async function loadPublicRankingFromSupabase() {
         );
         return true;
     } catch {
-        setPublicRanking([]);
         return false;
     }
 }
@@ -1048,7 +1045,7 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     document.getElementById("account-summary").innerText =
         `${authenticatedContext.account?.name || "Candidat"} • ${authenticatedContext.email} • ${authenticatedContext.account?.specialty || "Spécialité non renseignée"}${isAdmin ? " • Administrateur" : ""}`;
     uiController.switchScreen("theme-screen");
-    focusElement(".btn-theme");
+    focusElement(isAdmin ? "#theme-admin-btn" : ".btn-theme");
 }
 
 function showAdminApp() {
@@ -1278,7 +1275,8 @@ function renderGlobalRanking() {
 
     ranking.forEach(entry => {
         const item = document.createElement("li");
-        item.innerText = `${entry.medaille} ${entry.pseudo} — ${entry.score.toFixed(2)} / 20`;
+        const positionLabel = entry.rang === 1 ? "1er" : `${entry.rang}e`;
+        item.innerText = `${positionLabel} — ${entry.medaille} ${entry.pseudo} — ${entry.score.toFixed(2)} / 20`;
         list.appendChild(item);
     });
 }
