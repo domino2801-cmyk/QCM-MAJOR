@@ -16,8 +16,6 @@ let selectedTheme = null;
 let maxQuestions = 0;
 let reviewItems = [];
 let questionSourceReady = false;
-const accountsStorageKey = "bm4-accounts";
-const sessionStorageKey = "bm4-session";
 const adminSessionStorageKey = "bm4-admin-session";
 const pendingSignupStorageKey = "bm4-pending-signup";
 const supabaseSessionStorageKey = "bm4-supabase-session";
@@ -42,6 +40,8 @@ const supabase = supabaseUrl && supabaseAnonKey
     : null;
 let editingQuestionIndex = null;
 let authAudioRetry = null;
+let currentAuthenticatedAccount = null;
+let cachedAccounts = {};
 let successAction = () => {
     uiController.switchScreen("auth-screen");
     showAuthView("login");
@@ -294,7 +294,7 @@ if (supabase) {
 }
 
 function getAccounts() {
-    return getStoredJson(sessionStorage, accountsStorageKey, {});
+    return cachedAccounts;
 }
 
 function getPendingSignup() {
@@ -471,14 +471,12 @@ function clearAuthMessages() {
 function cacheAccount(account) {
     if (!account?.email) return;
 
-    const accounts = getAccounts();
-    accounts[account.email] = {
-        id: account.id || accounts[account.email]?.id || null,
+    cachedAccounts[account.email] = {
+        id: account.id || cachedAccounts[account.email]?.id || null,
         email: account.email,
         name: account.name || "",
         specialty: account.specialty || ""
     };
-    sessionStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
 }
 
 function getRecoveryRedirectUrl() {
@@ -566,7 +564,7 @@ async function upsertProfileForUser(user, profile = {}) {
     return account;
 }
 
-async function finalizeAuthenticatedUser(user, fallback = {}, { persistAccount = false } = {}) {
+async function finalizeAuthenticatedUser(user, fallback = {}) {
     const account = await fetchProfileForUser(user);
     const mergedAccount = {
         ...fallback,
@@ -574,12 +572,8 @@ async function finalizeAuthenticatedUser(user, fallback = {}, { persistAccount =
         email: normalizeEmail(fallback.email || account.email || user?.email || "")
     };
 
-    if (persistAccount) {
-        cacheAccount(mergedAccount);
-    }
-    if (mergedAccount.email) {
-        sessionStorage.setItem(sessionStorageKey, mergedAccount.email);
-    }
+    currentAuthenticatedAccount = mergedAccount;
+    cacheAccount(mergedAccount);
     showAuthenticatedApp(mergedAccount.email, mergedAccount);
 }
 
@@ -666,9 +660,8 @@ function renderAdminAccounts() {
         deleteButton.innerText = "Retirer du cache";
         deleteButton.addEventListener("click", () => {
             delete accounts[email];
-            sessionStorage.setItem(accountsStorageKey, JSON.stringify(accounts));
-            if (sessionStorage.getItem(sessionStorageKey) === email) {
-                sessionStorage.removeItem(sessionStorageKey);
+            if (currentAuthenticatedAccount?.email === email) {
+                currentAuthenticatedAccount = null;
             }
             renderAdminAccounts();
         });
@@ -966,7 +959,7 @@ async function restoreSupabaseSession() {
     }
 
     await finalizeAuthenticatedUser(session.user, {
-        email: sessionStorage.getItem(sessionStorageKey) || session.user?.email || ""
+        email: currentAuthenticatedAccount?.email || session.user?.email || ""
     });
 }
 
@@ -1012,6 +1005,7 @@ function initializeAuth() {
 
     document.getElementById("reset-back-btn").addEventListener("click", () => {
         clearAuthMessages();
+        currentAuthenticatedAccount = null;
         clearRecoveryUrlState();
         showAuthView("login");
     });
@@ -1153,7 +1147,7 @@ function initializeAuth() {
         try {
             await supabase.auth.updateUser({ password });
             await supabase.auth.signOut();
-            sessionStorage.removeItem(sessionStorageKey);
+            currentAuthenticatedAccount = null;
             clearPendingSignup();
             clearRecoveryUrlState();
             document.getElementById("reset-password-form").reset();
@@ -1189,6 +1183,7 @@ function initializeAuth() {
         supabase.auth.onAuthStateChange(event => {
             if (event === "PASSWORD_RECOVERY") {
                 uiController.switchScreen("auth-screen");
+                currentAuthenticatedAccount = null;
                 clearAuthMessages();
                 showAuthView("reset", { resetMode: "update" });
             }
@@ -1213,6 +1208,7 @@ async function initializeApp() {
 
     if (isRecoveryModeFromUrl()) {
         uiController.switchScreen("auth-screen");
+        currentAuthenticatedAccount = null;
         showAuthView("reset", { resetMode: "update" });
     }
 }
@@ -1255,7 +1251,7 @@ async function initializeAppInteractions() {
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
         if (supabase) await supabase.auth.signOut();
-        sessionStorage.removeItem(sessionStorageKey);
+        currentAuthenticatedAccount = null;
         clearPendingSignup();
         uiController.switchScreen("auth-screen");
         document.getElementById("login-form").reset();
@@ -1347,7 +1343,7 @@ async function initializeAppInteractions() {
 // =========================================================
 
 function startQuiz() {
-    const email = sessionStorage.getItem(sessionStorageKey) || "anonymous";
+    const email = currentAuthenticatedAccount?.email || "anonymous";
     const history = getQuestionHistory();
     const themeHistory = history[email]?.[selectedTheme] || [];
     const pool = getQuestionPool(selectedTheme);
@@ -1469,8 +1465,8 @@ async function bilanFinal() {
     const total = quizEngine.questions.length;
     const note = scoring.computeFinal(quizEngine.stats, total);
     const results = getResults();
-    const email = sessionStorage.getItem(sessionStorageKey) || "Candidat inconnu";
-    const account = getAccounts()[email];
+    const email = currentAuthenticatedAccount?.email || "Candidat inconnu";
+    const account = currentAuthenticatedAccount || getAccounts()[email];
     const candidateId = email === "Candidat inconnu"
         ? crypto.randomUUID()
         : await hashIdentifier(email);

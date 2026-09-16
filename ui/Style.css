@@ -260,6 +260,17 @@ body {
     gap: 14px;
 }
 
+.otp-fieldset {
+    border: 1px dashed var(--primary);
+    margin: 0;
+    padding: 14px;
+}
+
+.otp-fieldset legend {
+    color: var(--accent);
+    padding: 0 8px;
+}
+
 .otp-inputs {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
