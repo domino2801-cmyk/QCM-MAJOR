@@ -134,15 +134,17 @@
                     <p id="success-copy" class="terminal-copy">Opération terminée avec succès.</p>
                     <button id="success-action-btn" class="btn-main" type="button">Retour à la connexion</button>
                 </section>
-                <form id="admin-form" class="auth-form auth-view hidden">
-                    <div class="terminal-panel-title">Accès administrateur</div>
-                    <label for="admin-email">Email administrateur</label>
-                    <input id="admin-email" name="email" type="email" autocomplete="email" placeholder="admin@unite.fr" required>
-                    <label for="admin-password">Mot de passe administrateur</label>
-                    <input id="admin-password" name="password" type="password" placeholder="............" required>
-                    <p id="admin-message" class="auth-message" role="alert"></p>
-                    <button class="btn-main" type="submit">Ouvrir l’administration</button>
-                </form>
+                <section id="admin-view" class="auth-view hidden">
+                    <form id="admin-form" class="auth-form">
+                        <div class="terminal-panel-title">Accès administrateur</div>
+                        <label for="admin-email">Email administrateur</label>
+                        <input id="admin-email" name="email" type="email" autocomplete="email" placeholder="admin@unite.fr" required>
+                        <label for="admin-password">Mot de passe administrateur</label>
+                        <input id="admin-password" name="password" type="password" placeholder="............" required>
+                        <p id="admin-message" class="auth-message" role="alert"></p>
+                        <button class="btn-main" type="submit">Ouvrir l’administration</button>
+                    </form>
+                </section>
             </div>
             <section id="global-ranking-section" class="global-ranking">
                 <h2>Classement campagne globale</h2>
