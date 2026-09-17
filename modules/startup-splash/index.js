@@ -85,26 +85,39 @@ export async function hideSplashScreen({
     if (!splash || splash.dataset.state === "hidden") return;
 
     const state = win.__bm4Splash || {};
-    if (state.timeoutId !== undefined && state.timeoutId !== null) {
-        win.clearTimeout(state.timeoutId);
-        state.timeoutId = null;
-    }
-
-    const shownAt = Number(state.shownAt || Date.now());
-    const minDuration = Number(state.minDuration || 1400);
-    const elapsed = Date.now() - shownAt;
-    const waitTime = immediate ? 0 : Math.max(0, minDuration - elapsed);
-
-    await new Promise(resolve => win.setTimeout(resolve, waitTime));
-    splash.dataset.state = "hidden";
-    splash.classList.add(state.hiddenClass || hiddenClass);
-    splash.setAttribute("aria-hidden", "true");
-
-    if (win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-        splash.hidden = true;
+    if (state.hidePromise) {
+        await state.hidePromise;
         return;
     }
 
-    await new Promise(resolve => win.setTimeout(resolve, 320));
-    splash.hidden = true;
+    state.hidePromise = (async () => {
+        if (state.timeoutId !== undefined && state.timeoutId !== null) {
+            win.clearTimeout(state.timeoutId);
+            state.timeoutId = null;
+        }
+
+        const shownAt = Number(state.shownAt || Date.now());
+        const minDuration = Number(state.minDuration || 1400);
+        const elapsed = Date.now() - shownAt;
+        const waitTime = immediate ? 0 : Math.max(0, minDuration - elapsed);
+
+        await new Promise(resolve => win.setTimeout(resolve, waitTime));
+        splash.dataset.state = "hidden";
+        splash.classList.add(state.hiddenClass || hiddenClass);
+        splash.setAttribute("aria-hidden", "true");
+
+        if (win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+            splash.hidden = true;
+            return;
+        }
+
+        await new Promise(resolve => win.setTimeout(resolve, 320));
+        splash.hidden = true;
+    })();
+
+    try {
+        await state.hidePromise;
+    } finally {
+        state.hidePromise = null;
+    }
 }

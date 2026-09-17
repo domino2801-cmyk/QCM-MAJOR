@@ -14,7 +14,8 @@ const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 test("splash markup uses the main logo and tactical status elements", () => {
     assert.match(html, /id="app-splash"/);
     assert.match(html, /src="public\/images\/logo2\.png"/);
-    assert.match(html, /id="app-splash-status" role="status" aria-live="polite" aria-atomic="true"/);
+    assert.match(html, /class="app-splash__status-line" role="status" aria-live="polite" aria-atomic="true" aria-label="Statut de chargement tactique"/);
+    assert.match(html, /id="app-splash-status"/);
     assert.match(html, /QUESTION POUR UN MAJOR/);
     assert.match(html, /script type="module" src="startup-splash-bootstrap\.js"/);
 });
@@ -105,6 +106,45 @@ test("hideSplashScreen waits for the normal fade path before hiding the splash",
     assert.deepEqual(delays, [400, 320]);
     assert.equal(splash.hidden, true);
     assert.equal(splash.dataset.state, "hidden");
+});
+
+test("hideSplashScreen reuses the same in-flight hide promise", async () => {
+    const splash = createSplashFixture();
+    const scheduledCallbacks = [];
+    const windowFixture = {
+        __bm4Splash: {
+            shownAt: Date.now(),
+            minDuration: 1400,
+            hiddenClass: "app-splash--hidden",
+            timeoutId: 5
+        },
+        clearTimeout() {},
+        setTimeout(callback) {
+            scheduledCallbacks.push(callback);
+            return scheduledCallbacks.length;
+        },
+        matchMedia() {
+            return { matches: true };
+        }
+    };
+    const options = {
+        window: windowFixture,
+        document: {
+            getElementById(id) {
+                return id === "app-splash" ? splash : null;
+            }
+        },
+        immediate: true
+    };
+
+    const firstHide = hideSplashScreen(options);
+    const secondHide = hideSplashScreen(options);
+
+    assert.equal(scheduledCallbacks.length, 1);
+    assert.ok(windowFixture.__bm4Splash.hidePromise);
+    scheduledCallbacks[0]();
+    await Promise.all([firstHide, secondHide]);
+    assert.equal(splash.hidden, true);
 });
 
 function createSplashFixture() {
