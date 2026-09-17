@@ -61,6 +61,7 @@ let authAudioRetry = null;
 let currentAuthenticatedAccount = null;
 let currentCandidateEmail = "";
 let currentSupabaseSession = null;
+let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
@@ -1906,6 +1907,7 @@ async function initializeApp() {
         };
         setResults(Array.isArray(storedResults) ? storedResults : []);
         initializeAuth();
+        authUiReady = true;
         const loadedFromSupabase = await loadQuestionsFromSupabase();
         if (!loadedFromSupabase) applyQuestionOverrides();
         setSplashStatus("Synchronisation du théâtre d’opérations…");
@@ -1925,12 +1927,27 @@ async function initializeApp() {
         setSplashStatus("Console BM4 prête.");
     } catch (error) {
         console.error("Initialisation BM4 incomplète", error);
-        uiController.switchScreen("auth-screen");
+        if (!authUiReady) {
+            try {
+                initializeAuth();
+                authUiReady = true;
+            } catch (authError) {
+                console.error("Activation du mode dégradé impossible", authError);
+            }
+        }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
-        clearAuthMessages();
-        showAuthView("login");
-        setAuthMessage("login-message", "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.");
+        if (typeof window.__bm4Splash?.activateFallback === "function") {
+            window.__bm4Splash.activateFallback();
+        }
+        if (authUiReady) {
+            uiController.switchScreen("auth-screen");
+            clearAuthMessages();
+            showAuthView("login");
+            setAuthMessage("login-message", "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.");
+            const authTerminalState = document.getElementById("auth-terminal-state");
+            if (authTerminalState) authTerminalState.innerText = "MODE DÉGRADÉ";
+        }
         setSplashStatus("Mode dégradé engagé.");
     } finally {
         await hideSplashScreen();

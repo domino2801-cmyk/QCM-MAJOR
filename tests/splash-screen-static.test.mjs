@@ -17,6 +17,7 @@ test("splash markup uses the main logo and tactical status elements", () => {
     assert.match(html, /id="app-splash-status" role="status" aria-live="polite" aria-atomic="true"/);
     assert.match(html, /QUESTION POUR UN MAJOR/);
     assert.match(html, /window\.__bm4Splash/);
+    assert.match(html, /activateFallback/);
 });
 
 test("splash styles support responsive layout and reduced motion", () => {
@@ -34,6 +35,7 @@ test("app initialization always hides the splash after startup", () => {
 
 test("hideSplashScreen marks the splash hidden in the reduced-motion path", async () => {
     const splash = createSplashFixture();
+    let clearedTimeout = null;
     const hideSplashScreen = extractNamedFunction("hideSplashScreen", {
         splashScreenId: "app-splash",
         splashHiddenClass: "app-splash--hidden",
@@ -50,7 +52,7 @@ test("hideSplashScreen marks the splash hidden in the reduced-motion path", asyn
                 timeoutId: 99
             },
             clearTimeout(id) {
-                assert.equal(id, 99);
+                clearedTimeout = id;
             },
             setTimeout(callback) {
                 callback();
@@ -68,6 +70,49 @@ test("hideSplashScreen marks the splash hidden in the reduced-motion path", asyn
     assert.equal(splash.hidden, true);
     assert.equal(splash.attributes["aria-hidden"], "true");
     assert.deepEqual(splash.addedClasses, ["app-splash--hidden"]);
+    assert.equal(clearedTimeout, 99);
+});
+
+test("hideSplashScreen waits for the normal fade path before hiding the splash", async () => {
+    const splash = createSplashFixture();
+    const delays = [];
+    const hideSplashScreen = extractNamedFunction("hideSplashScreen", {
+        splashScreenId: "app-splash",
+        splashHiddenClass: "app-splash--hidden",
+        Date: {
+            now() {
+                return 2000;
+            }
+        },
+        document: {
+            getElementById(id) {
+                return id === "app-splash" ? splash : null;
+            }
+        },
+        window: {
+            __bm4Splash: {
+                shownAt: 1000,
+                minDuration: 1400,
+                hiddenClass: "app-splash--hidden",
+                timeoutId: 7
+            },
+            clearTimeout() {},
+            setTimeout(callback, delay = 0) {
+                delays.push(delay);
+                callback();
+                return 1;
+            },
+            matchMedia() {
+                return { matches: false };
+            }
+        }
+    });
+
+    await hideSplashScreen();
+
+    assert.deepEqual(delays, [400, 320]);
+    assert.equal(splash.hidden, true);
+    assert.equal(splash.dataset.state, "hidden");
 });
 
 function extractNamedFunction(name, globals = {}) {
