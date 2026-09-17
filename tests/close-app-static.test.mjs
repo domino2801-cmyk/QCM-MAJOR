@@ -57,20 +57,23 @@ test("btn-new-mission returns to theme selection and resets the current selectio
     const context = {
         document: {
             getElementById(id) {
-                assert.equal(id, "btn-new-mission");
-                return {
-                    addEventListener(eventName, handler) {
-                        listeners.set(eventName, handler);
-                    }
-                };
-            },
-            querySelector(selector) {
-                assert.equal(selector, ".btn-theme");
-                return {
-                    focus() {
-                        context.focusCalled = true;
-                    }
-                };
+                if (id === "btn-new-mission") {
+                    return {
+                        addEventListener(eventName, handler) {
+                            listeners.set(eventName, handler);
+                        }
+                    };
+                }
+
+                if (id === "theme-all-btn") {
+                    return {
+                        focus() {
+                            context.focusCalled = true;
+                        }
+                    };
+                }
+
+                assert.fail(`unexpected id: ${id}`);
             }
         },
         uiController: {
@@ -111,11 +114,7 @@ test("btn-new-mission listener registration stays null-safe", () => {
         runStatement(statement, {
             document: {
                 getElementById(id) {
-                    assert.equal(id, "btn-new-mission");
-                    return null;
-                },
-                querySelector(selector) {
-                    assert.equal(selector, ".btn-theme");
+                    assert.match(id, /^(btn-new-mission|theme-all-btn)$/);
                     return null;
                 }
             },
