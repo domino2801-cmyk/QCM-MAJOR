@@ -28,3 +28,10 @@ test("app bootstrap no longer wires startup splash logic", () => {
     assert.doesNotMatch(js, /activateSplashFallback\(/);
     assert.doesNotMatch(js, /hideSplashScreen\(/);
 });
+
+test("app bootstrap keeps an explicit startup recovery fallback", () => {
+    assert.match(js, /function showStartupRecoveryState\(message\)/);
+    assert.match(js, /showStartupRecoveryState\(startupFallbackMessage\)/);
+    assert.match(js, /uiController\.switchScreen\("auth-screen"\)/);
+    assert.match(js, /showAuthView\("login"\)/);
+});

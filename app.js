@@ -1185,6 +1185,30 @@ function setAuthMessage(id, message) {
     document.getElementById(id).innerText = message;
 }
 
+function showStartupRecoveryState(message) {
+    document.querySelectorAll(".screen").forEach(screen => {
+        screen.classList.toggle("active", screen.id === "auth-screen");
+    });
+
+    ["register-view", "otp-view", "reset-view", "success-view", "admin-form"].forEach(id => {
+        document.getElementById(id)?.classList.add("hidden");
+    });
+    document.getElementById("login-view")?.classList.remove("hidden");
+
+    document.querySelectorAll('#auth-screen [data-auth-mode="login"]').forEach(button => {
+        button.classList.add("active");
+    });
+    document.querySelectorAll('#auth-screen [data-auth-mode="register"]').forEach(button => {
+        button.classList.remove("active");
+    });
+
+    const authState = document.getElementById("auth-terminal-state");
+    if (authState) authState.innerText = "MODE DÉGRADÉ";
+
+    const loginMessage = document.getElementById("login-message");
+    if (loginMessage) loginMessage.innerText = message;
+}
+
 function getRegisterValidationMessage(field) {
     if (!field?.validity) {
         return "Vérifiez les champs du formulaire d’inscription.";
@@ -2004,6 +2028,7 @@ async function initializeApp() {
         }
     } catch (error) {
         console.error("Initialisation BM4 incomplète", error);
+        const startupFallbackMessage = "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.";
         if (!authUiReady) {
             try {
                 initializeAuth();
@@ -2018,8 +2043,8 @@ async function initializeApp() {
             clearAuthMessages();
             uiController.switchScreen("auth-screen");
             showAuthView("login");
-            setAuthMessage("login-message", "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.");
         }
+        showStartupRecoveryState(startupFallbackMessage);
     }
 }
 
