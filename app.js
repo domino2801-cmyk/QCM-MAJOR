@@ -497,7 +497,8 @@ function normalizeQuestionAnswers(rawAnswers) {
                 return completeCandidate;
             }
 
-            if (countDefinedAnswers(mergedHumanOrderedValues) > countDefinedAnswers(orderedNumericValues)) {
+            if (countDefinedAnswers(mergedHumanOrderedValues) >= countDefinedAnswers(orderedNumericValues)
+                && mergedHumanOrderedValues.some(hasAnswerValue)) {
                 return mergedHumanOrderedValues;
             }
 
