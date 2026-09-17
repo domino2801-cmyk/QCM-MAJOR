@@ -38,8 +38,10 @@
                 timeoutId: window.setTimeout(() => {
                     const splash = document.getElementById(splashId);
                     if (!splash || splash.classList.contains(hiddenClass)) return;
+                    splash.dataset.state = "hidden";
                     splash.classList.add(hiddenClass);
                     splash.setAttribute("aria-hidden", "true");
+                    splash.hidden = true;
                 }, 4000)
             };
             window.__bm4Splash = state;

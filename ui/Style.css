@@ -1225,8 +1225,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .app-splash,
     .app-splash__logo,
-    .app-splash__loader,
-    .btn-main:not(:disabled) {
+    .app-splash__loader {
         animation: none !important;
         transition: none !important;
     }
