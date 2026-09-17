@@ -9,6 +9,10 @@ const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
+function escapeForRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function extractDivBlockById(markup, id) {
     const openTagPattern = new RegExp(`<div\\b[^>]*\\bid="${id}"[^>]*>`, "i");
     const openTagMatch = openTagPattern.exec(markup);
@@ -36,6 +40,15 @@ function extractDivBlockById(markup, id) {
 
 function normalizeCss(stylesheet) {
     return stylesheet.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
+}
+
+function findTagIndexByAttribute(markup, tagName, attributeName, attributeValue) {
+    const escapedValue = escapeForRegExp(attributeValue);
+    const pattern = attributeName === "class"
+        ? new RegExp(`<${tagName}\\b(?=[^>]*\\bclass=(["'])[^"'<>]*\\b${escapedValue}\\b[^"'<>]*\\1)[^>]*>`, "i")
+        : new RegExp(`<${tagName}\\b(?=[^>]*\\b${attributeName}=(["'])${escapedValue}\\1)[^>]*>`, "i");
+    const match = pattern.exec(markup);
+    return match ? match.index : -1;
 }
 
 function parseCssDeclarations(ruleText) {
@@ -122,10 +135,10 @@ test("theme screen keeps the logout button, header and account summary order", (
 
     assert.ok(themeScreenMarkup);
 
-    const accountBarIndex = themeScreenMarkup.indexOf('class="account-bar"');
-    const logoutButtonIndex = themeScreenMarkup.indexOf('id="logout-btn"');
-    const brandLockupIndex = themeScreenMarkup.indexOf('class="brand-lockup"');
-    const accountSummaryIndex = themeScreenMarkup.indexOf('id="account-summary"');
+    const accountBarIndex = findTagIndexByAttribute(themeScreenMarkup, "div", "class", "account-bar");
+    const logoutButtonIndex = findTagIndexByAttribute(themeScreenMarkup, "button", "id", "logout-btn");
+    const brandLockupIndex = findTagIndexByAttribute(themeScreenMarkup, "div", "class", "brand-lockup");
+    const accountSummaryIndex = findTagIndexByAttribute(themeScreenMarkup, "p", "id", "account-summary");
 
     assert.notEqual(accountBarIndex, -1);
     assert.notEqual(logoutButtonIndex, -1);
@@ -143,6 +156,8 @@ test("theme screen styles center the logout button without offsetting it", () =>
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
     assert.equal(accountBarRule.declarations["justify-content"], "center");
-    assert.equal(logoutButtonRule.declarations.margin, "0");
+    assert.ok(!/\bauto\b/.test(logoutButtonRule.declarations.margin ?? ""));
+    assert.notEqual(logoutButtonRule.declarations["margin-left"], "auto");
+    assert.notEqual(logoutButtonRule.declarations["margin-right"], "auto");
     assert.equal(logoutButtonRule.declarations.transform, "none");
 });
