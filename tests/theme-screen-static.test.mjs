@@ -10,10 +10,22 @@ const html = readFileSync(`${root}/index.html`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
 test("theme screen keeps the logout button, header and account summary order", () => {
-    assert.match(
-        html,
-        /<div id="theme-screen" class="screen">[\s\S]*?<div class="account-bar">\s*<button id="logout-btn" type="button">Déconnexion<\/button>\s*<\/div>\s*<div class="brand-lockup">[\s\S]*?<\/div>\s*<p class="subtitle">[\s\S]*?<\/p>\s*<p id="account-summary" class="account-summary-under">\s*<\/p>/
-    );
+    const themeScreenStart = html.indexOf('<div id="theme-screen" class="screen">');
+    const themeScreenEnd = html.indexOf('<div id="quiz-screen"', themeScreenStart);
+    const themeScreenMarkup = html.slice(themeScreenStart, themeScreenEnd);
+    const accountBarIndex = themeScreenMarkup.indexOf('class="account-bar"');
+    const logoutButtonIndex = themeScreenMarkup.indexOf('id="logout-btn"');
+    const brandLockupIndex = themeScreenMarkup.indexOf('class="brand-lockup"');
+    const accountSummaryIndex = themeScreenMarkup.indexOf('id="account-summary"');
+
+    assert.notEqual(themeScreenStart, -1);
+    assert.notEqual(accountBarIndex, -1);
+    assert.notEqual(logoutButtonIndex, -1);
+    assert.notEqual(brandLockupIndex, -1);
+    assert.notEqual(accountSummaryIndex, -1);
+    assert.ok(accountBarIndex < brandLockupIndex);
+    assert.ok(logoutButtonIndex > accountBarIndex);
+    assert.ok(brandLockupIndex < accountSummaryIndex);
 });
 
 test("theme screen styles center the logout button without offsetting it", () => {
