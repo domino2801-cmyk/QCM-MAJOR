@@ -9,57 +9,40 @@ const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
-function findCssRuleDeclarations(stylesheet, selector) {
-    const normalizedSelector = selector.replace(/\s+/g, " ").trim();
+function extractDivBlockById(markup, id) {
+    const openTagPattern = new RegExp(`<div\\b[^>]*\\bid="${id}"[^>]*>`, "i");
+    const openTagMatch = openTagPattern.exec(markup);
 
-    for (const block of stylesheet.split("}")) {
-        const [rawSelectors, declarations] = block.split("{");
-        if (!declarations) {
-            continue;
-        }
+    if (!openTagMatch) {
+        return null;
+    }
 
-        const selectors = rawSelectors
-            .split(",")
-            .map(value => value.replace(/\s+/g, " ").trim())
-            .filter(Boolean);
+    const divTagPattern = /<\/?div\b[^>]*>/gi;
+    divTagPattern.lastIndex = openTagMatch.index + openTagMatch[0].length;
 
-        if (selectors.includes(normalizedSelector)) {
-            return declarations;
+    let depth = 1;
+    let tagMatch;
+
+    while ((tagMatch = divTagPattern.exec(markup))) {
+        depth += tagMatch[0].startsWith("</div") ? -1 : 1;
+
+        if (depth === 0) {
+            return markup.slice(openTagMatch.index, divTagPattern.lastIndex);
         }
     }
 
     return null;
 }
 
-function parseCssDeclarations(ruleText) {
-    return Object.fromEntries(
-        ruleText
-            .replace(/\/\*[\s\S]*?\*\//g, "")
-            .split(";")
-            .map(entry => entry.trim())
-            .filter(Boolean)
-            .map(entry => {
-                const separatorIndex = entry.indexOf(":");
-                return [
-                    entry.slice(0, separatorIndex).trim(),
-                    entry.slice(separatorIndex + 1).trim()
-                ];
-            })
-    );
+function normalizeCss(stylesheet) {
+    return stylesheet.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
 }
 
 test("theme screen keeps the logout button, header and account summary order", () => {
-    const themeScreenMatch = html.match(/<div[^>]*id="theme-screen"[^>]*>/);
+    const themeScreenMarkup = extractDivBlockById(html, "theme-screen");
 
-    assert.ok(themeScreenMatch);
+    assert.ok(themeScreenMarkup);
 
-    const themeScreenStart = themeScreenMatch.index;
-    const themeScreenEnd = html.search(/<div[^>]*id="quiz-screen"[^>]*>/);
-
-    assert.notEqual(themeScreenStart, -1);
-    assert.notEqual(themeScreenEnd, -1);
-
-    const themeScreenMarkup = html.slice(themeScreenStart, themeScreenEnd);
     const accountBarIndex = themeScreenMarkup.indexOf('class="account-bar"');
     const logoutButtonIndex = themeScreenMarkup.indexOf('id="logout-btn"');
     const brandLockupIndex = themeScreenMarkup.indexOf('class="brand-lockup"');
@@ -75,14 +58,13 @@ test("theme screen keeps the logout button, header and account summary order", (
 });
 
 test("theme screen styles center the logout button without offsetting it", () => {
-    const accountBarRule = findCssRuleDeclarations(css, "#theme-screen .account-bar");
-    const logoutButtonRule = findCssRuleDeclarations(css, "#theme-screen .account-bar #logout-btn");
-    const accountBarDeclarations = parseCssDeclarations(accountBarRule ?? "");
-    const logoutButtonDeclarations = parseCssDeclarations(logoutButtonRule ?? "");
+    const normalizedCss = normalizeCss(css);
+    const accountBarRule = normalizedCss.match(/#theme-screen \.account-bar \{([^}]*)\}/);
+    const logoutButtonRule = normalizedCss.match(/#theme-screen \.account-bar #logout-btn \{([^}]*)\}/);
 
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
-    assert.equal(accountBarDeclarations["justify-content"], "center");
-    assert.equal(logoutButtonDeclarations.margin, "0");
-    assert.equal(logoutButtonDeclarations.transform, "none");
+    assert.match(accountBarRule[1], /justify-content: center;/);
+    assert.match(logoutButtonRule[1], /margin: 0;/);
+    assert.match(logoutButtonRule[1], /transform: none;/);
 });
