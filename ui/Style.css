@@ -309,8 +309,8 @@ body {
 }
 
 #theme-screen .account-bar #logout-btn {
-    margin: 0 auto;
-    transform: translateY(12px);
+    margin: 0;
+    transform: none;
 }
 
 .account-summary-under {
