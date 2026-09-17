@@ -32,7 +32,12 @@ test("theme screen keeps the logout button, header and account summary order", (
 });
 
 test("theme screen styles center the logout button without offsetting it", () => {
-    assert.match(css, /#theme-screen \.account-bar\s*\{[\s\S]*?justify-content:\s*center;\s*[\s\S]*?\}/);
-    assert.match(css, /#theme-screen \.account-bar #logout-btn\s*\{[\s\S]*?margin:\s*0;\s*[\s\S]*?\}/);
-    assert.match(css, /#theme-screen \.account-bar #logout-btn\s*\{[\s\S]*?transform:\s*none;\s*[\s\S]*?\}/);
+    const accountBarRule = css.match(/#theme-screen \.account-bar\s*\{([^}]*)\}/);
+    const logoutButtonRule = css.match(/#theme-screen \.account-bar #logout-btn\s*\{([^}]*)\}/);
+
+    assert.ok(accountBarRule);
+    assert.ok(logoutButtonRule);
+    assert.match(accountBarRule[1], /justify-content:\s*center;/);
+    assert.match(logoutButtonRule[1], /margin:\s*0;/);
+    assert.match(logoutButtonRule[1], /transform:\s*none;/);
 });
