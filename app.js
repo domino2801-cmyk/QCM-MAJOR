@@ -1903,7 +1903,6 @@ async function initializeApp() {
         activateSplashFallback({
             message: "Initialisation incomplète. Vérifiez la connexion puis relancez l’application."
         });
-        setSplashStatus({ message: "Mode dégradé engagé." });
     } finally {
         await hideSplashScreen();
     }

@@ -16,7 +16,7 @@ test("splash markup uses the main logo and tactical status elements", () => {
     assert.match(html, /src="public\/images\/logo2\.png"/);
     assert.match(html, /id="app-splash-status" role="status" aria-live="polite" aria-atomic="true"/);
     assert.match(html, /QUESTION POUR UN MAJOR/);
-    assert.match(html, /installSplashFallback/);
+    assert.match(html, /script type="module" src="startup-splash-bootstrap\.js"/);
 });
 
 test("splash styles support responsive layout and reduced motion", () => {

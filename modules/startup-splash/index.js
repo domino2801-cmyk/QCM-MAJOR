@@ -85,7 +85,7 @@ export async function hideSplashScreen({
     if (!splash || splash.dataset.state === "hidden") return;
 
     const state = win.__bm4Splash || {};
-    if (state.timeoutId) {
+    if (state.timeoutId !== undefined && state.timeoutId !== null) {
         win.clearTimeout(state.timeoutId);
         state.timeoutId = null;
     }
