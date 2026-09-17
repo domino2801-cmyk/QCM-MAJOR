@@ -67,6 +67,7 @@ const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
 const SPLASH_MIN_DURATION_MS = 1200;
 const SPLASH_SAFETY_TIMEOUT_MS = 5000;
+const SPLASH_HIDE_TRANSITION_MS = 350;
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -1887,9 +1888,17 @@ async function initializeApp() {
 function hideSplashScreen() {
     const splash = document.getElementById("splash-screen");
     if (!splash) return;
+    if (splash.hasAttribute("hidden")) return;
     splash.classList.add("is-hidden");
     splash.setAttribute("aria-hidden", "true");
-    splash.setAttribute("hidden", "");
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+        splash.setAttribute("hidden", "");
+        return;
+    }
+    window.setTimeout(() => {
+        splash.setAttribute("hidden", "");
+    }, SPLASH_HIDE_TRANSITION_MS);
 }
 
 function setSplashStatus(message) {
