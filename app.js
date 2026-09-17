@@ -65,6 +65,8 @@ let cachedAccounts = {};
 let resultsCache = [];
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
+const SPLASH_MIN_DURATION_MS = 1200;
+const SPLASH_SAFETY_TIMEOUT_MS = 5000;
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -1882,6 +1884,39 @@ async function initializeApp() {
     }
 }
 
+function hideSplashScreen() {
+    const splash = document.getElementById("splash-screen");
+    if (!splash) return;
+    splash.classList.add("is-hidden");
+    splash.setAttribute("aria-hidden", "true");
+}
+
+function setupSplashSafetyTimeout() {
+    const splash = document.getElementById("splash-screen");
+    if (!splash) return () => {};
+    const timeoutId = window.setTimeout(hideSplashScreen, SPLASH_SAFETY_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+}
+
+async function bootstrapApplication() {
+    const startedAt = Date.now();
+    const clearSplashTimeout = setupSplashSafetyTimeout();
+
+    try {
+        await initializeApp();
+    } catch (error) {
+        console.error("Initialisation de l'application interrompue :", error);
+    } finally {
+        const elapsed = Date.now() - startedAt;
+        const remainingDelay = Math.max(0, SPLASH_MIN_DURATION_MS - elapsed);
+        if (remainingDelay > 0) {
+            await new Promise(resolve => window.setTimeout(resolve, remainingDelay));
+        }
+        clearSplashTimeout();
+        hideSplashScreen();
+    }
+}
+
 async function initializeAppInteractions() {
     // =========================================================
     // SÉLECTION DU THÉÂTRE D’OPÉRATION
@@ -2219,9 +2254,9 @@ function renderReview() {
 
 if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initializeApp);
+        document.addEventListener("DOMContentLoaded", bootstrapApplication);
     } else {
-        initializeApp();
+        bootstrapApplication();
     }
 }
 

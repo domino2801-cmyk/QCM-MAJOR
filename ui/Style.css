@@ -1019,3 +1019,144 @@ body {
 #auth-screen h1 {
     margin-bottom: 14px;
     padding-bottom: 18px;
+}
+
+#auth-screen .auth-view {
+    padding: 24px 18px 18px;
+}
+
+.splash-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 50% 20%, rgba(159, 170, 132, 0.12), rgba(4, 9, 16, 0) 55%),
+        linear-gradient(160deg, rgba(4, 9, 16, 0.96), rgba(7, 16, 27, 0.98));
+    color: var(--text);
+    animation: splash-failsafe-hide 0s linear 5s forwards;
+}
+
+.splash-screen.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+    animation: none;
+}
+
+.splash-panel {
+    width: min(100%, 500px);
+    padding: 28px 22px;
+    text-align: center;
+    border: 1px solid rgba(159, 170, 132, 0.35);
+    border-radius: 16px;
+    background: rgba(8, 15, 26, 0.88);
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.splash-panel img {
+    width: clamp(72px, 18vw, 96px);
+    height: auto;
+    margin-bottom: 14px;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.4));
+}
+
+.splash-kicker {
+    margin: 0;
+    color: var(--accent);
+    letter-spacing: 0.14em;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+}
+
+.splash-title {
+    margin: 10px 0 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-size: clamp(1.2rem, 4.4vw, 1.8rem);
+}
+
+.splash-tagline {
+    margin: 0 auto 18px;
+    max-width: 36ch;
+    color: rgba(237, 242, 247, 0.84);
+    line-height: 1.45;
+}
+
+.splash-loader {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.splash-loader span {
+    width: 7px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--accent);
+    animation: splash-pulse 0.9s ease-in-out infinite;
+}
+
+.splash-loader span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.splash-loader span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.splash-status {
+    margin: 0;
+    color: rgba(159, 170, 132, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.73rem;
+}
+
+@keyframes splash-pulse {
+    0%,
+    100% {
+        transform: scaleY(0.62);
+        opacity: 0.45;
+    }
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+@keyframes splash-failsafe-hide {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .splash-panel {
+        padding: 24px 16px;
+    }
+
+    .splash-kicker {
+        letter-spacing: 0.12em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .splash-screen,
+    .splash-screen.is-hidden {
+        transition: none;
+    }
+
+    .splash-loader span {
+        animation: none;
+        opacity: 0.85;
+        transform: none;
+    }
+}
