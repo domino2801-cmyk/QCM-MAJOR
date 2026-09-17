@@ -6,6 +6,7 @@
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
+import { activateSplashFallback, hideSplashScreen, setSplashStatus } from "./modules/startup-splash/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
 // =========================================================
@@ -61,6 +62,7 @@ let authAudioRetry = null;
 let currentAuthenticatedAccount = null;
 let currentCandidateEmail = "";
 let currentSupabaseSession = null;
+let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
@@ -1857,28 +1859,52 @@ function initializeAuth() {
 }
 
 async function initializeApp() {
-    const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
-    const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
-    pendingResultSync = {
-        upserts: Array.isArray(storedSyncState?.upserts) ? storedSyncState.upserts : [],
-        deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
-    };
-    setResults(Array.isArray(storedResults) ? storedResults : []);
-    initializeAuth();
-    const loadedFromSupabase = await loadQuestionsFromSupabase();
-    if (!loadedFromSupabase) applyQuestionOverrides();
-    await loadResultsFromSupabase();
-    updateThemeQuestionCounts();
-    renderGlobalRanking(getResults());
-    initializeAppInteractions();
-    await syncSupabaseSessionFromUrl();
-    await restoreSupabaseSession();
+    try {
+        setSplashStatus({ message: "Chargement des données tactiques…" });
+        const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
+        const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
+        pendingResultSync = {
+            upserts: Array.isArray(storedSyncState?.upserts) ? storedSyncState.upserts : [],
+            deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
+        };
+        setResults(Array.isArray(storedResults) ? storedResults : []);
+        initializeAuth();
+        authUiReady = true;
+        const loadedFromSupabase = await loadQuestionsFromSupabase();
+        if (!loadedFromSupabase) applyQuestionOverrides();
+        setSplashStatus({ message: "Synchronisation du théâtre d’opérations…" });
+        await loadResultsFromSupabase();
+        updateThemeQuestionCounts();
+        renderGlobalRanking(getResults());
+        initializeAppInteractions();
+        await syncSupabaseSessionFromUrl();
+        await restoreSupabaseSession();
 
-    if (isRecoveryModeFromUrl()) {
-        uiController.switchScreen("auth-screen");
+        if (isRecoveryModeFromUrl()) {
+            uiController.switchScreen("auth-screen");
+            currentAuthenticatedAccount = null;
+            currentCandidateEmail = "";
+            showAuthView("reset", { resetMode: "update" });
+        }
+        setSplashStatus({ message: "Console BM4 prête." });
+    } catch (error) {
+        console.error("Initialisation BM4 incomplète", error);
+        if (!authUiReady) {
+            try {
+                initializeAuth();
+                authUiReady = true;
+            } catch (authError) {
+                console.error("Activation du mode dégradé impossible", authError);
+            }
+        }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
-        showAuthView("reset", { resetMode: "update" });
+        if (authUiReady) clearAuthMessages();
+        activateSplashFallback({
+            message: "Initialisation incomplète. Vérifiez la connexion puis relancez l’application."
+        });
+    } finally {
+        await hideSplashScreen();
     }
 }
 
