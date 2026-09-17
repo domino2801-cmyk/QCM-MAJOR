@@ -1940,7 +1940,7 @@ async function initializeAppInteractions() {
         startQuiz(); // Appel sonar + moteur
     });
 
-    document.getElementById("btn-new-mission").addEventListener("click", () => {
+    document.getElementById("btn-new-mission")?.addEventListener("click", () => {
         uiController.switchScreen("theme-screen");
     });
 
