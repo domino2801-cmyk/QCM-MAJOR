@@ -291,26 +291,19 @@ body {
 
 .account-bar {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     gap: 12px;
     color: var(--accent);
     font-size: 0.8rem;
     margin-bottom: 18px;
+    text-align: center;
 }
 
 .account-bar button {
     padding: 6px 10px;
     white-space: nowrap;
-}
-
-#theme-screen .account-bar {
-    justify-content: center;
-}
-
-#theme-screen .account-bar #logout-btn {
-    margin: 0;
-    transform: none;
 }
 
 .account-summary-under {
