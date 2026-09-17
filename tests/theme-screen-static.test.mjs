@@ -14,7 +14,8 @@ function escapeForRegExp(value) {
 }
 
 function extractDivBlockById(markup, id) {
-    const openTagPattern = new RegExp(`<div\\b[^>]*\\bid="${id}"[^>]*>`, "i");
+    const escapedId = escapeForRegExp(id);
+    const openTagPattern = new RegExp(`<div\\b[^>]*\\bid="${escapedId}"[^>]*>`, "i");
     const openTagMatch = openTagPattern.exec(markup);
 
     if (!openTagMatch) {
