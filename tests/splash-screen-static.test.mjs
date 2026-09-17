@@ -39,7 +39,7 @@ test("bootstrap fallback updates splash status and still hides splash on init er
     let hideCalled = false;
     let statusMessage = "";
     let now = 0;
-    const bootstrapApplication = extractNamedFunction("bootstrapApplication", {
+    const bootstrapApplication = loadBootstrapApplication({
         initializeApp: async () => {
             throw new Error("boom");
         },
@@ -76,27 +76,9 @@ test("bootstrap fallback updates splash status and still hides splash on init er
     assert.equal(hideCalled, true);
 });
 
-function extractNamedFunction(name, globals = {}) {
-    const asyncSignature = `async function ${name}`;
-    const plainSignature = `function ${name}`;
-    const start = js.includes(asyncSignature)
-        ? js.indexOf(asyncSignature)
-        : js.indexOf(plainSignature);
-    assert.notEqual(start, -1, `Unable to find function ${name}`);
-
-    const bodyStart = js.indexOf("{", start);
-    let depth = 0;
-    let cursor = bodyStart;
-    while (cursor < js.length) {
-        const character = js[cursor];
-        if (character === "{") depth += 1;
-        if (character === "}") {
-            depth -= 1;
-            if (depth === 0) break;
-        }
-        cursor += 1;
-    }
-
-    const functionSource = js.slice(start, cursor + 1);
+function loadBootstrapApplication(globals = {}) {
+    const match = js.match(/async function bootstrapApplication\(\)\s*\{[\s\S]*?\n\}\n\nasync function initializeAppInteractions/);
+    assert.ok(match, "Unable to extract bootstrapApplication");
+    const functionSource = match[0].replace(/\n\nasync function initializeAppInteractions[\s\S]*$/, "");
     return new Function(...Object.keys(globals), `return (${functionSource});`)(...Object.values(globals));
 }

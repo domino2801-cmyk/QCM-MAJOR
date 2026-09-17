@@ -1037,7 +1037,6 @@ body {
         radial-gradient(circle at 50% 20%, rgba(159, 170, 132, 0.12), rgba(4, 9, 16, 0) 55%),
         linear-gradient(160deg, rgba(4, 9, 16, 0.96), rgba(7, 16, 27, 0.98));
     color: var(--text);
-    animation: splash-failsafe-hide 0s linear 5s forwards;
 }
 
 .splash-screen.is-hidden {
@@ -1045,7 +1044,6 @@ body {
     visibility: hidden;
     pointer-events: none;
     transition: opacity 0.35s ease, visibility 0s linear 0.35s;
-    animation: none;
 }
 
 .splash-panel {
@@ -1127,14 +1125,6 @@ body {
     50% {
         transform: scaleY(1);
         opacity: 1;
-    }
-}
-
-@keyframes splash-failsafe-hide {
-    to {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
     }
 }
 

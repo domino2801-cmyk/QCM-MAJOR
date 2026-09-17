@@ -1889,6 +1889,7 @@ function hideSplashScreen() {
     if (!splash) return;
     splash.classList.add("is-hidden");
     splash.setAttribute("aria-hidden", "true");
+    splash.setAttribute("hidden", "");
 }
 
 function setSplashStatus(message) {
