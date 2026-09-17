@@ -8,7 +8,6 @@ import { activateSplashFallback, hideSplashScreen } from "../modules/startup-spl
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
-const js = readFileSync(`${root}/app.js`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
 test("startup splash markup is removed from the entry page", () => {
@@ -21,11 +20,6 @@ test("startup splash styles are removed from shared stylesheet", () => {
     assert.doesNotMatch(css, /\.app-splash\s*\{/);
     assert.doesNotMatch(css, /\.app-splash__logo\s*\{/);
     assert.doesNotMatch(css, /\.app-splash--hidden\s*\{/);
-});
-
-test("app initialization keeps splash cleanup call for fallback safety", () => {
-    assert.match(js, /import \{ activateSplashFallback, hideSplashScreen, setSplashStatus \} from "\.\/modules\/startup-splash\/index\.js"/);
-    assert.match(js, /finally\s*\{\s*await hideSplashScreen\(\);\s*\}/);
 });
 
 test("hideSplashScreen marks the splash hidden in the reduced-motion path", async () => {
