@@ -11,20 +11,29 @@ const html = readFileSync(`${root}/index.html`, "utf8");
 const js = readFileSync(`${root}/app.js`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
-test("splash markup uses the main logo and tactical status elements", () => {
+test("splash markup displays only the animated title text", () => {
     assert.match(html, /id="app-splash"/);
-    assert.match(html, /src="public\/images\/logo2\.png"/);
-    assert.match(html, /class="app-splash__status-line" role="status" aria-live="polite" aria-atomic="true" aria-label="Statut de chargement tactique"/);
-    assert.match(html, /id="app-splash-status"/);
-    assert.match(html, /QUESTION POUR UN MAJOR/);
+    assert.match(
+        html,
+        /<div id="app-splash" class="app-splash">\s*<div class="app-splash__content">\s*<h1 class="app-splash__title">Questions pour un Major<\/h1>\s*<\/div>\s*<\/div>/
+    );
+    assert.doesNotMatch(html, /app-splash__logo/);
+    assert.doesNotMatch(html, /app-splash__kicker/);
+    assert.doesNotMatch(html, /app-splash__tagline/);
+    assert.doesNotMatch(html, /app-splash__status-line/);
+    assert.doesNotMatch(html, /app-splash__loader/);
+    assert.doesNotMatch(html, /id="app-splash-status"/);
     assert.match(html, /script type="module" src="startup-splash-bootstrap\.js"/);
 });
 
 test("splash styles support responsive layout and reduced motion", () => {
     assert.match(css, /\.app-splash\s*\{/);
     assert.match(css, /\.app-splash--hidden\s*\{/);
+    assert.match(css, /\.app-splash__title\s*\{/);
+    assert.match(css, /animation:\s*splashTitleReveal 900ms cubic-bezier\(0\.22, 1, 0\.36, 1\) both;/);
+    assert.match(css, /@keyframes splashTitleReveal/);
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
-    assert.match(css, /\.app-splash__logo\s*\{/);
+    assert.doesNotMatch(css, /\.app-splash__logo\s*\{/);
 });
 
 test("app initialization always hides the splash after startup", () => {
