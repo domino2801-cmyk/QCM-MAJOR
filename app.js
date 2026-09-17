@@ -442,16 +442,72 @@ function normalizeQuestionAnswers(rawAnswers) {
         if (Array.isArray(value)) return value;
 
         if (value && typeof value === "object") {
-            const orderedNumericValues = [0, 1, 2, 3].map(index => value[index] ?? value[String(index)]);
-            if (orderedNumericValues.some(answer => answer !== undefined)) {
-                return orderedNumericValues;
-            }
+            const nestedAnswers = value.r
+                ?? value.answers
+                ?? value.options
+                ?? value.responses
+                ?? value.reponses
+                ?? value["réponses"];
+            const nestedAnswerArray = nestedAnswers !== undefined && nestedAnswers !== value
+                ? toAnswerArray(nestedAnswers)
+                : [];
 
+            const orderedNumericValues = [0, 1, 2, 3].map(index => value[index] ?? value[String(index)]);
+            const orderedOneBasedValues = [1, 2, 3, 4].map(index => value[index] ?? value[String(index)]);
             const orderedNamedValues = ["a", "b", "c", "d"].map(key =>
                 value[key] ?? value[key.toUpperCase()] ?? value[`answer${key.toUpperCase()}`]
             );
-            if (orderedNamedValues.some(answer => answer !== undefined)) {
-                return orderedNamedValues;
+            const orderedLegacyValues = [1, 2, 3, 4].map(index =>
+                value[`answer${index}`]
+                ?? value[`answer_${index}`]
+                ?? value[`option${index}`]
+                ?? value[`option_${index}`]
+                ?? value[`response${index}`]
+                ?? value[`response_${index}`]
+                ?? value[`reponse${index}`]
+                ?? value[`reponse_${index}`]
+            );
+            const hasAnswerValue = answer =>
+                answer !== undefined && String(answer).trim() !== "";
+            const pickAnswerValue = (...candidates) =>
+                candidates.find(hasAnswerValue);
+            const mergedHumanOrderedValues = [0, 1, 2, 3].map(index =>
+                pickAnswerValue(
+                    orderedOneBasedValues[index],
+                    orderedNamedValues[index],
+                    orderedLegacyValues[index],
+                    nestedAnswerArray[index]
+                )
+            );
+            const countDefinedAnswers = candidate =>
+                candidate.filter(hasAnswerValue).length;
+
+            const conventionCandidates = [
+                orderedNumericValues,
+                mergedHumanOrderedValues,
+                nestedAnswerArray,
+                orderedOneBasedValues,
+                orderedNamedValues,
+                orderedLegacyValues
+            ];
+            const completeCandidate = conventionCandidates.find(candidate =>
+                candidate.every(hasAnswerValue)
+            );
+            if (completeCandidate) {
+                return completeCandidate;
+            }
+
+            if (countDefinedAnswers(mergedHumanOrderedValues) >= countDefinedAnswers(orderedNumericValues)
+                && mergedHumanOrderedValues.some(hasAnswerValue)) {
+                return mergedHumanOrderedValues;
+            }
+
+            if (orderedNumericValues.some(hasAnswerValue)) {
+                return orderedNumericValues;
+            }
+
+            if (mergedHumanOrderedValues.some(hasAnswerValue)) {
+                return mergedHumanOrderedValues;
             }
 
             return Object.values(value);
@@ -475,6 +531,38 @@ function normalizeQuestionAnswers(rawAnswers) {
     };
 
     return [0, 1, 2, 3].map(index => String(toAnswerArray(rawAnswers)[index] ?? "").trim());
+}
+
+function resolveQuestionAnswers(question) {
+    const candidateSources = [
+        { source: question?.r, priority: 6 },
+        { source: question?.answers, priority: 5 },
+        { source: question?.options, priority: 4 },
+        { source: question?.responses, priority: 3 },
+        { source: question?.reponses, priority: 2 },
+        { source: question?.["réponses"], priority: 2 },
+        { source: question, priority: 1 }
+    ];
+    let bestAnswers = ["", "", "", ""];
+    let bestScore = -1;
+    let bestPriority = -1;
+
+    for (const { source, priority } of candidateSources) {
+        const answers = normalizeQuestionAnswers(source);
+        const score = answers.filter(answer => answer !== "").length;
+
+        if (score > bestScore || (score === bestScore && priority > bestPriority)) {
+            bestAnswers = answers;
+            bestScore = score;
+            bestPriority = priority;
+        }
+
+        if (score === 4 && priority === 6) {
+            return answers;
+        }
+    }
+
+    return bestAnswers;
 }
 
 function getQuestionPool(themeId) {
@@ -2120,8 +2208,8 @@ function startQuiz() {
 
 function afficherSituation() {
     const q = quizEngine.getCurrent();
-    const answers = typeof normalizeQuestionAnswers === "function"
-        ? normalizeQuestionAnswers(q.r)
+    const answers = typeof resolveQuestionAnswers === "function"
+        ? resolveQuestionAnswers(q)
         : (Array.isArray(q.r) ? q.r : []);
 
     document.getElementById("progress").innerText =

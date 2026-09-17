@@ -71,6 +71,8 @@ function createContainer(initialChildren = []) {
 }
 
 test("afficherSituation renders answer buttons in #options-grid and reuses #skip-btn", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
     const progress = { innerText: "" };
     const livePoints = { innerText: "" };
@@ -106,7 +108,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
             getCurrent() {
                 return {
                     q: "Situation test",
-                    r: ["Alpha", "Bravo", "Charlie"],
+                    r: ["Alpha", "Bravo", "Charlie", "Delta"],
                     correct: 1
                 };
             },
@@ -128,13 +130,16 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
         console
     };
 
-    vm.runInNewContext(`${afficherSituationSource}\nafficherSituation();`, context);
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\n${afficherSituationSource}\nafficherSituation();`,
+        context
+    );
 
     assert.equal(progress.innerText, "Question 1 / 1");
     assert.equal(livePoints.innerText, "Points : 3");
     assert.equal(question.innerText, "Situation test");
-    assert.equal(optionsGrid.children.length, 3);
-    assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie"]);
+    assert.equal(optionsGrid.children.length, 4);
+    assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie", "Delta"]);
     assert.equal(skipButton.innerText, "Passer");
     assert.equal(skipButton.disabled, false);
     assert.equal(typeof skipButton.onclick, "function");
@@ -143,9 +148,145 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
 
     assert.equal(skipAnswer, null);
     assert.equal(finalCalls, 1);
-    assert.equal(optionsGrid.children.length, 3);
+    assert.equal(optionsGrid.children.length, 4);
     assert.equal(context.reviewItems.length, 1);
     assert.equal(context.reviewItems[0].type, "skipped");
+});
+
+test("resolveQuestionAnswers supports legacy answer field names", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            q: "Situation legacy",
+            answer1: "Alpha",
+            answer2: "Bravo",
+            answer3: "Charlie",
+            answer4: "Delta",
+            correct: 1
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
+test("resolveQuestionAnswers merges hybrid legacy answer formats", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            q: "Situation hybride",
+            1: "Alpha",
+            answer2: "Bravo",
+            response3: "Charlie",
+            reponse4: "Delta",
+            correct: 2
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
+test("resolveQuestionAnswers completes a partial nested payload with legacy root fields", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            q: "Situation mixte",
+            r: ["Alpha", "", "Charlie", ""],
+            answer2: "Bravo",
+            reponse4: "Delta",
+            correct: 1
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
+test("afficherSituation uses the most complete answer set for mixed payloads", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const afficherSituationSource = extractFunction(appJs, "afficherSituation");
+    const progress = { innerText: "" };
+    const livePoints = { innerText: "" };
+    const question = { innerText: "" };
+    const optionsGrid = createContainer();
+    const skipButton = createButton();
+
+    const context = {
+        document: {
+            getElementById(id) {
+                return {
+                    progress,
+                    "live-points": livePoints,
+                    question,
+                    "options-grid": optionsGrid,
+                    "skip-btn": skipButton
+                }[id] ?? null;
+            },
+            createElement() {
+                return createButton();
+            }
+        },
+        quizEngine: {
+            index: 0,
+            questions: [{}],
+            stats: { points: 0 },
+            getCurrent() {
+                return {
+                    q: "Situation mixte",
+                    r: ["Alpha", "", "Charlie", ""],
+                    answer2: "Bravo",
+                    reponse4: "Delta",
+                    correct: 1
+                };
+            }
+        },
+        reviewItems: [],
+        playAnswerSound() {},
+        verrouillerOptions() {},
+        marquerBoutons() {},
+        bilanFinal() {},
+        setTimeout() {
+            throw new Error("setTimeout should not be used while rendering options");
+        },
+        console
+    };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\n${afficherSituationSource}\nafficherSituation();`,
+        context
+    );
+
+    assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
+test("resolveQuestionAnswers prefers the dedicated nested answer source on equal completeness", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            r: ["Alpha", "Bravo", "Charlie", "Delta"],
+            answer1: "Legacy 1",
+            answer2: "Legacy 2",
+            answer3: "Legacy 3",
+            answer4: "Legacy 4"
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
