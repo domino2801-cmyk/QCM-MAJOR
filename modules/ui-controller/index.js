@@ -30,7 +30,7 @@ export const uiController = {
     // Nettoyage des options de réponse
     // -----------------------------------------------------
     clearOptions() {
-        const options = document.getElementById("options");
+        const options = document.getElementById("options-grid");
         if (options) options.innerHTML = "";
     },
 
@@ -38,7 +38,7 @@ export const uiController = {
     // Désactivation de tous les boutons de réponse
     // -----------------------------------------------------
     lockOptions() {
-        document.querySelectorAll("#options .btn, #options .btn-skip")
+        document.querySelectorAll("#options-grid .btn, #skip-btn")
             .forEach(btn => btn.disabled = true);
     },
 
@@ -46,7 +46,7 @@ export const uiController = {
     // Marquage visuel des réponses
     // -----------------------------------------------------
     markAnswer(selected, correct) {
-        const btns = document.querySelectorAll("#options .btn");
+        const btns = document.querySelectorAll("#options-grid .btn");
 
         if (btns[selected]) {
             btns[selected].classList.add(
