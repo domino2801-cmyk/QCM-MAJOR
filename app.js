@@ -2018,8 +2018,6 @@ async function initializeApp() {
         currentCandidateEmail = "";
         if (authUiReady) {
             clearAuthMessages();
-            uiController.switchScreen("auth-screen");
-            showAuthView("login");
         }
         showStartupRecoveryState({ message: startupFallbackMessage });
     }
