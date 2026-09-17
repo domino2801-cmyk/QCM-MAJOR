@@ -304,11 +304,15 @@ body {
     white-space: nowrap;
 }
 
-#theme-screen .account-bar {
+#theme-screen .account-bar,
+#admin-screen .account-bar {
+    flex-direction: column;
     justify-content: center;
+    text-align: center;
 }
 
-#theme-screen .account-bar #logout-btn {
+#theme-screen .account-bar #logout-btn,
+#admin-screen .account-bar #admin-logout-btn {
     margin: 0;
     transform: none;
 }
