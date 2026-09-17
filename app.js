@@ -1891,6 +1891,11 @@ function hideSplashScreen() {
     splash.setAttribute("aria-hidden", "true");
 }
 
+function setSplashStatus(message) {
+    const splashStatus = document.getElementById("splash-status");
+    if (splashStatus) splashStatus.innerText = message;
+}
+
 function setupSplashSafetyTimeout() {
     const splash = document.getElementById("splash-screen");
     if (!splash) return () => {};
@@ -1901,12 +1906,17 @@ function setupSplashSafetyTimeout() {
 async function bootstrapApplication() {
     const startedAt = Date.now();
     const clearSplashTimeout = setupSplashSafetyTimeout();
+    let initialized = false;
 
     try {
         await initializeApp();
+        initialized = true;
     } catch (error) {
         console.error("Initialisation de l'application interrompue :", error);
-    } finally {
+        setSplashStatus("Mode dégradé : accès à l’authentification.");
+    }
+
+    if (initialized) {
         const elapsed = Date.now() - startedAt;
         const remainingDelay = Math.max(0, SPLASH_MIN_DURATION_MS - elapsed);
         if (remainingDelay > 0) {
