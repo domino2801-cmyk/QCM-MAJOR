@@ -212,6 +212,64 @@ test("resolveQuestionAnswers completes a partial nested payload with legacy root
     assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
+test("afficherSituation uses the most complete answer set for mixed payloads", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const afficherSituationSource = extractFunction(appJs, "afficherSituation");
+    const progress = { innerText: "" };
+    const livePoints = { innerText: "" };
+    const question = { innerText: "" };
+    const optionsGrid = createContainer();
+    const skipButton = createButton();
+
+    const context = {
+        document: {
+            getElementById(id) {
+                return {
+                    progress,
+                    "live-points": livePoints,
+                    question,
+                    "options-grid": optionsGrid,
+                    "skip-btn": skipButton
+                }[id] ?? null;
+            },
+            createElement() {
+                return createButton();
+            }
+        },
+        quizEngine: {
+            index: 0,
+            questions: [{}],
+            stats: { points: 0 },
+            getCurrent() {
+                return {
+                    q: "Situation mixte",
+                    r: ["Alpha", "", "Charlie", ""],
+                    answer2: "Bravo",
+                    reponse4: "Delta",
+                    correct: 1
+                };
+            }
+        },
+        reviewItems: [],
+        playAnswerSound() {},
+        verrouillerOptions() {},
+        marquerBoutons() {},
+        bilanFinal() {},
+        setTimeout() {
+            throw new Error("setTimeout should not be used while rendering options");
+        },
+        console
+    };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\n${afficherSituationSource}\nafficherSituation();`,
+        context
+    );
+
+    assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
     const selectedButton = createButton();
     const correctButton = createButton();

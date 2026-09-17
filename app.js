@@ -542,15 +542,24 @@ function resolveQuestionAnswers(question) {
         question?.reponses,
         question?.["réponses"],
     ];
+    let bestAnswers = ["", "", "", ""];
+    let bestScore = -1;
 
     for (const source of candidateSources) {
         const answers = normalizeQuestionAnswers(source);
-        if (answers.some(answer => answer !== "")) {
+        const score = answers.filter(answer => answer !== "").length;
+
+        if (score > bestScore) {
+            bestAnswers = answers;
+            bestScore = score;
+        }
+
+        if (score === 4) {
             return answers;
         }
     }
 
-    return normalizeQuestionAnswers(question?.r);
+    return bestAnswers;
 }
 
 function getQuestionPool(themeId) {
