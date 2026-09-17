@@ -9,6 +9,28 @@ const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
+function findCssRuleDeclarations(stylesheet, selector) {
+    const normalizedSelector = selector.replace(/\s+/g, " ").trim();
+
+    for (const block of stylesheet.split("}")) {
+        const [rawSelectors, declarations] = block.split("{");
+        if (!declarations) {
+            continue;
+        }
+
+        const selectors = rawSelectors
+            .split(",")
+            .map(value => value.replace(/\s+/g, " ").trim())
+            .filter(Boolean);
+
+        if (selectors.includes(normalizedSelector)) {
+            return declarations;
+        }
+    }
+
+    return null;
+}
+
 test("theme screen keeps the logout button, header and account summary order", () => {
     const themeScreenStart = html.indexOf('<div id="theme-screen" class="screen">');
     const themeScreenEnd = html.indexOf('<div id="quiz-screen"', themeScreenStart);
@@ -32,12 +54,12 @@ test("theme screen keeps the logout button, header and account summary order", (
 });
 
 test("theme screen styles center the logout button without offsetting it", () => {
-    const accountBarRule = css.match(/#theme-screen \.account-bar\s*\{([^}]*)\}/);
-    const logoutButtonRule = css.match(/#theme-screen \.account-bar #logout-btn\s*\{([^}]*)\}/);
+    const accountBarRule = findCssRuleDeclarations(css, "#theme-screen .account-bar");
+    const logoutButtonRule = findCssRuleDeclarations(css, "#theme-screen .account-bar #logout-btn");
 
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
-    assert.match(accountBarRule[1], /justify-content:\s*center;/);
-    assert.match(logoutButtonRule[1], /margin:\s*0;/);
-    assert.match(logoutButtonRule[1], /transform:\s*none;/);
+    assert.match(accountBarRule, /justify-content:\s*center;/);
+    assert.match(logoutButtonRule, /margin:\s*0;/);
+    assert.match(logoutButtonRule, /transform:\s*none;/);
 });
