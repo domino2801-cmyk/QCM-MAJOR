@@ -23,7 +23,7 @@ test("startup splash styles are removed from shared stylesheet", () => {
     assert.doesNotMatch(css, /\.app-splash--hidden\s*\{/);
 });
 
-test("app initialization always hides the splash after startup", () => {
+test("app initialization keeps splash cleanup call for fallback safety", () => {
     assert.match(js, /import \{ activateSplashFallback, hideSplashScreen, setSplashStatus \} from "\.\/modules\/startup-splash\/index\.js"/);
     assert.match(js, /finally\s*\{\s*await hideSplashScreen\(\);\s*\}/);
 });
