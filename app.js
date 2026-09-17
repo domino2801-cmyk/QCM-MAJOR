@@ -6,7 +6,7 @@
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
-import { activateSplashFallback, hideSplashScreen, setSplashStatus } from "./modules/startup-splash/index.js";
+import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
 // =========================================================
@@ -1186,6 +1186,17 @@ function setAuthMessage(id, message) {
     document.getElementById(id).innerText = message;
 }
 
+function clearLegacyStartupSplashState() {
+    const splashState = window.__bm4Splash;
+    if (!splashState) return;
+
+    if (splashState.timeoutId !== undefined && splashState.timeoutId !== null) {
+        window.clearTimeout(splashState.timeoutId);
+    }
+
+    window.__bm4Splash = null;
+}
+
 function getRegisterValidationMessage(field) {
     if (!field?.validity) {
         return "Vérifiez les champs du formulaire d’inscription.";
@@ -1979,7 +1990,6 @@ function initializeAuth() {
 
 async function initializeApp() {
     try {
-        setSplashStatus({ message: "Chargement des données tactiques…" });
         const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
         const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
         pendingResultSync = {
@@ -1991,7 +2001,6 @@ async function initializeApp() {
         authUiReady = true;
         const loadedFromSupabase = await loadQuestionsFromSupabase();
         if (!loadedFromSupabase) applyQuestionOverrides();
-        setSplashStatus({ message: "Synchronisation du théâtre d’opérations…" });
         await loadResultsFromSupabase();
         updateThemeQuestionCounts();
         renderGlobalRanking(getResults());
@@ -2005,9 +2014,10 @@ async function initializeApp() {
             currentCandidateEmail = "";
             showAuthView("reset", { resetMode: "update" });
         }
-        setSplashStatus({ message: "Console BM4 prête." });
+        clearLegacyStartupSplashState();
     } catch (error) {
         console.error("Initialisation BM4 incomplète", error);
+        const startupFallbackMessage = "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.";
         if (!authUiReady) {
             try {
                 initializeAuth();
@@ -2018,12 +2028,11 @@ async function initializeApp() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
-        if (authUiReady) clearAuthMessages();
-        activateSplashFallback({
-            message: "Initialisation incomplète. Vérifiez la connexion puis relancez l’application."
-        });
-    } finally {
-        await hideSplashScreen();
+        clearLegacyStartupSplashState();
+        if (authUiReady) {
+            clearAuthMessages();
+        }
+        showStartupRecoveryState({ message: startupFallbackMessage });
     }
 }
 
