@@ -1186,6 +1186,17 @@ function setAuthMessage(id, message) {
     document.getElementById(id).innerText = message;
 }
 
+function clearLegacyStartupSplashState() {
+    const splashState = window.__bm4Splash;
+    if (!splashState) return;
+
+    if (splashState.timeoutId !== undefined && splashState.timeoutId !== null) {
+        window.clearTimeout(splashState.timeoutId);
+    }
+
+    window.__bm4Splash = null;
+}
+
 function getRegisterValidationMessage(field) {
     if (!field?.validity) {
         return "Vérifiez les champs du formulaire d’inscription.";
@@ -2003,6 +2014,7 @@ async function initializeApp() {
             currentCandidateEmail = "";
             showAuthView("reset", { resetMode: "update" });
         }
+        clearLegacyStartupSplashState();
     } catch (error) {
         console.error("Initialisation BM4 incomplète", error);
         const startupFallbackMessage = "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.";
@@ -2016,6 +2028,7 @@ async function initializeApp() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
+        clearLegacyStartupSplashState();
         if (authUiReady) {
             clearAuthMessages();
         }

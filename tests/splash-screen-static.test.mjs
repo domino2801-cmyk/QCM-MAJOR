@@ -32,5 +32,6 @@ test("app bootstrap no longer wires startup splash logic", () => {
 test("app bootstrap keeps an explicit startup recovery fallback", () => {
     assert.match(js, /from "\.\/modules\/startup-recovery\/index\.js"/);
     assert.match(js, /showStartupRecoveryState\(\{ message: startupFallbackMessage \}\)/);
+    assert.match(js, /clearLegacyStartupSplashState\(\);/);
     assert.match(js, /if \(authUiReady\) \{\s*clearAuthMessages\(\);/);
 });
