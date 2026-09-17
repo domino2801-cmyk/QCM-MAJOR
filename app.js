@@ -437,6 +437,46 @@ function getQuestionHistory() {
     return getStoredJson(localStorage, questionHistoryStorageKey, {});
 }
 
+function normalizeQuestionAnswers(rawAnswers) {
+    const toAnswerArray = value => {
+        if (Array.isArray(value)) return value;
+
+        if (value && typeof value === "object") {
+            const orderedNumericValues = [0, 1, 2, 3].map(index => value[index] ?? value[String(index)]);
+            if (orderedNumericValues.some(answer => answer !== undefined)) {
+                return orderedNumericValues;
+            }
+
+            const orderedNamedValues = ["a", "b", "c", "d"].map(key =>
+                value[key] ?? value[key.toUpperCase()] ?? value[`answer${key.toUpperCase()}`]
+            );
+            if (orderedNamedValues.some(answer => answer !== undefined)) {
+                return orderedNamedValues;
+            }
+
+            return Object.values(value);
+        }
+
+        if (typeof value === "string") {
+            try {
+                return toAnswerArray(JSON.parse(value));
+            } catch {
+                const delimitedAnswers = value
+                    .split(/\s*(?:\||;|\n|•)\s*/)
+                    .map(answer => answer.trim())
+                    .filter(Boolean);
+                if (delimitedAnswers.length > 0) {
+                    return delimitedAnswers;
+                }
+            }
+        }
+
+        return [];
+    };
+
+    return [0, 1, 2, 3].map(index => String(toAnswerArray(rawAnswers)[index] ?? "").trim());
+}
+
 function getQuestionPool(themeId) {
     if (themeId === "all") return getAllQuestions();
 
@@ -448,7 +488,10 @@ function applyQuestionOverrides() {
     const overrides = getQuestionOverrides();
     Object.entries(overrides).forEach(([themeId, questions]) => {
         if (questionsBank[themeId] && Array.isArray(questions)) {
-            questionsBank[themeId].questions = questions;
+            questionsBank[themeId].questions = questions.map(question => ({
+                ...question,
+                r: normalizeQuestionAnswers(question.r)
+            }));
         }
     });
 }
@@ -463,7 +506,7 @@ function applyRemoteQuestions(questions) {
             questionsBank[question.themeId].questions.push({
                 id: question.id,
                 q: question.q,
-                r: question.r,
+                r: normalizeQuestionAnswers(question.r),
                 correct: question.correct
             });
         }
@@ -583,25 +626,11 @@ async function fetchSupabaseQuestions() {
             const data = await supabaseRestRequest(query, { accessToken });
             return {
                 questions: (Array.isArray(data) ? data : []).map(question => {
-                    let parsedAnswers = [];
-                    if (Array.isArray(question.r)) {
-                        parsedAnswers = question.r;
-                    } else if (typeof question.r === "string") {
-                        try {
-                            const parsed = JSON.parse(question.r);
-                            parsedAnswers = Array.isArray(parsed) ? parsed : [];
-                        } catch {
-                            parsedAnswers = [];
-                        }
-                    }
-                    const answers = Array.isArray(question.r)
-                        ? question.r
-                        : parsedAnswers;
                     return {
                         id: String(question.id),
                         themeId: String(question.theme_id),
                         q: String(question.q || ""),
-                        r: [0, 1, 2, 3].map(index => String(answers[index] || "")),
+                        r: normalizeQuestionAnswers(question.r),
                         correct: Number(question.correct || 0)
                     };
                 })
@@ -626,7 +655,7 @@ async function loadQuestionsFromSupabase() {
                 id: question.id || `${themeId}-${index + 1}`,
                 themeId,
                 q: question.q,
-                r: question.r,
+                r: normalizeQuestionAnswers(question.r),
                 correct: question.correct
             }))
         );
@@ -1264,10 +1293,11 @@ function renderAdminQuestions() {
         const actionCell = document.createElement("td");
         const editButton = document.createElement("button");
         const deleteButton = document.createElement("button");
+        const answers = normalizeQuestionAnswers(question.r);
 
         questionCell.innerText = question.q;
-        answersCell.innerText = question.r.join(" | ");
-        correctCell.innerText = question.r[question.correct];
+        answersCell.innerText = answers.join(" | ");
+        correctCell.innerText = answers[question.correct];
         editButton.type = "button";
         editButton.className = "admin-edit-btn";
         editButton.innerText = "Modifier";
@@ -1294,10 +1324,11 @@ function renderAdminQuestions() {
 
 function editQuestion(themeId, index) {
     const question = questionsBank[themeId].questions[index];
+    const answers = normalizeQuestionAnswers(question.r);
     editingQuestionIndex = index;
     document.getElementById("admin-question-theme").value = themeId;
     document.getElementById("admin-question-text").value = question.q;
-    question.r.forEach((answer, answerIndex) => {
+    answers.forEach((answer, answerIndex) => {
         document.getElementById(`admin-answer-${answerIndex + 1}`).value = answer;
     });
     document.getElementById("admin-correct-answer").value = question.correct;
@@ -2089,6 +2120,7 @@ function startQuiz() {
 
 function afficherSituation() {
     const q = quizEngine.getCurrent();
+    const answers = normalizeQuestionAnswers(q.r);
 
     document.getElementById("progress").innerText =
         `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
@@ -2102,7 +2134,7 @@ function afficherSituation() {
     optionsGrid.innerHTML = "";
 
     // Génération des options
-    q.r.forEach((optionText, index) => {
+    answers.forEach((optionText, index) => {
         const btn = document.createElement("button");
         btn.className = "btn";
         btn.innerText = optionText;
@@ -2115,7 +2147,7 @@ function afficherSituation() {
                     type: "wrong",
                     question: q.q,
                     selected: optionText,
-                    correct: q.r[q.correct]
+                    correct: answers[q.correct]
                 });
             }
             const encore = quizEngine.answer(index);
@@ -2138,7 +2170,7 @@ function afficherSituation() {
         reviewItems.push({
             type: "skipped",
             question: q.q,
-            correct: q.r[q.correct]
+            correct: answers[q.correct]
         });
         const encore = quizEngine.answer(null);
         if (encore) afficherSituation();
