@@ -291,19 +291,24 @@ body {
 
 .account-bar {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: 12px;
     color: var(--accent);
     font-size: 0.8rem;
     margin-bottom: 18px;
-    text-align: center;
 }
 
 .account-bar button {
     padding: 6px 10px;
     white-space: nowrap;
+}
+
+#theme-screen .account-bar,
+#admin-screen .account-bar {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
 }
 
 .account-summary-under {
