@@ -92,6 +92,31 @@ test("btn-new-mission returns to theme selection and resets the current selectio
     assert.equal(context.uiController.switchedTo, "theme-screen");
 });
 
+test("btn-new-mission listener registration stays null-safe", () => {
+    const statement = extractStatement(
+        /document\.getElementById\("btn-new-mission"\)\??\.addEventListener\("click",\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*\);/
+    );
+
+    assert.doesNotThrow(() => {
+        runStatement(statement, {
+            document: {
+                getElementById(id) {
+                    assert.equal(id, "btn-new-mission");
+                    return null;
+                }
+            },
+            uiController: {
+                resetThemeSelection() {
+                    throw new Error("listener should not run when button is missing");
+                },
+                switchScreen() {
+                    throw new Error("listener should not run when button is missing");
+                }
+            }
+        });
+    });
+});
+
 function extractStatement(pattern) {
     const match = js.match(pattern);
     assert.ok(match, `Unable to find statement matching ${pattern}`);
