@@ -23,8 +23,9 @@ test("result screen exposes the ids expected by app.js", () => {
 });
 
 test("quiz option locking and marking target #options-grid in app.js", () => {
-    assert.match(js, /querySelectorAll\("#options-grid \.btn, #options-grid \.btn-skip"\)/);
+    assert.match(js, /querySelectorAll\("#options-grid \.btn, #skip-btn"\)/);
     assert.match(js, /querySelectorAll\("#options-grid \.btn"\)/);
-    assert.doesNotMatch(js, /querySelectorAll\("#options \.btn, #options \.btn-skip"\)/);
+    assert.doesNotMatch(js, /querySelectorAll\("#options-grid \.btn, #options-grid \.btn-skip"\)/);
+    assert.doesNotMatch(js, /querySelectorAll\("#options \.btn, #skip-btn"\)/);
     assert.doesNotMatch(js, /querySelectorAll\("#options \.btn"\)/);
 });
