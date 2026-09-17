@@ -1906,25 +1906,21 @@ function setupSplashSafetyTimeout() {
 async function bootstrapApplication() {
     const startedAt = Date.now();
     const clearSplashTimeout = setupSplashSafetyTimeout();
-    let initialized = false;
 
     try {
         await initializeApp();
-        initialized = true;
     } catch (error) {
         console.error("Initialisation de l'application interrompue :", error);
         setSplashStatus("Mode dégradé : accès à l’authentification.");
     }
 
-    if (initialized) {
-        const elapsed = Date.now() - startedAt;
-        const remainingDelay = Math.max(0, SPLASH_MIN_DURATION_MS - elapsed);
-        if (remainingDelay > 0) {
-            await new Promise(resolve => window.setTimeout(resolve, remainingDelay));
-        }
-        clearSplashTimeout();
-        hideSplashScreen();
+    const elapsed = Date.now() - startedAt;
+    const remainingDelay = Math.max(0, SPLASH_MIN_DURATION_MS - elapsed);
+    if (remainingDelay > 0) {
+        await new Promise(resolve => window.setTimeout(resolve, remainingDelay));
     }
+    clearSplashTimeout();
+    hideSplashScreen();
 }
 
 async function initializeAppInteractions() {
