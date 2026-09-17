@@ -6,6 +6,7 @@
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
+import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
 // =========================================================
@@ -1185,30 +1186,6 @@ function setAuthMessage(id, message) {
     document.getElementById(id).innerText = message;
 }
 
-function showStartupRecoveryState(message) {
-    document.querySelectorAll(".screen").forEach(screen => {
-        screen.classList.toggle("active", screen.id === "auth-screen");
-    });
-
-    ["register-view", "otp-view", "reset-view", "success-view", "admin-form"].forEach(id => {
-        document.getElementById(id)?.classList.add("hidden");
-    });
-    document.getElementById("login-view")?.classList.remove("hidden");
-
-    document.querySelectorAll('#auth-screen [data-auth-mode="login"]').forEach(button => {
-        button.classList.add("active");
-    });
-    document.querySelectorAll('#auth-screen [data-auth-mode="register"]').forEach(button => {
-        button.classList.remove("active");
-    });
-
-    const authState = document.getElementById("auth-terminal-state");
-    if (authState) authState.innerText = "MODE DÉGRADÉ";
-
-    const loginMessage = document.getElementById("login-message");
-    if (loginMessage) loginMessage.innerText = message;
-}
-
 function getRegisterValidationMessage(field) {
     if (!field?.validity) {
         return "Vérifiez les champs du formulaire d’inscription.";
@@ -2044,7 +2021,7 @@ async function initializeApp() {
             uiController.switchScreen("auth-screen");
             showAuthView("login");
         }
-        showStartupRecoveryState(startupFallbackMessage);
+        showStartupRecoveryState({ message: startupFallbackMessage });
     }
 }
 
