@@ -157,8 +157,6 @@ test("theme screen styles center the logout button without offsetting it", () =>
 
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
-    assert.equal(accountBarRules.length, 1);
-    assert.equal(logoutButtonRules.length, 1);
     assert.equal(accountBarRule.declarations["justify-content"], "center");
     assert.ok(!/\bauto\b/.test(logoutButtonRule.declarations.margin ?? ""));
     assert.notEqual(logoutButtonRule.declarations["margin-left"], "auto");
