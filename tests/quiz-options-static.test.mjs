@@ -270,6 +270,25 @@ test("afficherSituation uses the most complete answer set for mixed payloads", (
     assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
+test("resolveQuestionAnswers prefers the dedicated nested answer source on equal completeness", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            r: ["Alpha", "Bravo", "Charlie", "Delta"],
+            answer1: "Legacy 1",
+            answer2: "Legacy 2",
+            answer3: "Legacy 3",
+            answer4: "Legacy 4"
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
     const selectedButton = createButton();
     const correctButton = createButton();

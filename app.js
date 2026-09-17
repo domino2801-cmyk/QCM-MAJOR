@@ -534,27 +534,29 @@ function normalizeQuestionAnswers(rawAnswers) {
 
 function resolveQuestionAnswers(question) {
     const candidateSources = [
-        question,
-        question?.r,
-        question?.answers,
-        question?.options,
-        question?.responses,
-        question?.reponses,
-        question?.["réponses"],
+        { source: question?.r, priority: 6 },
+        { source: question?.answers, priority: 5 },
+        { source: question?.options, priority: 4 },
+        { source: question?.responses, priority: 3 },
+        { source: question?.reponses, priority: 2 },
+        { source: question?.["réponses"], priority: 2 },
+        { source: question, priority: 1 }
     ];
     let bestAnswers = ["", "", "", ""];
     let bestScore = -1;
+    let bestPriority = -1;
 
-    for (const source of candidateSources) {
+    for (const { source, priority } of candidateSources) {
         const answers = normalizeQuestionAnswers(source);
         const score = answers.filter(answer => answer !== "").length;
 
-        if (score > bestScore) {
+        if (score > bestScore || (score === bestScore && priority > bestPriority)) {
             bestAnswers = answers;
             bestScore = score;
+            bestPriority = priority;
         }
 
-        if (score === 4) {
+        if (score === 4 && priority === 6) {
             return answers;
         }
     }
