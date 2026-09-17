@@ -2183,7 +2183,7 @@ async function bilanFinal() {
     document.getElementById("stat-wrong").innerText = quizEngine.stats.wrong;
     document.getElementById("stat-skipped").innerText = quizEngine.stats.skipped;
 
-    const maxPts = (total - quizEngine.stats.skipped) * 4;
+    const maxPts = total * 4;
     document.getElementById("stat-brut").innerText = quizEngine.stats.points;
     document.getElementById("brut-max").innerText = `/ ${maxPts}`;
     renderGlobalRanking(results);

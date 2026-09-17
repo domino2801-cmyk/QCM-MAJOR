@@ -51,9 +51,7 @@ export const stats = {
     // -----------------------------------------------------
     computeFinal(statsObj) {
 
-        const evaluated = statsObj.totalQuestions - statsObj.skipped;
-        const maxPoints = evaluated * 4;
-
+        const maxPoints = statsObj.totalQuestions * 4;
         const pts = Math.max(statsObj.points, 0);
 
         if (maxPoints === 0) {
