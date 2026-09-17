@@ -38,6 +38,85 @@ function normalizeCss(stylesheet) {
     return stylesheet.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ").trim();
 }
 
+function parseCssDeclarations(ruleText) {
+    return Object.fromEntries(
+        ruleText
+            .split(";")
+            .map(entry => entry.trim())
+            .filter(Boolean)
+            .map(entry => {
+                const separatorIndex = entry.indexOf(":");
+                return [
+                    entry.slice(0, separatorIndex).trim(),
+                    entry.slice(separatorIndex + 1).trim()
+                ];
+            })
+    );
+}
+
+function collectCssRules(stylesheet) {
+    const source = stylesheet.replace(/\/\*[\s\S]*?\*\//g, "");
+    const rules = [];
+    let selectorBuffer = "";
+    let blockBuffer = "";
+    let currentSelector = "";
+    let depth = 0;
+
+    for (const character of source) {
+        if (character === "{") {
+            if (depth === 0) {
+                currentSelector = selectorBuffer.trim();
+                selectorBuffer = "";
+            } else {
+                blockBuffer += character;
+            }
+
+            depth += 1;
+            continue;
+        }
+
+        if (character === "}") {
+            depth -= 1;
+
+            if (depth === 0) {
+                const blockContent = blockBuffer.trim();
+
+                if (currentSelector.startsWith("@")) {
+                    rules.push(...collectCssRules(blockContent));
+                } else if (currentSelector) {
+                    rules.push({
+                        selectors: currentSelector
+                            .split(",")
+                            .map(value => value.replace(/\s+/g, " ").trim())
+                            .filter(Boolean),
+                        declarations: parseCssDeclarations(normalizeCss(blockContent))
+                    });
+                }
+
+                currentSelector = "";
+                blockBuffer = "";
+            } else {
+                blockBuffer += character;
+            }
+
+            continue;
+        }
+
+        if (depth === 0) {
+            selectorBuffer += character;
+        } else {
+            blockBuffer += character;
+        }
+    }
+
+    return rules;
+}
+
+function findCssRule(stylesheet, selector) {
+    const normalizedSelector = selector.replace(/\s+/g, " ").trim();
+    return collectCssRules(stylesheet).find(rule => rule.selectors.includes(normalizedSelector)) ?? null;
+}
+
 test("theme screen keeps the logout button, header and account summary order", () => {
     const themeScreenMarkup = extractDivBlockById(html, "theme-screen");
 
@@ -58,13 +137,12 @@ test("theme screen keeps the logout button, header and account summary order", (
 });
 
 test("theme screen styles center the logout button without offsetting it", () => {
-    const normalizedCss = normalizeCss(css);
-    const accountBarRule = normalizedCss.match(/#theme-screen \.account-bar \{([^}]*)\}/);
-    const logoutButtonRule = normalizedCss.match(/#theme-screen \.account-bar #logout-btn \{([^}]*)\}/);
+    const accountBarRule = findCssRule(css, "#theme-screen .account-bar");
+    const logoutButtonRule = findCssRule(css, "#theme-screen .account-bar #logout-btn");
 
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
-    assert.match(accountBarRule[1], /justify-content: center;/);
-    assert.match(logoutButtonRule[1], /margin: 0;/);
-    assert.match(logoutButtonRule[1], /transform: none;/);
+    assert.equal(accountBarRule.declarations["justify-content"], "center");
+    assert.equal(logoutButtonRule.declarations.margin, "0");
+    assert.equal(logoutButtonRule.declarations.transform, "none");
 });
