@@ -19,7 +19,8 @@
             display: grid;
             place-items: center;
             background:
-                radial-gradient(circle at center, rgba(13, 18, 26, 0.78), rgba(2, 6, 11, 0.96) 62%);
+                radial-gradient(circle at 50% 35%, rgba(167, 136, 74, 0.12), transparent 20%),
+                linear-gradient(180deg, rgba(4, 8, 12, 0.94), rgba(8, 12, 18, 0.97));
             z-index: 30;
             transition: opacity 0.45s ease, visibility 0.45s ease;
         }
@@ -40,37 +41,37 @@
         .app-splash__content::after {
             content: "";
             position: absolute;
-            inset: 10% 14%;
-            border: 1px solid rgba(164, 188, 146, 0.25);
+            inset: 14% 18%;
+            border: 1px solid rgba(189, 156, 82, 0.18);
             pointer-events: none;
         }
 
         .app-splash__content::after {
-            inset: 18% 22%;
-            border-color: rgba(177, 132, 68, 0.22);
+            inset: 24% 28%;
+            border-color: rgba(189, 156, 82, 0.12);
         }
 
         .app-splash__title {
             position: relative;
             margin: 0;
-            font-size: clamp(2.2rem, 4.4vw, 5rem);
-            line-height: 0.96;
-            letter-spacing: 0.18em;
-            color: #edf2f7;
+            font-size: clamp(2.3rem, 5vw, 6rem);
+            line-height: 0.95;
+            letter-spacing: 0.16em;
+            color: #f6f1e7;
             font-weight: 900;
             text-transform: uppercase;
             text-shadow:
-                0 0 18px rgba(176, 196, 148, 0.14),
-                0 14px 28px rgba(0, 0, 0, 0.48),
-                0 0 24px rgba(191, 147, 70, 0.1);
-            animation: splashTitleReveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+                0 0 14px rgba(189, 156, 82, 0.1),
+                0 22px 40px rgba(0, 0, 0, 0.6),
+                0 0 28px rgba(189, 156, 82, 0.12);
+            animation: splashTitleRevealPremium 1.25s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes splashTitleReveal {
+        @keyframes splashTitleRevealPremium {
             0% {
                 opacity: 0;
                 transform: translateY(24px) scale(0.98);
-                filter: blur(9px);
+                filter: blur(8px);
                 letter-spacing: 0.32em;
             }
             45% {
@@ -80,28 +81,28 @@
                 opacity: 1;
                 transform: translateY(0) scale(1);
                 filter: blur(0);
-                letter-spacing: 0.18em;
+                letter-spacing: 0.16em;
             }
         }
 
         @media (max-width: 640px) {
             .app-splash__title {
-                letter-spacing: 0.12em;
-                line-height: 1.05;
+                letter-spacing: 0.11em;
+                line-height: 1.02;
             }
 
-            @keyframes splashTitleReveal {
+            @keyframes splashTitleRevealPremium {
                 0% {
                     opacity: 0;
                     transform: translateY(18px) scale(0.98);
-                    filter: blur(9px);
-                    letter-spacing: 0.2em;
+                    filter: blur(8px);
+                    letter-spacing: 0.22em;
                 }
                 100% {
                     opacity: 1;
                     transform: translateY(0) scale(1);
                     filter: blur(0);
-                    letter-spacing: 0.12em;
+                    letter-spacing: 0.11em;
                 }
             }
         }
