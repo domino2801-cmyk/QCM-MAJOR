@@ -47,7 +47,7 @@ QCM-MAJOR/
 ├── app.js                     # Point d’entrée, coordination des modules
 │
 ├── ui/
-│   └── style.css              # Style militaire (HUD, couleurs, animations)
+│   └── Style.css              # Style militaire (HUD, couleurs, animations)
 │
 ├── public/
 │   ├── images/                # Logos, décor, icônes
@@ -68,15 +68,11 @@ QCM-MAJOR/
 │   │   ├── engine.js          # Logique pure (chargement, mélange)
 │   │   └── scoring.js         # Barème militaire (+4 / -1 / 0)
 │   │
-│   ├── ui-controller/         # Gestion de l’interface
-│   │   └── index.js           # Changement d’écran, marquage visuel
+│   ├── startup-recovery/      # Fallback explicite en cas de démarrage dégradé
+│   │   └── index.js
 │   │
-│   ├── core/
-│   │   ├── router.js          # Navigation interne (menu → mission → bilan)
-│   │   └── events.js          # Bus d’événements tactiques
-│   │
-│   └── stats/
-│       └── index.js           # Statistiques, historique, export
+│   └── ui-controller/         # Gestion de l’interface
+│       └── index.js           # Changement d’écran, marquage visuel
 
 ```
 
@@ -147,10 +143,3 @@ Le flux candidat attendu est :
   - l’absence de blocage réseau/extension navigateur sur les appels `.../auth/v1/signup` et `.../auth/v1/verify`.
 
 ---
-
-## ✅ Campagne de tests manuels
-
-Les livrables de test manuel complet (candidat + admin + Supabase) sont disponibles ici :
-
-* [MANUAL_TEST_PLAN.md](./MANUAL_TEST_PLAN.md)
-* [supabase_manual_test_setup.sql](./supabase_manual_test_setup.sql)

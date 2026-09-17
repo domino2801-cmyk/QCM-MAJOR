@@ -8,7 +8,6 @@ import vm from "node:vm";
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
 const scoring = loadExportedConst("modules/quiz-engine/scoring.js", "scoring");
-const stats = loadExportedConst("modules/stats/index.js", "stats");
 
 test("quiz scoring computes final note from total questions and not only answered ones", () => {
     const quizStats = scoring.createStats();
@@ -30,17 +29,17 @@ test("quiz scoring clamps negative final note to zero", () => {
     assert.equal(scoring.computeFinal(quizStats, 2), 0);
 });
 
-test("stats module uses the same final note formula", () => {
-    const statsObj = stats.create();
+test("quiz scoring applyAnswer keeps the tactical barème", () => {
+    const quizStats = scoring.createStats();
 
-    statsObj.correct = 2;
-    statsObj.wrong = 1;
-    statsObj.skipped = 1;
-    statsObj.points = 7;
-    statsObj.totalQuestions = 4;
+    scoring.applyAnswer(quizStats, 2, 2);
+    scoring.applyAnswer(quizStats, 1, 3);
+    scoring.applyAnswer(quizStats, null, 0);
 
-    assert.equal(stats.computeFinal(statsObj), 8.75);
-    assert.equal(statsObj.finalScore, 8.75);
+    assert.equal(quizStats.correct, 1);
+    assert.equal(quizStats.wrong, 1);
+    assert.equal(quizStats.skipped, 1);
+    assert.equal(quizStats.points, 3);
 });
 
 function loadExportedConst(relativePath, exportName) {
