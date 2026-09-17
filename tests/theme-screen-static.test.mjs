@@ -125,9 +125,9 @@ function collectCssRules(stylesheet) {
     return rules;
 }
 
-function findCssRule(stylesheet, selector) {
+function findCssRules(stylesheet, selector) {
     const normalizedSelector = selector.replace(/\s+/g, " ").trim();
-    return collectCssRules(stylesheet).find(rule => rule.selectors.includes(normalizedSelector)) ?? null;
+    return collectCssRules(stylesheet).filter(rule => rule.selectors.includes(normalizedSelector));
 }
 
 test("theme screen keeps the logout button, header and account summary order", () => {
@@ -150,11 +150,15 @@ test("theme screen keeps the logout button, header and account summary order", (
 });
 
 test("theme screen styles center the logout button without offsetting it", () => {
-    const accountBarRule = findCssRule(css, "#theme-screen .account-bar");
-    const logoutButtonRule = findCssRule(css, "#theme-screen .account-bar #logout-btn");
+    const accountBarRules = findCssRules(css, "#theme-screen .account-bar");
+    const logoutButtonRules = findCssRules(css, "#theme-screen .account-bar #logout-btn");
+    const accountBarRule = accountBarRules.at(-1) ?? null;
+    const logoutButtonRule = logoutButtonRules.at(-1) ?? null;
 
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
+    assert.equal(accountBarRules.length, 1);
+    assert.equal(logoutButtonRules.length, 1);
     assert.equal(accountBarRule.declarations["justify-content"], "center");
     assert.ok(!/\bauto\b/.test(logoutButtonRule.declarations.margin ?? ""));
     assert.notEqual(logoutButtonRule.declarations["margin-left"], "auto");
