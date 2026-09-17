@@ -11,20 +11,16 @@ const html = readFileSync(`${root}/index.html`, "utf8");
 const js = readFileSync(`${root}/app.js`, "utf8");
 const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 
-test("splash markup uses the main logo and tactical status elements", () => {
-    assert.match(html, /id="app-splash"/);
-    assert.match(html, /src="public\/images\/logo2\.png"/);
-    assert.match(html, /class="app-splash__status-line" role="status" aria-live="polite" aria-atomic="true" aria-label="Statut de chargement tactique"/);
-    assert.match(html, /id="app-splash-status"/);
-    assert.match(html, /QUESTION POUR UN MAJOR/);
-    assert.match(html, /script type="module" src="startup-splash-bootstrap\.js"/);
+test("startup splash markup is removed from the entry page", () => {
+    assert.doesNotMatch(html, /id="app-splash"/);
+    assert.doesNotMatch(html, /id="app-splash-status"/);
+    assert.doesNotMatch(html, /script type="module" src="startup-splash-bootstrap\.js"/);
 });
 
-test("splash styles support responsive layout and reduced motion", () => {
-    assert.match(css, /\.app-splash\s*\{/);
-    assert.match(css, /\.app-splash--hidden\s*\{/);
-    assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
-    assert.match(css, /\.app-splash__logo\s*\{/);
+test("startup splash styles are removed from shared stylesheet", () => {
+    assert.doesNotMatch(css, /\.app-splash\s*\{/);
+    assert.doesNotMatch(css, /\.app-splash__logo\s*\{/);
+    assert.doesNotMatch(css, /\.app-splash--hidden\s*\{/);
 });
 
 test("app initialization always hides the splash after startup", () => {
