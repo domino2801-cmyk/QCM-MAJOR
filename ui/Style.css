@@ -190,6 +190,7 @@ body {
     gap: 8px;
     width: 100%;
     max-width: 560px;
+    box-sizing: border-box;
     margin-left: auto;
     margin-right: auto;
 }
@@ -203,6 +204,7 @@ body {
 .auth-form select,
 .auth-form textarea {
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box;
     background: #000;
     border: 1px solid var(--primary);
@@ -653,8 +655,21 @@ h1 {
     color: #000;
 }
 
+.admin-panel {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-panel .auth-form {
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .admin-table-wrapper {
     overflow-x: auto;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .admin-table {
@@ -695,6 +710,7 @@ h1 {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .admin-actions .btn-main {
