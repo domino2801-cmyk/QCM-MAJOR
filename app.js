@@ -6,6 +6,7 @@
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
+import { activateSplashFallback, hideSplashScreen, setSplashStatus } from "./modules/startup-splash/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
 // =========================================================
@@ -81,45 +82,6 @@ const correctAnswerAudio = new Audio("public/audio/BONNE%20REPONSE.mp3");
 correctAnswerAudio.preload = "auto";
 const incorrectAnswerAudio = new Audio("public/audio/MAUVAISE%20REPONSE.mp3");
 incorrectAnswerAudio.preload = "auto";
-const splashScreenId = "app-splash";
-const splashStatusId = "app-splash-status";
-const splashHiddenClass = "app-splash--hidden";
-
-function setSplashStatus(message) {
-    const status = document.getElementById(splashStatusId);
-    if (status) {
-        status.innerText = message;
-    }
-}
-
-async function hideSplashScreen({ immediate = false } = {}) {
-    const splash = document.getElementById(splashScreenId);
-    if (!splash || splash.dataset.state === "hidden") return;
-
-    const state = window.__bm4Splash || {};
-    if (state.timeoutId) {
-        window.clearTimeout(state.timeoutId);
-        state.timeoutId = null;
-    }
-
-    const shownAt = Number(state.shownAt || Date.now());
-    const minDuration = Number(state.minDuration || 1400);
-    const elapsed = Date.now() - shownAt;
-    const waitTime = immediate ? 0 : Math.max(0, minDuration - elapsed);
-
-    await new Promise(resolve => window.setTimeout(resolve, waitTime));
-    splash.dataset.state = "hidden";
-    splash.classList.add(state.hiddenClass || splashHiddenClass);
-    splash.setAttribute("aria-hidden", "true");
-
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
-        splash.hidden = true;
-        return;
-    }
-
-    await new Promise(resolve => window.setTimeout(resolve, 320));
-    splash.hidden = true;
-}
 
 function getStoredJson(storage, key, fallback) {
     try {
@@ -1898,7 +1860,7 @@ function initializeAuth() {
 
 async function initializeApp() {
     try {
-        setSplashStatus("Chargement des données tactiques…");
+        setSplashStatus({ message: "Chargement des données tactiques…" });
         const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
         const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
         pendingResultSync = {
@@ -1910,7 +1872,7 @@ async function initializeApp() {
         authUiReady = true;
         const loadedFromSupabase = await loadQuestionsFromSupabase();
         if (!loadedFromSupabase) applyQuestionOverrides();
-        setSplashStatus("Synchronisation du théâtre d’opérations…");
+        setSplashStatus({ message: "Synchronisation du théâtre d’opérations…" });
         await loadResultsFromSupabase();
         updateThemeQuestionCounts();
         renderGlobalRanking(getResults());
@@ -1924,7 +1886,7 @@ async function initializeApp() {
             currentCandidateEmail = "";
             showAuthView("reset", { resetMode: "update" });
         }
-        setSplashStatus("Console BM4 prête.");
+        setSplashStatus({ message: "Console BM4 prête." });
     } catch (error) {
         console.error("Initialisation BM4 incomplète", error);
         if (!authUiReady) {
@@ -1937,18 +1899,11 @@ async function initializeApp() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
-        if (typeof window.__bm4Splash?.activateFallback === "function") {
-            window.__bm4Splash.activateFallback();
-        }
-        if (authUiReady) {
-            uiController.switchScreen("auth-screen");
-            clearAuthMessages();
-            showAuthView("login");
-            setAuthMessage("login-message", "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.");
-            const authTerminalState = document.getElementById("auth-terminal-state");
-            if (authTerminalState) authTerminalState.innerText = "MODE DÉGRADÉ";
-        }
-        setSplashStatus("Mode dégradé engagé.");
+        if (authUiReady) clearAuthMessages();
+        activateSplashFallback({
+            message: "Initialisation incomplète. Vérifiez la connexion puis relancez l’application."
+        });
+        setSplashStatus({ message: "Mode dégradé engagé." });
     } finally {
         await hideSplashScreen();
     }

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import vm from "node:vm";
+import { activateSplashFallback, hideSplashScreen } from "../modules/startup-splash/index.js";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
@@ -16,8 +16,7 @@ test("splash markup uses the main logo and tactical status elements", () => {
     assert.match(html, /src="public\/images\/logo2\.png"/);
     assert.match(html, /id="app-splash-status" role="status" aria-live="polite" aria-atomic="true"/);
     assert.match(html, /QUESTION POUR UN MAJOR/);
-    assert.match(html, /window\.__bm4Splash/);
-    assert.match(html, /activateFallback/);
+    assert.match(html, /installSplashFallback/);
 });
 
 test("splash styles support responsive layout and reduced motion", () => {
@@ -28,22 +27,14 @@ test("splash styles support responsive layout and reduced motion", () => {
 });
 
 test("app initialization always hides the splash after startup", () => {
-    assert.match(js, /function setSplashStatus/);
-    assert.match(js, /async function hideSplashScreen/);
+    assert.match(js, /import \{ activateSplashFallback, hideSplashScreen, setSplashStatus \} from "\.\/modules\/startup-splash\/index\.js"/);
     assert.match(js, /finally\s*\{\s*await hideSplashScreen\(\);\s*\}/);
 });
 
 test("hideSplashScreen marks the splash hidden in the reduced-motion path", async () => {
     const splash = createSplashFixture();
     let clearedTimeout = null;
-    const hideSplashScreen = extractNamedFunction("hideSplashScreen", {
-        splashScreenId: "app-splash",
-        splashHiddenClass: "app-splash--hidden",
-        document: {
-            getElementById(id) {
-                return id === "app-splash" ? splash : null;
-            }
-        },
+    await hideSplashScreen({
         window: {
             __bm4Splash: {
                 shownAt: Date.now(),
@@ -61,10 +52,14 @@ test("hideSplashScreen marks the splash hidden in the reduced-motion path", asyn
             matchMedia() {
                 return { matches: true };
             }
-        }
+        },
+        document: {
+            getElementById(id) {
+                return id === "app-splash" ? splash : null;
+            }
+        },
+        immediate: true
     });
-
-    await hideSplashScreen({ immediate: true });
 
     assert.equal(splash.dataset.state, "hidden");
     assert.equal(splash.hidden, true);
@@ -76,83 +71,41 @@ test("hideSplashScreen marks the splash hidden in the reduced-motion path", asyn
 test("hideSplashScreen waits for the normal fade path before hiding the splash", async () => {
     const splash = createSplashFixture();
     const delays = [];
-    const hideSplashScreen = extractNamedFunction("hideSplashScreen", {
-        splashScreenId: "app-splash",
-        splashHiddenClass: "app-splash--hidden",
-        Date: {
-            now() {
-                return 2000;
-            }
-        },
-        document: {
-            getElementById(id) {
-                return id === "app-splash" ? splash : null;
-            }
-        },
-        window: {
-            __bm4Splash: {
-                shownAt: 1000,
-                minDuration: 1400,
-                hiddenClass: "app-splash--hidden",
-                timeoutId: 7
+    const originalNow = Date.now;
+    Date.now = () => 2000;
+    try {
+        await hideSplashScreen({
+            window: {
+                __bm4Splash: {
+                    shownAt: 1000,
+                    minDuration: 1400,
+                    hiddenClass: "app-splash--hidden",
+                    timeoutId: 7
+                },
+                clearTimeout() {},
+                setTimeout(callback, delay = 0) {
+                    delays.push(delay);
+                    callback();
+                    return 1;
+                },
+                matchMedia() {
+                    return { matches: false };
+                }
             },
-            clearTimeout() {},
-            setTimeout(callback, delay = 0) {
-                delays.push(delay);
-                callback();
-                return 1;
-            },
-            matchMedia() {
-                return { matches: false };
+            document: {
+                getElementById(id) {
+                    return id === "app-splash" ? splash : null;
+                }
             }
-        }
-    });
-
-    await hideSplashScreen();
+        });
+    } finally {
+        Date.now = originalNow;
+    }
 
     assert.deepEqual(delays, [400, 320]);
     assert.equal(splash.hidden, true);
     assert.equal(splash.dataset.state, "hidden");
 });
-
-function extractNamedFunction(name, globals = {}) {
-    const asyncSignature = `async function ${name}`;
-    const plainSignature = `function ${name}`;
-    const start = js.includes(asyncSignature)
-        ? js.indexOf(asyncSignature)
-        : js.indexOf(plainSignature);
-    assert.notEqual(start, -1, `Unable to find function ${name}`);
-
-    const paramsStart = js.indexOf("(", start);
-    let paramsDepth = 0;
-    let cursor = paramsStart;
-    while (cursor < js.length) {
-        const character = js[cursor];
-        if (character === "(") paramsDepth += 1;
-        if (character === ")") {
-            paramsDepth -= 1;
-            if (paramsDepth === 0) break;
-        }
-        cursor += 1;
-    }
-
-    const bodyStart = js.indexOf("{", cursor);
-    let depth = 0;
-    cursor = bodyStart;
-    while (cursor < js.length) {
-        const character = js[cursor];
-        if (character === "{") depth += 1;
-        if (character === "}") {
-            depth -= 1;
-            if (depth === 0) break;
-        }
-        cursor += 1;
-    }
-
-    const functionSource = js.slice(start, cursor + 1);
-    const script = new vm.Script(`(${functionSource})`);
-    return script.runInNewContext(globals);
-}
 
 function createSplashFixture() {
     const fixture = {
@@ -167,5 +120,96 @@ function createSplashFixture() {
             this.attributes[name] = value;
         }
     };
+    return fixture;
+}
+
+test("activateSplashFallback centralizes degraded login state", () => {
+    const splash = createSplashFixture();
+    const loginView = createViewFixture();
+    const hiddenViews = new Map(
+        ["register-view", "otp-view", "reset-view", "success-view", "admin-form"]
+            .map(id => [id, createViewFixture()])
+    );
+    const loginMessage = { innerText: "" };
+    const authTerminalState = { innerText: "" };
+    const screenFixtures = [
+        createScreenFixture("auth-screen"),
+        createScreenFixture("theme-screen")
+    ];
+    const loginTabs = [createTabFixture(), createTabFixture()];
+    const registerTabs = [createTabFixture(), createTabFixture("active")];
+
+    activateSplashFallback({
+        document: {
+            getElementById(id) {
+                if (id === "app-splash") return splash;
+                if (id === "login-view") return loginView;
+                if (hiddenViews.has(id)) return hiddenViews.get(id);
+                if (id === "login-message") return loginMessage;
+                if (id === "auth-terminal-state") return authTerminalState;
+                return null;
+            },
+            querySelectorAll(selector) {
+                if (selector === ".screen") return screenFixtures;
+                if (selector === '#auth-screen [data-auth-mode="login"]') return loginTabs;
+                if (selector === '#auth-screen [data-auth-mode="register"]') return registerTabs;
+                return [];
+            }
+        },
+        message: "Mode secours"
+    });
+
+    assert.equal(splash.hidden, true);
+    assert.equal(splash.dataset.state, "hidden");
+    assert.equal(loginView.hiddenClasses.has("hidden"), false);
+    hiddenViews.forEach(view => assert.equal(view.hiddenClasses.has("hidden"), true));
+    assert.equal(screenFixtures[0].active, true);
+    assert.equal(screenFixtures[1].active, false);
+    assert.equal(authTerminalState.innerText, "MODE DÉGRADÉ");
+    assert.equal(loginMessage.innerText, "Mode secours");
+    loginTabs.forEach(tab => assert.equal(tab.active, true));
+    registerTabs.forEach(tab => assert.equal(tab.active, false));
+});
+
+function createViewFixture(initialClass) {
+    return createClassListFixture(initialClass);
+}
+
+function createTabFixture(initialClass) {
+    return createClassListFixture(initialClass);
+}
+
+function createScreenFixture(id) {
+    const fixture = createClassListFixture();
+    fixture.id = id;
+    return fixture;
+}
+
+function createClassListFixture(initialClass) {
+    const fixture = {
+        hiddenClasses: new Set(initialClass ? [initialClass] : []),
+        classList: {
+            add(className) {
+                fixture.hiddenClasses.add(className);
+            },
+            remove(className) {
+                fixture.hiddenClasses.delete(className);
+            },
+            toggle(className, force) {
+                if (force) fixture.hiddenClasses.add(className);
+                else fixture.hiddenClasses.delete(className);
+            }
+        }
+    };
+    fixture.classList.owner = fixture;
+    Object.defineProperty(fixture, "active", {
+        get() {
+            return fixture.hiddenClasses.has("active");
+        },
+        set(value) {
+            if (value) fixture.hiddenClasses.add("active");
+            else fixture.hiddenClasses.delete("active");
+        }
+    });
     return fixture;
 }

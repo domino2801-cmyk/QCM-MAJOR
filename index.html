@@ -27,42 +27,9 @@
             </div>
         </div>
     </div>
-    <script>
-        (function () {
-            const splashId = "app-splash";
-            const hiddenClass = "app-splash--hidden";
-            const activateFallback = () => {
-                const splash = document.getElementById(splashId);
-                if (!splash || splash.dataset.state === "hidden") return;
-                splash.dataset.state = "hidden";
-                splash.classList.add(hiddenClass);
-                splash.setAttribute("aria-hidden", "true");
-                splash.hidden = true;
-
-                document.querySelectorAll(".screen").forEach(screen => {
-                    screen.classList.toggle("active", screen.id === "auth-screen");
-                });
-
-                ["register-view", "otp-view", "reset-view", "success-view", "admin-form"].forEach(id => {
-                    document.getElementById(id)?.classList.add("hidden");
-                });
-                document.getElementById("login-view")?.classList.remove("hidden");
-                const authState = document.getElementById("auth-terminal-state");
-                if (authState) authState.textContent = "MODE DÉGRADÉ";
-                const loginMessage = document.getElementById("login-message");
-                if (loginMessage && !loginMessage.textContent.trim()) {
-                    loginMessage.textContent = "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.";
-                }
-            };
-            const state = {
-                shownAt: Date.now(),
-                minDuration: 1400,
-                hiddenClass,
-                activateFallback,
-                timeoutId: window.setTimeout(activateFallback, 4000)
-            };
-            window.__bm4Splash = state;
-        }());
+    <script type="module">
+        import { installSplashFallback } from "./modules/startup-splash/index.js";
+        installSplashFallback();
     </script>
     <div class="container">
         <button id="close-app" class="close-app" type="button" aria-label="Fermer l’application" title="Fermer l’application">X</button>
