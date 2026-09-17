@@ -108,7 +108,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
             getCurrent() {
                 return {
                     q: "Situation test",
-                    r: ["Alpha", "Bravo", "Charlie"],
+                    r: ["Alpha", "Bravo", "Charlie", "Delta"],
                     correct: 1
                 };
             },
@@ -138,8 +138,8 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     assert.equal(progress.innerText, "Question 1 / 1");
     assert.equal(livePoints.innerText, "Points : 3");
     assert.equal(question.innerText, "Situation test");
-    assert.equal(optionsGrid.children.length, 3);
-    assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie"]);
+    assert.equal(optionsGrid.children.length, 4);
+    assert.deepEqual(optionsGrid.children.map(button => button.innerText), ["Alpha", "Bravo", "Charlie", "Delta"]);
     assert.equal(skipButton.innerText, "Passer");
     assert.equal(skipButton.disabled, false);
     assert.equal(typeof skipButton.onclick, "function");
@@ -148,7 +148,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
 
     assert.equal(skipAnswer, null);
     assert.equal(finalCalls, 1);
-    assert.equal(optionsGrid.children.length, 3);
+    assert.equal(optionsGrid.children.length, 4);
     assert.equal(context.reviewItems.length, 1);
     assert.equal(context.reviewItems[0].type, "skipped");
 });
@@ -170,7 +170,7 @@ test("resolveQuestionAnswers supports legacy answer field names", () => {
         context
     );
 
-    assert.deepEqual(context.resolved, ["Alpha", "Bravo", "Charlie", "Delta"]);
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
