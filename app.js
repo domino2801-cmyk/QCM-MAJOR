@@ -2064,6 +2064,7 @@ async function initializeAppInteractions() {
         maxQuestions = 0;
         uiController.resetThemeSelection();
         uiController.switchScreen("theme-screen");
+        document.querySelector(".btn-theme")?.focus();
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {

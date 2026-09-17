@@ -63,6 +63,14 @@ test("btn-new-mission returns to theme selection and resets the current selectio
                         listeners.set(eventName, handler);
                     }
                 };
+            },
+            querySelector(selector) {
+                assert.equal(selector, ".btn-theme");
+                return {
+                    focus() {
+                        context.focusCalled = true;
+                    }
+                };
             }
         },
         uiController: {
@@ -76,7 +84,8 @@ test("btn-new-mission returns to theme selection and resets the current selectio
             }
         },
         selectedTheme: "3",
-        maxQuestions: 12
+        maxQuestions: 12,
+        focusCalled: false
     };
 
     assert.doesNotThrow(() => {
@@ -90,6 +99,7 @@ test("btn-new-mission returns to theme selection and resets the current selectio
     assert.equal(context.maxQuestions, 0);
     assert.equal(context.uiController.resetThemeSelectionCalled, true);
     assert.equal(context.uiController.switchedTo, "theme-screen");
+    assert.equal(context.focusCalled, true);
 });
 
 test("btn-new-mission listener registration stays null-safe", () => {
@@ -102,6 +112,10 @@ test("btn-new-mission listener registration stays null-safe", () => {
             document: {
                 getElementById(id) {
                     assert.equal(id, "btn-new-mission");
+                    return null;
+                },
+                querySelector(selector) {
+                    assert.equal(selector, ".btn-theme");
                     return null;
                 }
             },
