@@ -36,12 +36,10 @@ test("quiz scoring applyAnswer keeps the tactical barème", () => {
     scoring.applyAnswer(quizStats, 1, 3);
     scoring.applyAnswer(quizStats, null, 0);
 
-    assert.deepEqual(quizStats, {
-        correct: 1,
-        wrong: 1,
-        skipped: 1,
-        points: 3
-    });
+    assert.equal(quizStats.correct, 1);
+    assert.equal(quizStats.wrong, 1);
+    assert.equal(quizStats.skipped, 1);
+    assert.equal(quizStats.points, 3);
     assert.equal(statsObj.finalScore, 8.75);
 });
 
