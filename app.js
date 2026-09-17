@@ -2153,7 +2153,7 @@ function afficherSituation() {
 // =========================================================
 
 function verrouillerOptions() {
-    document.querySelectorAll("#options .btn, #options .btn-skip")
+    document.querySelectorAll("#options-grid .btn, #options-grid .btn-skip")
         .forEach(btn => btn.disabled = true);
 }
 
@@ -2162,7 +2162,7 @@ function verrouillerOptions() {
 // =========================================================
 
 function marquerBoutons(selected, correct) {
-    const btns = document.querySelectorAll("#options .btn");
+    const btns = document.querySelectorAll("#options-grid .btn");
 
     btns[selected].classList.add(
         selected === correct ? "correct" : "incorrect"
