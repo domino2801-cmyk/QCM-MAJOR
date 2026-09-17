@@ -46,9 +46,66 @@ test("login screen keeps a close-app button with fallback content", () => {
     assert.equal(body.innerHTML, "<main class=\"app-closed\"><h1>Application fermée</h1></main>");
 });
 
-test("missing btn-new-mission does not throw during listener registration", () => {
-    assert.doesNotMatch(html, /id="btn-new-mission"/);
+test("btn-new-mission returns to theme selection and resets the current selection", () => {
+    assert.match(html, /id="btn-new-mission"/);
 
+    const statement = extractStatement(
+        /document\.getElementById\("btn-new-mission"\)\??\.addEventListener\("click",\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*\);/
+    );
+
+    const listeners = new Map();
+    const context = {
+        document: {
+            getElementById(id) {
+                if (id === "btn-new-mission") {
+                    return {
+                        addEventListener(eventName, handler) {
+                            listeners.set(eventName, handler);
+                        }
+                    };
+                }
+
+                if (id === "theme-all-btn") {
+                    return {
+                        focus() {
+                            context.focusCalled = true;
+                        }
+                    };
+                }
+
+                assert.fail(`unexpected id: ${id}`);
+            }
+        },
+        uiController: {
+            resetThemeSelectionCalled: false,
+            switchedTo: null,
+            resetThemeSelection() {
+                this.resetThemeSelectionCalled = true;
+            },
+            switchScreen(screenId) {
+                this.switchedTo = screenId;
+            }
+        },
+        selectedTheme: "3",
+        maxQuestions: 12,
+        focusCalled: false
+    };
+
+    assert.doesNotThrow(() => {
+        runStatement(statement, context);
+    });
+
+    const clickHandler = listeners.get("click");
+    assert.equal(typeof clickHandler, "function");
+    clickHandler();
+    assert.equal(context.selectedTheme, null);
+    assert.equal(context.maxQuestions, 0);
+    assert.equal(context.uiController.resetThemeSelectionCalled, true);
+    assert.equal(context.uiController.switchedTo, "theme-screen");
+    assert.equal(context.focusCalled, true);
+});
+
+test("btn-new-mission listener registration stays null-safe", () => {
     const statement = extractStatement(
         /document\.getElementById\("btn-new-mission"\)\??\.addEventListener\("click",\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*\);/
     );
@@ -57,11 +114,14 @@ test("missing btn-new-mission does not throw during listener registration", () =
         runStatement(statement, {
             document: {
                 getElementById(id) {
-                    assert.equal(id, "btn-new-mission");
+                    assert.match(id, /^(btn-new-mission|theme-all-btn)$/);
                     return null;
                 }
             },
             uiController: {
+                resetThemeSelection() {
+                    throw new Error("listener should not run when button is missing");
+                },
                 switchScreen() {
                     throw new Error("listener should not run when button is missing");
                 }
