@@ -173,6 +173,26 @@ test("resolveQuestionAnswers supports legacy answer field names", () => {
     assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
+test("resolveQuestionAnswers merges hybrid legacy answer formats", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            q: "Situation hybride",
+            1: "Alpha",
+            answer2: "Bravo",
+            response3: "Charlie",
+            reponse4: "Delta",
+            correct: 2
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
     const selectedButton = createButton();
     const correctButton = createButton();

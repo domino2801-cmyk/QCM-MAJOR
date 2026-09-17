@@ -453,22 +453,10 @@ function normalizeQuestionAnswers(rawAnswers) {
             }
 
             const orderedNumericValues = [0, 1, 2, 3].map(index => value[index] ?? value[String(index)]);
-            if (orderedNumericValues.some(answer => answer !== undefined)) {
-                return orderedNumericValues;
-            }
-
             const orderedOneBasedValues = [1, 2, 3, 4].map(index => value[index] ?? value[String(index)]);
-            if (orderedOneBasedValues.some(answer => answer !== undefined)) {
-                return orderedOneBasedValues;
-            }
-
             const orderedNamedValues = ["a", "b", "c", "d"].map(key =>
                 value[key] ?? value[key.toUpperCase()] ?? value[`answer${key.toUpperCase()}`]
             );
-            if (orderedNamedValues.some(answer => answer !== undefined)) {
-                return orderedNamedValues;
-            }
-
             const orderedLegacyValues = [1, 2, 3, 4].map(index =>
                 value[`answer${index}`]
                 ?? value[`answer_${index}`]
@@ -479,8 +467,28 @@ function normalizeQuestionAnswers(rawAnswers) {
                 ?? value[`reponse${index}`]
                 ?? value[`reponse_${index}`]
             );
-            if (orderedLegacyValues.some(answer => answer !== undefined)) {
-                return orderedLegacyValues;
+
+            const conventionCandidates = [
+                orderedNumericValues,
+                orderedOneBasedValues,
+                orderedNamedValues,
+                orderedLegacyValues
+            ];
+            const completeCandidate = conventionCandidates.find(candidate =>
+                candidate.every(answer => answer !== undefined)
+            );
+            if (completeCandidate) {
+                return completeCandidate;
+            }
+
+            const mergedAnswers = [0, 1, 2, 3].map(index =>
+                orderedNumericValues[index]
+                ?? orderedOneBasedValues[index]
+                ?? orderedNamedValues[index]
+                ?? orderedLegacyValues[index]
+            );
+            if (mergedAnswers.some(answer => answer !== undefined)) {
+                return mergedAnswers;
             }
 
             return Object.values(value);
