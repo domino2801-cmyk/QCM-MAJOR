@@ -1923,6 +1923,15 @@ async function initializeApp() {
             showAuthView("reset", { resetMode: "update" });
         }
         setSplashStatus("Console BM4 prête.");
+    } catch (error) {
+        console.error("Initialisation BM4 incomplète", error);
+        uiController.switchScreen("auth-screen");
+        currentAuthenticatedAccount = null;
+        currentCandidateEmail = "";
+        clearAuthMessages();
+        showAuthView("login");
+        setAuthMessage("login-message", "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.");
+        setSplashStatus("Mode dégradé engagé.");
     } finally {
         await hideSplashScreen();
     }
