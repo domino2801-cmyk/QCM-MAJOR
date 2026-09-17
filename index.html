@@ -18,11 +18,9 @@
             inset: 0;
             display: grid;
             place-items: center;
-            background:
-                radial-gradient(circle at 50% 35%, rgba(167, 136, 74, 0.12), transparent 20%),
-                linear-gradient(180deg, rgba(4, 8, 12, 0.94), rgba(8, 12, 18, 0.97));
+            background: #04070b;
             z-index: 30;
-            transition: opacity 0.45s ease, visibility 0.45s ease;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
         }
 
         #app-splash.app-splash--hidden {
@@ -33,76 +31,84 @@
 
         .app-splash__content {
             position: relative;
-            padding: clamp(1.5rem, 4vw, 3rem);
+            padding: clamp(2rem, 5vw, 4rem);
             text-align: center;
         }
 
-        .app-splash__content::before,
-        .app-splash__content::after {
+        .app-splash__content::before {
             content: "";
             position: absolute;
-            inset: 14% 18%;
-            border: 1px solid rgba(189, 156, 82, 0.18);
+            inset: 12% 16%;
+            border: 1px solid rgba(214, 177, 95, 0.12);
             pointer-events: none;
-        }
-
-        .app-splash__content::after {
-            inset: 24% 28%;
-            border-color: rgba(189, 156, 82, 0.12);
         }
 
         .app-splash__title {
             position: relative;
             margin: 0;
-            font-size: clamp(2.3rem, 5vw, 6rem);
-            line-height: 0.95;
-            letter-spacing: 0.16em;
-            color: #f6f1e7;
-            font-weight: 900;
+            font-size: clamp(2.2rem, 5vw, 6rem);
+            line-height: 0.92;
+            letter-spacing: 0.18em;
+            color: #f5f1ea;
+            font-weight: 800;
             text-transform: uppercase;
-            text-shadow:
-                0 0 14px rgba(189, 156, 82, 0.1),
-                0 22px 40px rgba(0, 0, 0, 0.6),
-                0 0 28px rgba(189, 156, 82, 0.12);
-            animation: splashTitleRevealPremium 1.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+            text-shadow: 0 0 18px rgba(214, 177, 95, 0.10), 0 0 42px rgba(245, 241, 234, 0.04);
+            animation: netflixIntro 2s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes splashTitleRevealPremium {
+        @keyframes netflixIntro {
             0% {
                 opacity: 0;
-                transform: translateY(24px) scale(0.98);
-                filter: blur(8px);
-                letter-spacing: 0.32em;
+                transform: scale(1.18) translateY(22px);
+                filter: blur(10px);
+                letter-spacing: 0.34em;
             }
-            45% {
-                opacity: 0.8;
+            18% {
+                opacity: 1;
+                filter: blur(1px);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1.05) translateY(0);
+                filter: blur(0.4px);
+                letter-spacing: 0.22em;
             }
             100% {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: scale(1) translateY(0);
                 filter: blur(0);
-                letter-spacing: 0.16em;
+                letter-spacing: 0.18em;
             }
         }
 
         @media (max-width: 640px) {
             .app-splash__title {
-                letter-spacing: 0.11em;
+                letter-spacing: 0.12em;
                 line-height: 1.02;
             }
 
-            @keyframes splashTitleRevealPremium {
+            @keyframes netflixIntro {
                 0% {
                     opacity: 0;
-                    transform: translateY(18px) scale(0.98);
+                    transform: scale(1.15) translateY(16px);
                     filter: blur(8px);
-                    letter-spacing: 0.22em;
+                    letter-spacing: 0.24em;
+                }
+                18% {
+                    opacity: 1;
+                    filter: blur(1px);
+                }
+                40% {
+                    opacity: 1;
+                    transform: scale(1.04) translateY(0);
+                    filter: blur(0.3px);
+                    letter-spacing: 0.16em;
                 }
                 100% {
                     opacity: 1;
-                    transform: translateY(0) scale(1);
+                    transform: scale(1) translateY(0);
                     filter: blur(0);
-                    letter-spacing: 0.11em;
+                    letter-spacing: 0.12em;
                 }
             }
         }
