@@ -12,13 +12,16 @@ const css = readFileSync(`${root}/ui/Style.css`, "utf8");
 test("theme screen keeps the logout button, header and account summary order", () => {
     const themeScreenStart = html.indexOf('<div id="theme-screen" class="screen">');
     const themeScreenEnd = html.indexOf('<div id="quiz-screen"', themeScreenStart);
+
+    assert.notEqual(themeScreenStart, -1);
+    assert.notEqual(themeScreenEnd, -1);
+
     const themeScreenMarkup = html.slice(themeScreenStart, themeScreenEnd);
     const accountBarIndex = themeScreenMarkup.indexOf('class="account-bar"');
     const logoutButtonIndex = themeScreenMarkup.indexOf('id="logout-btn"');
     const brandLockupIndex = themeScreenMarkup.indexOf('class="brand-lockup"');
     const accountSummaryIndex = themeScreenMarkup.indexOf('id="account-summary"');
 
-    assert.notEqual(themeScreenStart, -1);
     assert.notEqual(accountBarIndex, -1);
     assert.notEqual(logoutButtonIndex, -1);
     assert.notEqual(brandLockupIndex, -1);
