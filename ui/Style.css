@@ -311,6 +311,12 @@ body {
     text-align: center;
 }
 
+#theme-screen .account-bar #logout-btn,
+#admin-screen .account-bar #admin-logout-btn {
+    margin: 0;
+    transform: none;
+}
+
 .account-summary-under {
     color: var(--accent);
     font-size: 0.8rem;
