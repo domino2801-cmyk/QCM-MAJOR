@@ -195,6 +195,10 @@ body {
     margin-right: auto;
 }
 
+#admin-form {
+    max-width: 720px;
+}
+
 .auth-form label {
     color: var(--accent);
     margin-top: 8px;
