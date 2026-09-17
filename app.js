@@ -467,9 +467,17 @@ function normalizeQuestionAnswers(rawAnswers) {
                 ?? value[`reponse${index}`]
                 ?? value[`reponse_${index}`]
             );
+            const mergedHumanOrderedValues = [0, 1, 2, 3].map(index =>
+                orderedOneBasedValues[index]
+                ?? orderedNamedValues[index]
+                ?? orderedLegacyValues[index]
+            );
+            const countDefinedAnswers = candidate =>
+                candidate.filter(answer => answer !== undefined).length;
 
             const conventionCandidates = [
                 orderedNumericValues,
+                mergedHumanOrderedValues,
                 orderedOneBasedValues,
                 orderedNamedValues,
                 orderedLegacyValues
@@ -481,14 +489,16 @@ function normalizeQuestionAnswers(rawAnswers) {
                 return completeCandidate;
             }
 
-            const mergedAnswers = [0, 1, 2, 3].map(index =>
-                orderedNumericValues[index]
-                ?? orderedOneBasedValues[index]
-                ?? orderedNamedValues[index]
-                ?? orderedLegacyValues[index]
-            );
-            if (mergedAnswers.some(answer => answer !== undefined)) {
-                return mergedAnswers;
+            if (countDefinedAnswers(mergedHumanOrderedValues) > countDefinedAnswers(orderedNumericValues)) {
+                return mergedHumanOrderedValues;
+            }
+
+            if (orderedNumericValues.some(answer => answer !== undefined)) {
+                return orderedNumericValues;
+            }
+
+            if (mergedHumanOrderedValues.some(answer => answer !== undefined)) {
+                return mergedHumanOrderedValues;
             }
 
             return Object.values(value);
