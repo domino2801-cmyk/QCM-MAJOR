@@ -448,9 +448,9 @@ function normalizeQuestionAnswers(rawAnswers) {
                 ?? value.responses
                 ?? value.reponses
                 ?? value["réponses"];
-            if (nestedAnswers !== undefined && nestedAnswers !== value) {
-                return toAnswerArray(nestedAnswers);
-            }
+            const nestedAnswerArray = nestedAnswers !== undefined && nestedAnswers !== value
+                ? toAnswerArray(nestedAnswers)
+                : [];
 
             const orderedNumericValues = [0, 1, 2, 3].map(index => value[index] ?? value[String(index)]);
             const orderedOneBasedValues = [1, 2, 3, 4].map(index => value[index] ?? value[String(index)]);
@@ -467,23 +467,31 @@ function normalizeQuestionAnswers(rawAnswers) {
                 ?? value[`reponse${index}`]
                 ?? value[`reponse_${index}`]
             );
+            const hasAnswerValue = answer =>
+                answer !== undefined && String(answer).trim() !== "";
+            const pickAnswerValue = (...candidates) =>
+                candidates.find(hasAnswerValue);
             const mergedHumanOrderedValues = [0, 1, 2, 3].map(index =>
-                orderedOneBasedValues[index]
-                ?? orderedNamedValues[index]
-                ?? orderedLegacyValues[index]
+                pickAnswerValue(
+                    orderedOneBasedValues[index],
+                    orderedNamedValues[index],
+                    orderedLegacyValues[index],
+                    nestedAnswerArray[index]
+                )
             );
             const countDefinedAnswers = candidate =>
-                candidate.filter(answer => answer !== undefined).length;
+                candidate.filter(hasAnswerValue).length;
 
             const conventionCandidates = [
                 orderedNumericValues,
                 mergedHumanOrderedValues,
+                nestedAnswerArray,
                 orderedOneBasedValues,
                 orderedNamedValues,
                 orderedLegacyValues
             ];
             const completeCandidate = conventionCandidates.find(candidate =>
-                candidate.every(answer => answer !== undefined)
+                candidate.every(hasAnswerValue)
             );
             if (completeCandidate) {
                 return completeCandidate;
@@ -493,11 +501,11 @@ function normalizeQuestionAnswers(rawAnswers) {
                 return mergedHumanOrderedValues;
             }
 
-            if (orderedNumericValues.some(answer => answer !== undefined)) {
+            if (orderedNumericValues.some(hasAnswerValue)) {
                 return orderedNumericValues;
             }
 
-            if (mergedHumanOrderedValues.some(answer => answer !== undefined)) {
+            if (mergedHumanOrderedValues.some(hasAnswerValue)) {
                 return mergedHumanOrderedValues;
             }
 
@@ -526,13 +534,13 @@ function normalizeQuestionAnswers(rawAnswers) {
 
 function resolveQuestionAnswers(question) {
     const candidateSources = [
+        question,
         question?.r,
         question?.answers,
         question?.options,
         question?.responses,
         question?.reponses,
         question?.["réponses"],
-        question
     ];
 
     for (const source of candidateSources) {

@@ -193,6 +193,25 @@ test("resolveQuestionAnswers merges hybrid legacy answer formats", () => {
     assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
+test("resolveQuestionAnswers completes a partial nested payload with legacy root fields", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            q: "Situation mixte",
+            r: ["Alpha", "", "Charlie", ""],
+            answer2: "Bravo",
+            reponse4: "Delta",
+            correct: 1
+        });`,
+        context
+    );
+
+    assert.deepEqual(Array.from(context.resolved), ["Alpha", "Bravo", "Charlie", "Delta"]);
+});
+
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
     const selectedButton = createButton();
     const correctButton = createButton();
