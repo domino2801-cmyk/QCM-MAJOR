@@ -442,9 +442,24 @@ function normalizeQuestionAnswers(rawAnswers) {
         if (Array.isArray(value)) return value;
 
         if (value && typeof value === "object") {
+            const nestedAnswers = value.r
+                ?? value.answers
+                ?? value.options
+                ?? value.responses
+                ?? value.reponses
+                ?? value["réponses"];
+            if (nestedAnswers !== undefined && nestedAnswers !== value) {
+                return toAnswerArray(nestedAnswers);
+            }
+
             const orderedNumericValues = [0, 1, 2, 3].map(index => value[index] ?? value[String(index)]);
             if (orderedNumericValues.some(answer => answer !== undefined)) {
                 return orderedNumericValues;
+            }
+
+            const orderedOneBasedValues = [1, 2, 3, 4].map(index => value[index] ?? value[String(index)]);
+            if (orderedOneBasedValues.some(answer => answer !== undefined)) {
+                return orderedOneBasedValues;
             }
 
             const orderedNamedValues = ["a", "b", "c", "d"].map(key =>
@@ -452,6 +467,20 @@ function normalizeQuestionAnswers(rawAnswers) {
             );
             if (orderedNamedValues.some(answer => answer !== undefined)) {
                 return orderedNamedValues;
+            }
+
+            const orderedLegacyValues = [1, 2, 3, 4].map(index =>
+                value[`answer${index}`]
+                ?? value[`answer_${index}`]
+                ?? value[`option${index}`]
+                ?? value[`option_${index}`]
+                ?? value[`response${index}`]
+                ?? value[`response_${index}`]
+                ?? value[`reponse${index}`]
+                ?? value[`reponse_${index}`]
+            );
+            if (orderedLegacyValues.some(answer => answer !== undefined)) {
+                return orderedLegacyValues;
             }
 
             return Object.values(value);
@@ -475,6 +504,27 @@ function normalizeQuestionAnswers(rawAnswers) {
     };
 
     return [0, 1, 2, 3].map(index => String(toAnswerArray(rawAnswers)[index] ?? "").trim());
+}
+
+function resolveQuestionAnswers(question) {
+    const candidateSources = [
+        question?.r,
+        question?.answers,
+        question?.options,
+        question?.responses,
+        question?.reponses,
+        question?.["réponses"],
+        question
+    ];
+
+    for (const source of candidateSources) {
+        const answers = normalizeQuestionAnswers(source);
+        if (answers.some(answer => answer !== "")) {
+            return answers;
+        }
+    }
+
+    return normalizeQuestionAnswers(question?.r);
 }
 
 function getQuestionPool(themeId) {
@@ -2120,8 +2170,8 @@ function startQuiz() {
 
 function afficherSituation() {
     const q = quizEngine.getCurrent();
-    const answers = typeof normalizeQuestionAnswers === "function"
-        ? normalizeQuestionAnswers(q.r)
+    const answers = typeof resolveQuestionAnswers === "function"
+        ? resolveQuestionAnswers(q)
         : (Array.isArray(q.r) ? q.r : []);
 
     document.getElementById("progress").innerText =

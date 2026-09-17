@@ -71,6 +71,8 @@ function createContainer(initialChildren = []) {
 }
 
 test("afficherSituation renders answer buttons in #options-grid and reuses #skip-btn", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
     const progress = { innerText: "" };
     const livePoints = { innerText: "" };
@@ -128,7 +130,10 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
         console
     };
 
-    vm.runInNewContext(`${afficherSituationSource}\nafficherSituation();`, context);
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\n${afficherSituationSource}\nafficherSituation();`,
+        context
+    );
 
     assert.equal(progress.innerText, "Question 1 / 1");
     assert.equal(livePoints.innerText, "Points : 3");
@@ -146,6 +151,26 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     assert.equal(optionsGrid.children.length, 3);
     assert.equal(context.reviewItems.length, 1);
     assert.equal(context.reviewItems[0].type, "skipped");
+});
+
+test("resolveQuestionAnswers supports legacy answer field names", () => {
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const context = { console };
+
+    vm.runInNewContext(
+        `${normalizeQuestionAnswersSource}\n${resolveQuestionAnswersSource}\nresolved = resolveQuestionAnswers({
+            q: "Situation legacy",
+            answer1: "Alpha",
+            answer2: "Bravo",
+            answer3: "Charlie",
+            answer4: "Delta",
+            correct: 1
+        });`,
+        context
+    );
+
+    assert.deepEqual(context.resolved, ["Alpha", "Bravo", "Charlie", "Delta"]);
 });
 
 test("uiController clears, locks and marks answer buttons using #options-grid and #skip-btn", () => {
