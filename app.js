@@ -1913,6 +1913,14 @@ function setupSplashSafetyTimeout() {
     return () => window.clearTimeout(timeoutId);
 }
 
+function isRecoverableBootstrapError(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return message.includes("failed to fetch")
+        || message.includes("networkerror")
+        || message.includes("network")
+        || message.includes("supabase");
+}
+
 async function bootstrapApplication() {
     const startedAt = Date.now();
     const clearSplashTimeout = setupSplashSafetyTimeout();
@@ -1921,6 +1929,11 @@ async function bootstrapApplication() {
         await initializeApp();
     } catch (error) {
         console.error("Initialisation de l'application interrompue :", error);
+        if (!isRecoverableBootstrapError(error)) {
+            setSplashStatus("Erreur de démarrage. Rechargez la page.");
+            clearSplashTimeout();
+            return;
+        }
         setSplashStatus("Mode dégradé : accès à l’authentification.");
     }
 

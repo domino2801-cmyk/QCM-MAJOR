@@ -52,6 +52,7 @@ test("bootstrap fallback updates splash status and still hides splash on init er
         hideSplashScreen: () => {
             hideCalled = true;
         },
+        isRecoverableBootstrapError: () => true,
         SPLASH_MIN_DURATION_MS: 1200,
         Date: {
             now: () => {
@@ -77,8 +78,85 @@ test("bootstrap fallback updates splash status and still hides splash on init er
 });
 
 function loadBootstrapApplication(globals = {}) {
-    const match = js.match(/async function bootstrapApplication\(\)\s*\{[\s\S]*?\n\}\n\nasync function initializeAppInteractions/);
-    assert.ok(match, "Unable to extract bootstrapApplication");
-    const functionSource = match[0].replace(/\n\nasync function initializeAppInteractions[\s\S]*$/, "");
+    const signature = "async function bootstrapApplication()";
+    const start = js.indexOf(signature);
+    assert.notEqual(start, -1, "Unable to find bootstrapApplication");
+    const bodyStart = js.indexOf("{", start);
+    let cursor = bodyStart;
+    let depth = 0;
+    let mode = "code";
+    let escaped = false;
+
+    while (cursor < js.length) {
+        const char = js[cursor];
+        const next = js[cursor + 1];
+
+        if (mode === "line-comment") {
+            if (char === "\n") mode = "code";
+            cursor += 1;
+            continue;
+        }
+
+        if (mode === "block-comment") {
+            if (char === "*" && next === "/") {
+                mode = "code";
+                cursor += 2;
+                continue;
+            }
+            cursor += 1;
+            continue;
+        }
+
+        if (mode === "single-quote" || mode === "double-quote" || mode === "template") {
+            if (!escaped && ((mode === "single-quote" && char === "'")
+                || (mode === "double-quote" && char === "\"")
+                || (mode === "template" && char === "`"))) {
+                mode = "code";
+                cursor += 1;
+                continue;
+            }
+            escaped = !escaped && char === "\\";
+            cursor += 1;
+            continue;
+        }
+
+        if (char === "/" && next === "/") {
+            mode = "line-comment";
+            cursor += 2;
+            continue;
+        }
+        if (char === "/" && next === "*") {
+            mode = "block-comment";
+            cursor += 2;
+            continue;
+        }
+        if (char === "'") {
+            mode = "single-quote";
+            escaped = false;
+            cursor += 1;
+            continue;
+        }
+        if (char === "\"") {
+            mode = "double-quote";
+            escaped = false;
+            cursor += 1;
+            continue;
+        }
+        if (char === "`") {
+            mode = "template";
+            escaped = false;
+            cursor += 1;
+            continue;
+        }
+
+        if (char === "{") depth += 1;
+        if (char === "}") {
+            depth -= 1;
+            if (depth === 0) break;
+        }
+        cursor += 1;
+    }
+
+    const functionSource = js.slice(start, cursor + 1);
     return new Function(...Object.keys(globals), `return (${functionSource});`)(...Object.values(globals));
 }
