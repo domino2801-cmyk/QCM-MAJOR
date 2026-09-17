@@ -605,6 +605,10 @@ h1 {
     margin: 0 0 14px;
 }
 
+.result-actions {
+    margin-top: 24px;
+}
+
 .review-item {
     border-left: 4px solid var(--primary);
     background: rgba(0, 0, 0, 0.25);

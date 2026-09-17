@@ -2060,6 +2060,9 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("btn-new-mission")?.addEventListener("click", () => {
+        selectedTheme = null;
+        maxQuestions = 0;
+        uiController.resetThemeSelection();
         uiController.switchScreen("theme-screen");
     });
 

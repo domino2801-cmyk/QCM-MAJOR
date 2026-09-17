@@ -19,6 +19,7 @@ test("result screen exposes the ids expected by app.js", () => {
     assert.match(html, /id="brut-max"/);
     assert.match(html, /id="review-section"/);
     assert.match(html, /id="review-list"/);
+    assert.match(html, /id="btn-new-mission"/);
     assert.doesNotMatch(html, /id="final-score"/);
 });
 
