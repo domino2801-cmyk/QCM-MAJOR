@@ -31,9 +31,30 @@ function findCssRuleDeclarations(stylesheet, selector) {
     return null;
 }
 
+function parseCssDeclarations(ruleText) {
+    return Object.fromEntries(
+        ruleText
+            .replace(/\/\*[\s\S]*?\*\//g, "")
+            .split(";")
+            .map(entry => entry.trim())
+            .filter(Boolean)
+            .map(entry => {
+                const separatorIndex = entry.indexOf(":");
+                return [
+                    entry.slice(0, separatorIndex).trim(),
+                    entry.slice(separatorIndex + 1).trim()
+                ];
+            })
+    );
+}
+
 test("theme screen keeps the logout button, header and account summary order", () => {
-    const themeScreenStart = html.indexOf('<div id="theme-screen" class="screen">');
-    const themeScreenEnd = html.indexOf('<div id="quiz-screen"', themeScreenStart);
+    const themeScreenMatch = html.match(/<div[^>]*id="theme-screen"[^>]*>/);
+
+    assert.ok(themeScreenMatch);
+
+    const themeScreenStart = themeScreenMatch.index;
+    const themeScreenEnd = html.search(/<div[^>]*id="quiz-screen"[^>]*>/);
 
     assert.notEqual(themeScreenStart, -1);
     assert.notEqual(themeScreenEnd, -1);
@@ -56,10 +77,12 @@ test("theme screen keeps the logout button, header and account summary order", (
 test("theme screen styles center the logout button without offsetting it", () => {
     const accountBarRule = findCssRuleDeclarations(css, "#theme-screen .account-bar");
     const logoutButtonRule = findCssRuleDeclarations(css, "#theme-screen .account-bar #logout-btn");
+    const accountBarDeclarations = parseCssDeclarations(accountBarRule ?? "");
+    const logoutButtonDeclarations = parseCssDeclarations(logoutButtonRule ?? "");
 
     assert.ok(accountBarRule);
     assert.ok(logoutButtonRule);
-    assert.match(accountBarRule, /justify-content:\s*center;/);
-    assert.match(logoutButtonRule, /margin:\s*0;/);
-    assert.match(logoutButtonRule, /transform:\s*none;/);
+    assert.equal(accountBarDeclarations["justify-content"], "center");
+    assert.equal(logoutButtonDeclarations.margin, "0");
+    assert.equal(logoutButtonDeclarations.transform, "none");
 });
