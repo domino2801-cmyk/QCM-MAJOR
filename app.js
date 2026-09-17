@@ -67,6 +67,9 @@ let cachedAccounts = {};
 let resultsCache = [];
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
+const SPLASH_MIN_DURATION_MS = 1200;
+const SPLASH_SAFETY_TIMEOUT_MS = 5000;
+const SPLASH_HIDE_TRANSITION_MS = 350;
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -1939,6 +1942,67 @@ async function initializeApp() {
     }
 }
 
+function hideSplashScreen() {
+    const splash = document.getElementById("splash-screen");
+    if (!splash) return;
+    if (splash.hasAttribute("hidden")) return;
+    splash.classList.add("is-hidden");
+    splash.setAttribute("aria-hidden", "true");
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+        splash.setAttribute("hidden", "");
+        return;
+    }
+    window.setTimeout(() => {
+        splash.setAttribute("hidden", "");
+    }, SPLASH_HIDE_TRANSITION_MS);
+}
+
+function setSplashStatus(message) {
+    const splashStatus = document.getElementById("splash-status");
+    if (splashStatus) splashStatus.innerText = message;
+}
+
+function setupSplashSafetyTimeout() {
+    const splash = document.getElementById("splash-screen");
+    if (!splash) return () => {};
+    const timeoutId = window.setTimeout(hideSplashScreen, SPLASH_SAFETY_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+}
+
+function isRecoverableBootstrapError(error) {
+    const message = String(error?.message || "").toLowerCase();
+    return message.includes("failed to fetch")
+        || message.includes("networkerror")
+        || message.includes("network")
+        || message.includes("supabase");
+}
+
+async function bootstrapApplication() {
+    const startedAt = Date.now();
+    const clearSplashTimeout = setupSplashSafetyTimeout();
+
+    try {
+        await initializeApp();
+    } catch (error) {
+        console.error("Initialisation de l'application interrompue :", error);
+        if (!isRecoverableBootstrapError(error)) {
+            setSplashStatus("Erreur de démarrage. Rechargez la page.");
+            clearSplashTimeout();
+            return;
+        }
+        setSplashStatus("Mode dégradé : accès à l’authentification.");
+    }
+
+    const elapsed = Date.now() - startedAt;
+    const remainingDelay = Math.max(0, SPLASH_MIN_DURATION_MS - elapsed);
+    if (remainingDelay > 0) {
+        await new Promise(resolve => window.setTimeout(resolve, remainingDelay));
+    }
+    clearSplashTimeout();
+    hideSplashScreen();
+}
+
 async function initializeAppInteractions() {
     // =========================================================
     // SÉLECTION DU THÉÂTRE D’OPÉRATION
@@ -2274,9 +2338,9 @@ function renderReview() {
 
 if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initializeApp);
+        document.addEventListener("DOMContentLoaded", bootstrapApplication);
     } else {
-        initializeApp();
+        bootstrapApplication();
     }
 }
 
