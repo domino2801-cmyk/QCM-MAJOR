@@ -80,6 +80,45 @@ const correctAnswerAudio = new Audio("public/audio/BONNE%20REPONSE.mp3");
 correctAnswerAudio.preload = "auto";
 const incorrectAnswerAudio = new Audio("public/audio/MAUVAISE%20REPONSE.mp3");
 incorrectAnswerAudio.preload = "auto";
+const splashScreenId = "app-splash";
+const splashStatusId = "app-splash-status";
+const splashHiddenClass = "app-splash--hidden";
+
+function setSplashStatus(message) {
+    const status = document.getElementById(splashStatusId);
+    if (status) {
+        status.innerText = message;
+    }
+}
+
+async function hideSplashScreen({ immediate = false } = {}) {
+    const splash = document.getElementById(splashScreenId);
+    if (!splash || splash.dataset.state === "hidden") return;
+
+    const state = window.__bm4Splash || {};
+    if (state.timeoutId) {
+        window.clearTimeout(state.timeoutId);
+        state.timeoutId = null;
+    }
+
+    const shownAt = Number(state.shownAt || Date.now());
+    const minDuration = Number(state.minDuration || 1400);
+    const elapsed = Date.now() - shownAt;
+    const waitTime = immediate ? 0 : Math.max(0, minDuration - elapsed);
+
+    await new Promise(resolve => window.setTimeout(resolve, waitTime));
+    splash.dataset.state = "hidden";
+    splash.classList.add(state.hiddenClass || splashHiddenClass);
+    splash.setAttribute("aria-hidden", "true");
+
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) {
+        splash.hidden = true;
+        return;
+    }
+
+    await new Promise(resolve => window.setTimeout(resolve, 320));
+    splash.hidden = true;
+}
 
 function getStoredJson(storage, key, fallback) {
     try {
@@ -1857,28 +1896,35 @@ function initializeAuth() {
 }
 
 async function initializeApp() {
-    const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
-    const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
-    pendingResultSync = {
-        upserts: Array.isArray(storedSyncState?.upserts) ? storedSyncState.upserts : [],
-        deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
-    };
-    setResults(Array.isArray(storedResults) ? storedResults : []);
-    initializeAuth();
-    const loadedFromSupabase = await loadQuestionsFromSupabase();
-    if (!loadedFromSupabase) applyQuestionOverrides();
-    await loadResultsFromSupabase();
-    updateThemeQuestionCounts();
-    renderGlobalRanking(getResults());
-    initializeAppInteractions();
-    await syncSupabaseSessionFromUrl();
-    await restoreSupabaseSession();
+    try {
+        setSplashStatus("Chargement des données tactiques…");
+        const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
+        const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
+        pendingResultSync = {
+            upserts: Array.isArray(storedSyncState?.upserts) ? storedSyncState.upserts : [],
+            deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
+        };
+        setResults(Array.isArray(storedResults) ? storedResults : []);
+        initializeAuth();
+        const loadedFromSupabase = await loadQuestionsFromSupabase();
+        if (!loadedFromSupabase) applyQuestionOverrides();
+        setSplashStatus("Synchronisation du théâtre d’opérations…");
+        await loadResultsFromSupabase();
+        updateThemeQuestionCounts();
+        renderGlobalRanking(getResults());
+        initializeAppInteractions();
+        await syncSupabaseSessionFromUrl();
+        await restoreSupabaseSession();
 
-    if (isRecoveryModeFromUrl()) {
-        uiController.switchScreen("auth-screen");
-        currentAuthenticatedAccount = null;
-        currentCandidateEmail = "";
-        showAuthView("reset", { resetMode: "update" });
+        if (isRecoveryModeFromUrl()) {
+            uiController.switchScreen("auth-screen");
+            currentAuthenticatedAccount = null;
+            currentCandidateEmail = "";
+            showAuthView("reset", { resetMode: "update" });
+        }
+        setSplashStatus("Console BM4 prête.");
+    } finally {
+        await hideSplashScreen();
     }
 }
 
