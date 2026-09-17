@@ -6,7 +6,6 @@
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
-import { activateSplashFallback, hideSplashScreen, setSplashStatus } from "./modules/startup-splash/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
 // =========================================================
@@ -1979,7 +1978,6 @@ function initializeAuth() {
 
 async function initializeApp() {
     try {
-        setSplashStatus({ message: "Chargement des données tactiques…" });
         const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
         const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
         pendingResultSync = {
@@ -1991,7 +1989,6 @@ async function initializeApp() {
         authUiReady = true;
         const loadedFromSupabase = await loadQuestionsFromSupabase();
         if (!loadedFromSupabase) applyQuestionOverrides();
-        setSplashStatus({ message: "Synchronisation du théâtre d’opérations…" });
         await loadResultsFromSupabase();
         updateThemeQuestionCounts();
         renderGlobalRanking(getResults());
@@ -2005,7 +2002,6 @@ async function initializeApp() {
             currentCandidateEmail = "";
             showAuthView("reset", { resetMode: "update" });
         }
-        setSplashStatus({ message: "Console BM4 prête." });
     } catch (error) {
         console.error("Initialisation BM4 incomplète", error);
         if (!authUiReady) {
@@ -2018,12 +2014,12 @@ async function initializeApp() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
-        if (authUiReady) clearAuthMessages();
-        activateSplashFallback({
-            message: "Initialisation incomplète. Vérifiez la connexion puis relancez l’application."
-        });
-    } finally {
-        await hideSplashScreen();
+        if (authUiReady) {
+            clearAuthMessages();
+            uiController.switchScreen("auth-screen");
+            showAuthView("login");
+            setAuthMessage("login-message", "Initialisation incomplète. Vérifiez la connexion puis relancez l’application.");
+        }
     }
 }
 
