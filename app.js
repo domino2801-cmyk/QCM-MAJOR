@@ -2120,7 +2120,9 @@ function startQuiz() {
 
 function afficherSituation() {
     const q = quizEngine.getCurrent();
-    const answers = normalizeQuestionAnswers(q.r);
+    const answers = typeof normalizeQuestionAnswers === "function"
+        ? normalizeQuestionAnswers(q.r)
+        : (Array.isArray(q.r) ? q.r : []);
 
     document.getElementById("progress").innerText =
         `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
@@ -2130,7 +2132,8 @@ function afficherSituation() {
 
     document.getElementById("question").innerText = q.q;
 
-    const optionsGrid = document.getElementById("options");
+    const optionsGrid = document.getElementById("options-grid");
+    const skip = document.getElementById("skip-btn");
     optionsGrid.innerHTML = "";
 
     // Génération des options
@@ -2163,9 +2166,7 @@ function afficherSituation() {
     });
 
     // Bouton skip
-    const skip = document.createElement("button");
-    skip.className = "btn-skip";
-    skip.innerText = "Passer la situation tactique (0 pt)";
+    skip.disabled = false;
     skip.onclick = () => {
         reviewItems.push({
             type: "skipped",
@@ -2176,8 +2177,6 @@ function afficherSituation() {
         if (encore) afficherSituation();
         else bilanFinal();
     };
-
-    optionsGrid.appendChild(skip);
 }
 
 // =========================================================
@@ -2185,7 +2184,7 @@ function afficherSituation() {
 // =========================================================
 
 function verrouillerOptions() {
-    document.querySelectorAll("#options .btn, #options .btn-skip")
+    document.querySelectorAll("#options-grid .btn, #skip-btn")
         .forEach(btn => btn.disabled = true);
 }
 
@@ -2194,7 +2193,7 @@ function verrouillerOptions() {
 // =========================================================
 
 function marquerBoutons(selected, correct) {
-    const btns = document.querySelectorAll("#options .btn");
+    const btns = document.querySelectorAll("#options-grid .btn");
 
     btns[selected].classList.add(
         selected === correct ? "correct" : "incorrect"
