@@ -18,7 +18,7 @@
             inset: 0;
             display: grid;
             place-items: center;
-            background: #04070b;
+            background: #020507;
             z-index: 30;
             transition: opacity 0.6s ease, visibility 0.6s ease;
         }
@@ -49,28 +49,35 @@
             font-size: clamp(2.2rem, 5vw, 6rem);
             line-height: 0.92;
             letter-spacing: 0.18em;
-            color: #f5f1ea;
+            color: #f3f1ed;
             font-weight: 800;
             text-transform: uppercase;
-            text-shadow: 0 0 18px rgba(214, 177, 95, 0.10), 0 0 42px rgba(245, 241, 234, 0.04);
-            animation: netflixIntro 2s cubic-bezier(0.22, 1, 0.36, 1) both;
+            text-shadow:
+                0 0 20px rgba(214, 177, 95, 0.08),
+                0 0 45px rgba(255, 255, 255, 0.04);
+            animation: netflixUltraIntro 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes netflixIntro {
+        @keyframes netflixUltraIntro {
             0% {
                 opacity: 0;
-                transform: scale(1.18) translateY(22px);
-                filter: blur(10px);
-                letter-spacing: 0.34em;
+                transform: scale(1.38) translateY(28px);
+                filter: blur(12px);
+                letter-spacing: 0.62em;
             }
             18% {
-                opacity: 1;
-                filter: blur(1px);
+                opacity: 0.86;
+                filter: blur(4px);
             }
-            40% {
+            42% {
                 opacity: 1;
-                transform: scale(1.05) translateY(0);
-                filter: blur(0.4px);
+                transform: scale(1.12) translateY(0);
+                filter: blur(1px);
+                letter-spacing: 0.3em;
+            }
+            76% {
+                transform: scale(1.02) translateY(0);
+                filter: blur(0.2px);
                 letter-spacing: 0.22em;
             }
             100% {
@@ -87,22 +94,22 @@
                 line-height: 1.02;
             }
 
-            @keyframes netflixIntro {
+            @keyframes netflixUltraIntro {
                 0% {
                     opacity: 0;
-                    transform: scale(1.15) translateY(16px);
-                    filter: blur(8px);
-                    letter-spacing: 0.24em;
+                    transform: scale(1.2) translateY(18px);
+                    filter: blur(10px);
+                    letter-spacing: 0.45em;
                 }
                 18% {
-                    opacity: 1;
-                    filter: blur(1px);
+                    opacity: 0.9;
+                    filter: blur(3px);
                 }
-                40% {
+                42% {
                     opacity: 1;
-                    transform: scale(1.04) translateY(0);
-                    filter: blur(0.3px);
-                    letter-spacing: 0.16em;
+                    transform: scale(1.08) translateY(0);
+                    filter: blur(0.4px);
+                    letter-spacing: 0.2em;
                 }
                 100% {
                     opacity: 1;
