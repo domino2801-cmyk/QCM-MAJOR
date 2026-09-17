@@ -40,9 +40,7 @@ export const scoring = {
     // -----------------------------------------------------
     computeFinal(stats, totalQuestions) {
 
-        const evaluated = totalQuestions - stats.skipped;
-        const maxPoints = evaluated * 4;
-
+        const maxPoints = totalQuestions * 4;
         const pts = Math.max(stats.points, 0);
 
         if (maxPoints === 0) return 0;
