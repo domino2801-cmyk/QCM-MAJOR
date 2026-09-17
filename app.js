@@ -1320,7 +1320,7 @@ function setTerminalState(label) {
 function showAuthView(view, options = {}) {
     const views = ["login", "register", "otp", "reset", "success", "admin"];
     views.forEach(currentView => {
-        const viewElement = document.getElementById(currentView === "admin" ? "admin-form" : `${currentView}-view`);
+        const viewElement = document.getElementById(`${currentView}-view`);
         viewElement.classList.toggle("hidden", currentView !== view);
     });
 

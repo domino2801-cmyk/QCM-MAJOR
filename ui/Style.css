@@ -164,6 +164,8 @@ body {
 }
 
 .auth-view {
+    width: 100%;
+    box-sizing: border-box;
     padding: 24px 18px 18px;
 }
 
