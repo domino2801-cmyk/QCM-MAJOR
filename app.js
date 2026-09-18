@@ -2336,6 +2336,7 @@ function marquerBoutons(selected, correct) {
 
 async function bilanFinal() {
     const quizRunId = currentQuizRunId;
+    const isCurrentQuizRun = () => currentQuizRunId === quizRunId;
 
     try {
         if (finalizedQuizRunId === quizRunId) return;
@@ -2399,6 +2400,7 @@ async function bilanFinal() {
 
         try {
             await saveResult(resultRecord);
+            if (!isCurrentQuizRun()) return;
             try {
                 renderGlobalRanking(getResults());
             } catch (error) {
@@ -2406,6 +2408,7 @@ async function bilanFinal() {
             }
         } catch (error) {
             console.warn("Synchronisation distante du résultat indisponible.", error);
+            if (!isCurrentQuizRun()) return;
             try {
                 renderGlobalRanking(getResults());
             } catch (rankingError) {

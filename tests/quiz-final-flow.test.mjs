@@ -566,6 +566,33 @@ test("final ranking includes the last result even before async save settles", as
     assert.equal(harness.getRankingPayload()[0].wrong, 0);
 });
 
+test("stale finalization does not overwrite a newer run after async save resolves", async () => {
+    let releaseSave;
+    const savePromise = new Promise(resolve => {
+        releaseSave = resolve;
+    });
+    const harness = createQuizFlowHarness({
+        saveResultBehavior: () => savePromise
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    const newerRunRanking = [{ id: "new-run" }];
+    harness.context.currentQuizRunId = 2;
+    harness.context.finalizedQuizRunId = -1;
+    harness.context.uiController.switchScreen("quiz-screen");
+    harness.context.renderGlobalRanking(newerRunRanking);
+
+    releaseSave();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(harness.getActiveScreen(), "quiz-screen");
+    assert.deepEqual(harness.getRankingPayload(), newerRunRanking);
+});
+
 test("final screen still renders when review rendering fails on the last answer", async () => {
     const harness = createQuizFlowHarness({
         renderReviewBehavior: () => {
