@@ -95,7 +95,7 @@ function createClassToggleNode() {
     };
 }
 
-function createQuizFlowHarness() {
+function createQuizFlowHarness({ saveResultBehavior, persistResultLocally = true } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
@@ -118,6 +118,7 @@ function createQuizFlowHarness() {
     const skipButton = createButton();
     const scheduled = [];
     const savedResults = [];
+    const warnings = [];
     let activeScreen = "";
     let rankingPayload = null;
     let answerSounds = [];
@@ -130,7 +131,12 @@ function createQuizFlowHarness() {
 
     const context = {
         Date,
-        console,
+        console: {
+            ...console,
+            warn(...args) {
+                warnings.push(args);
+            }
+        },
         scoring,
         selectedTheme: "all",
         currentCandidateEmail: "candidat@example.com",
@@ -140,6 +146,8 @@ function createQuizFlowHarness() {
             name: "Candidate Test"
         },
         questionTransitionLocked: false,
+        currentQuizRunId: 1,
+        finalizedQuizRunId: -1,
         reviewItems: [],
         quizEngine: {
             index: 0,
@@ -199,6 +207,24 @@ function createQuizFlowHarness() {
         createRecordId() {
             return "result-1";
         },
+        normalizeResultRecord(rawResult = {}) {
+            return {
+                id: rawResult.id || "result-1",
+                candidateId: rawResult.candidateId || "",
+                label: rawResult.label || "",
+                email: rawResult.email || "",
+                name: rawResult.name || "",
+                theme: rawResult.theme || "",
+                score: Number(rawResult.score || 0),
+                correct: Number(rawResult.correct || 0),
+                wrong: Number(rawResult.wrong || 0),
+                skipped: Number(rawResult.skipped || 0),
+                total: Number(rawResult.total || 0),
+                date: rawResult.date || new Date().toLocaleString("fr-FR"),
+                createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString(),
+                synced: rawResult.synced !== false
+            };
+        },
         getCandidateLabel(account) {
             return account?.name || "Candidat inconnu";
         },
@@ -206,7 +232,12 @@ function createQuizFlowHarness() {
             return {};
         },
         async saveResult(resultRecord) {
-            savedResults.push(resultRecord);
+            if (persistResultLocally) {
+                savedResults.push(resultRecord);
+            }
+            if (typeof saveResultBehavior === "function") {
+                return saveResultBehavior(resultRecord, savedResults);
+            }
         },
         getResults() {
             return savedResults.slice();
@@ -247,6 +278,7 @@ function createQuizFlowHarness() {
         brutMax,
         reviewSection,
         savedResults,
+        warnings,
         getActiveScreen: () => activeScreen,
         getRankingPayload: () => rankingPayload,
         getAnswerSounds: () => answerSounds
@@ -338,6 +370,67 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.context.reviewItems.length, 1);
     assert.equal(harness.context.reviewItems[0].type, "skipped");
+});
+
+test("final screen renders immediately even if remote result sync stays pending", async () => {
+    const harness = createQuizFlowHarness({
+        saveResultBehavior: () => new Promise(() => {})
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].correct, 1);
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(harness.statCorrect.innerText, 1);
+    assert.equal(harness.statWrong.innerText, 0);
+    assert.equal(harness.statSkipped.innerText, 0);
+});
+
+test("final screen still renders when remote result sync fails", async () => {
+    const harness = createQuizFlowHarness({
+        saveResultBehavior: () => Promise.reject(new Error("offline"))
+    });
+
+    harness.context.afficherSituation();
+    harness.skipButton.onclick();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].skipped, 1);
+    assert.equal(harness.scoreDisplay.innerText, "0.00 / 20");
+    assert.equal(harness.warnings.length, 1);
+    assert.equal(harness.warnings[0][0], "Synchronisation distante du résultat indisponible.");
+});
+
+test("final ranking includes the last result even before async save settles", async () => {
+    const harness = createQuizFlowHarness({
+        persistResultLocally: false,
+        saveResultBehavior: () => new Promise(() => {})
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.getRankingPayload().length, 1);
+    assert.equal(harness.getRankingPayload()[0].id, "result-1");
+    assert.equal(harness.getRankingPayload()[0].candidateId, "cand-1");
+    assert.equal(harness.getRankingPayload()[0].label, "Candidate Test");
+    assert.equal(harness.getRankingPayload()[0].theme, "all");
+    assert.equal(harness.getRankingPayload()[0].score, 20);
+    assert.equal(harness.getRankingPayload()[0].correct, 1);
+    assert.equal(harness.getRankingPayload()[0].wrong, 0);
+    assert.equal(harness.getRankingPayload()[0].skipped, 0);
+    assert.equal(harness.getRankingPayload()[0].total, 1);
+    assert.equal(harness.getRankingPayload()[0].synced, false);
 });
 
 function loadExportedConst(relativePath, exportName) {
