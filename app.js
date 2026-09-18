@@ -2237,7 +2237,9 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
     if (!q) {
-        bilanFinal(activeQuizRunId);
+        void bilanFinal(activeQuizRunId).catch(error => {
+            console.error("Finalisation du quiz impossible.", error);
+        });
         return;
     }
     const answers = typeof resolveQuestionAnswers === "function"
@@ -2284,7 +2286,9 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
 
             setTimeout(() => {
                 if (encore) afficherSituation(activeQuizRunId);
-                else bilanFinal(activeQuizRunId);
+                else void bilanFinal(activeQuizRunId).catch(error => {
+                    console.error("Finalisation du quiz impossible.", error);
+                });
             }, 900);
         };
 
@@ -2304,7 +2308,9 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         });
         const encore = quizEngine.answer(null);
         if (encore) afficherSituation(activeQuizRunId);
-        else bilanFinal(activeQuizRunId);
+        else void bilanFinal(activeQuizRunId).catch(error => {
+            console.error("Finalisation du quiz impossible.", error);
+        });
     };
 }
 
