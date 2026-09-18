@@ -2383,6 +2383,9 @@ async function bilanFinal() {
         const fallbackResults = storedResults.some(result => result.id === fallbackResult.id)
             ? storedResults
             : [fallbackResult, ...storedResults];
+        const withFallbackResult = resultRecord => storedResults.some(result => result.id === resultRecord.id)
+            ? storedResults
+            : [resultRecord, ...storedResults];
         let preparedFallbackResults = fallbackResults;
 
         try {
@@ -2397,23 +2400,17 @@ async function bilanFinal() {
                 email: email === "Candidat inconnu" ? "" : email,
                 name: account?.name || ""
             });
-            preparedFallbackResults = storedResults.some(result => result.id === preparedFallbackResult.id)
-                ? storedResults
-                : [preparedFallbackResult, ...storedResults];
+            preparedFallbackResults = withFallbackResult(preparedFallbackResult);
             const label = getCandidateLabel(account, candidateId);
             preparedFallbackResult.label = label || fallbackPreparedLabel;
-            preparedFallbackResults = storedResults.some(result => result.id === preparedFallbackResult.id)
-                ? storedResults
-                : [preparedFallbackResult, ...storedResults];
+            preparedFallbackResults = withFallbackResult(preparedFallbackResult);
             const resultRecord = {
                 ...preparedFallbackResult,
                 candidateId,
                 label: preparedFallbackResult.label,
                 synced: undefined
             };
-            const results = storedResults.some(result => result.id === resultRecord.id)
-                ? storedResults
-                : [normalizeResultRecord({ ...resultRecord, synced: false }), ...storedResults];
+            const results = withFallbackResult(normalizeResultRecord({ ...resultRecord, synced: false }));
 
             try {
                 renderGlobalRanking(results);
