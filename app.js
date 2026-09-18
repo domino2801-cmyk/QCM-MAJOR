@@ -984,7 +984,9 @@ function updateThemeQuestionCounts() {
         const quantityInput = document.getElementById(`qty-${themeId}`);
 
         button.dataset.label = label.replace(/\s+\(\d+ questions?\)$/, "");
-        button.innerText = `${button.dataset.label} (${count} questions)`;
+        button.innerText = themeId === "all"
+            ? `${button.dataset.label} (${count} questions)`
+            : button.dataset.label;
 
         if (quantityInput) {
             quantityInput.max = count;

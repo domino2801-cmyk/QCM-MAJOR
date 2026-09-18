@@ -10,6 +10,11 @@ const root = path.resolve(testDirectory, "..");
 const appJs = readFileSync(`${root}/app.js`, "utf8");
 const { uiController } = await import(pathToFileURL(`${root}/modules/ui-controller/index.js`).href);
 
+test("theme buttons keep the question count only for the global campaign", () => {
+    assert.match(appJs, /themeId === "all"/);
+    assert.match(appJs, /button\.innerText = themeId === "all"/);
+});
+
 function extractFunction(source, functionName) {
     const marker = `function ${functionName}(`;
     const start = source.indexOf(marker);
