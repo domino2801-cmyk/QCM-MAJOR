@@ -602,6 +602,69 @@ h1 {
     font-weight: bold;
 }
 
+.global-evolution {
+    border: 1px solid var(--accent);
+    background: rgba(124, 169, 124, 0.08);
+    margin: 24px auto;
+    padding: 16px 20px;
+    max-width: 520px;
+}
+
+.global-evolution h2 {
+    color: var(--accent);
+    font-size: 1.1rem;
+    margin: 0 0 18px;
+    text-align: center;
+}
+
+.global-evolution-chart {
+    align-items: end;
+    border-bottom: 1px solid rgba(226, 232, 226, 0.45);
+    display: flex;
+    gap: 8px;
+    height: 150px;
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.global-evolution-bar {
+    background: var(--accent);
+    border-radius: 3px 3px 0 0;
+    flex: 1 1 0;
+    max-width: 42px;
+    min-width: 8px;
+    position: relative;
+    transition: filter 0.2s ease;
+}
+
+.global-evolution-bar:hover {
+    filter: brightness(1.25);
+}
+
+.global-evolution-bar span {
+    color: #fff;
+    font-size: 0.72rem;
+    left: 50%;
+    position: absolute;
+    top: -19px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.global-evolution-list {
+    display: grid;
+    gap: 6px;
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    text-align: center;
+}
+
+.global-evolution-list li {
+    color: #fff;
+    font-size: 0.9rem;
+}
+
 .review-section {
     border-top: 1px dashed var(--primary);
     margin: 24px auto;
@@ -617,6 +680,10 @@ h1 {
 
 .result-actions {
     margin-top: 24px;
+}
+
+.result-actions .btn-main + .btn-main {
+    margin-top: 10px;
 }
 
 .review-item {

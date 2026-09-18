@@ -1522,6 +1522,47 @@ function renderGlobalRanking(results) {
     });
 }
 
+function renderGlobalEvolution(results, candidateId) {
+    const section = document.getElementById("global-evolution-section");
+    const chart = document.getElementById("global-evolution-chart");
+    const list = document.getElementById("global-evolution-list");
+    if (!section || !chart || !list) return;
+
+    const evolution = results
+        .filter(result => result.theme === "all" && result.candidateId === candidateId)
+        .sort((first, second) => String(first.createdAt).localeCompare(String(second.createdAt)));
+    const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    });
+
+    chart.innerHTML = "";
+    list.innerHTML = "";
+    section.classList.toggle("hidden", evolution.length === 0);
+
+    evolution.forEach(result => {
+        const score = Math.max(0, Math.min(20, Number(result.score) || 0));
+        const date = result.createdAt && !Number.isNaN(Date.parse(result.createdAt))
+            ? dateFormatter.format(new Date(result.createdAt))
+            : result.date;
+        const bar = document.createElement("div");
+        const barValue = document.createElement("span");
+        const item = document.createElement("li");
+
+        bar.className = "global-evolution-bar";
+        bar.style.height = `${Math.max(score * 5, 3)}%`;
+        bar.title = `${date} — ${score.toFixed(2)} / 20`;
+        bar.setAttribute("aria-label", `${date} — ${score.toFixed(2)} / 20`);
+        barValue.innerText = score.toFixed(2);
+        bar.appendChild(barValue);
+
+        item.innerText = `${date} — ${score.toFixed(2)} / 20`;
+        chart.appendChild(bar);
+        list.appendChild(item);
+    });
+}
+
 function setTerminalState(label) {
     const terminalState = document.getElementById("auth-terminal-state");
     if (!terminalState) return;
@@ -2115,6 +2156,18 @@ async function initializeAppInteractions() {
         uiController.resetThemeSelection();
         uiController.switchScreen("theme-screen");
         document.getElementById("theme-all-btn")?.focus();
+    });
+
+    document.getElementById("btn-evolution-result")?.addEventListener("click", event => {
+        const section = document.getElementById("global-evolution-section");
+        if (!section) return;
+        const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail];
+        const candidateId = String(account?.id || currentCandidateEmail || "candidat-inconnu");
+        const isOpening = section.classList.contains("hidden");
+
+        if (isOpening) renderGlobalEvolution(getResults(), candidateId);
+        section.classList.toggle("hidden", !isOpening);
+        event.currentTarget.setAttribute("aria-expanded", String(isOpening));
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {
