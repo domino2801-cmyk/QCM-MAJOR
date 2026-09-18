@@ -1440,7 +1440,7 @@ function editQuestion(themeId, index) {
 }
 
 function renderAdminResults() {
-    const list = document.getElementById("admin-results-list");
+    const list = document.getElementById("admin-results-table");
     const results = getResults();
     list.innerHTML = "";
 
