@@ -1383,7 +1383,7 @@ function resetQuestionForm() {
 
 function renderAdminQuestions() {
     const themeId = document.getElementById("admin-question-theme").value;
-    const list = document.getElementById("admin-questions-list");
+    const list = document.getElementById("admin-questions-table");
     const questions = questionsBank[themeId].questions;
     list.innerHTML = "";
 
