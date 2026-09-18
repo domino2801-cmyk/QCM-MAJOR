@@ -1995,12 +1995,6 @@ function initializeAuth() {
         showAuthView("reset", { resetMode: "request" });
     });
 
-    document.getElementById("register-forgot-password-btn").addEventListener("click", () => {
-        clearAuthMessages();
-        document.getElementById("reset-email").value = document.getElementById("register-email").value.trim();
-        showAuthView("reset", { resetMode: "request" });
-    });
-
     document.getElementById("otp-back-btn").addEventListener("click", () => {
         clearAuthMessages();
         clearOtpInputs();
