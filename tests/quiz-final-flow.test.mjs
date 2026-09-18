@@ -101,6 +101,7 @@ function createQuizFlowHarness({
     persistResultLocally = true,
     renderGlobalRankingBehavior,
     renderReviewBehavior,
+    getAccountsBehavior,
     useLegacyResultIds = false,
     omitResultStatsNodes = false
 } = {}) {
@@ -246,6 +247,9 @@ function createQuizFlowHarness({
             return account?.name || "Candidat inconnu";
         },
         getAccounts() {
+            if (typeof getAccountsBehavior === "function") {
+                return getAccountsBehavior();
+            }
             return {};
         },
         async saveResult(resultRecord) {
@@ -522,6 +526,30 @@ test("final screen still renders when result stat nodes are absent", async () =>
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);
     assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+});
+
+test("final screen still renders even if result preparation fails after the last answer", async () => {
+    const harness = createQuizFlowHarness({
+        getAccountsBehavior: () => {
+            throw new Error("accounts unavailable");
+        }
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(harness.statCorrect.innerText, 1);
+    assert.equal(harness.statWrong.innerText, 0);
+    assert.equal(harness.statSkipped.innerText, 0);
+    assert.equal(harness.statBrut.innerText, 4);
+    assert.equal(harness.brutMax.innerText, "/ 4");
+    assert.equal(harness.savedResults.length, 0);
+    assert.equal(harness.warnings.length, 1);
+    assert.equal(harness.warnings[0][0], "Préparation du résultat indisponible.");
 });
 
 test("final ranking includes the last result even before async save settles", async () => {

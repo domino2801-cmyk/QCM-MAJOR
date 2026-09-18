@@ -2343,29 +2343,7 @@ async function bilanFinal() {
 
         const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
         const note = scoring.computeFinal(quizEngine.stats, total);
-        const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
-        const account = currentAuthenticatedAccount || getAccounts()[email];
-        const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
-        const label = getCandidateLabel(account, candidateId);
-        const resultRecord = {
-            id: createRecordId("result"),
-            candidateId,
-            label,
-            email: email === "Candidat inconnu" ? "" : email,
-            name: account?.name || "",
-            theme: selectedTheme,
-            score: note,
-            correct: quizEngine.stats.correct,
-            wrong: quizEngine.stats.wrong,
-            skipped: quizEngine.stats.skipped,
-            total,
-            date: new Date().toLocaleString("fr-FR")
-        };
-        const storedResults = getResults();
-        const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
-        const results = storedResults.some(result => result.id === resultRecord.id)
-            ? storedResults
-            : [fallbackResult, ...storedResults];
+        const maxPts = total * 4;
 
         uiController.switchScreen("result-screen");
 
@@ -2373,16 +2351,8 @@ async function bilanFinal() {
         setResultText(["stat-correct"], quizEngine.stats.correct);
         setResultText(["stat-wrong"], quizEngine.stats.wrong);
         setResultText(["stat-skipped"], quizEngine.stats.skipped);
-
-        const maxPts = total * 4;
         setResultText(["stat-brut"], quizEngine.stats.points);
         setResultText(["brut-max"], `/ ${maxPts}`);
-
-        try {
-            renderGlobalRanking(results);
-        } catch (error) {
-            console.warn("Rendu du classement indisponible.", error);
-        }
 
         try {
             renderReview();
@@ -2391,14 +2361,53 @@ async function bilanFinal() {
         }
 
         try {
-            await saveResult(resultRecord);
+            const storedResults = getResults();
+            const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
+            const account = currentAuthenticatedAccount || getAccounts()[email];
+            const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
+            const label = getCandidateLabel(account, candidateId);
+            const resultRecord = {
+                id: createRecordId("result"),
+                candidateId,
+                label,
+                email: email === "Candidat inconnu" ? "" : email,
+                name: account?.name || "",
+                theme: selectedTheme,
+                score: note,
+                correct: quizEngine.stats.correct,
+                wrong: quizEngine.stats.wrong,
+                skipped: quizEngine.stats.skipped,
+                total,
+                date: new Date().toLocaleString("fr-FR")
+            };
+            const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
+            const results = storedResults.some(result => result.id === resultRecord.id)
+                ? storedResults
+                : [fallbackResult, ...storedResults];
+
             try {
-                renderGlobalRanking(getResults());
+                renderGlobalRanking(results);
             } catch (error) {
-                console.warn("Actualisation du classement indisponible.", error);
+                console.warn("Rendu du classement indisponible.", error);
+            }
+
+            try {
+                await saveResult(resultRecord);
+                try {
+                    renderGlobalRanking(getResults());
+                } catch (error) {
+                    console.warn("Actualisation du classement indisponible.", error);
+                }
+            } catch (error) {
+                console.warn("Synchronisation distante du résultat indisponible.", error);
+                try {
+                    renderGlobalRanking(getResults());
+                } catch (rankingError) {
+                    console.warn("Actualisation du classement indisponible.", rankingError);
+                }
             }
         } catch (error) {
-            console.warn("Synchronisation distante du résultat indisponible.", error);
+            console.warn("Préparation du résultat indisponible.", error);
             try {
                 renderGlobalRanking(getResults());
             } catch (rankingError) {
