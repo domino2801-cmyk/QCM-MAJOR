@@ -1332,7 +1332,7 @@ function switchAdminSection(section) {
 
 function renderAdminAccounts() {
     const accounts = getAccounts();
-    const list = document.getElementById("admin-accounts-list");
+    const list = document.getElementById("admin-accounts-table");
     list.innerHTML = "";
 
     Object.entries(accounts).forEach(([email, account]) => {
