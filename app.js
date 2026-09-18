@@ -16,6 +16,7 @@ import { uiController } from "./modules/ui-controller/index.js";
 let selectedTheme = null;
 let maxQuestions = 0;
 let reviewItems = [];
+let questionTransitionLocked = false;
 let questionSourceReady = false;
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
@@ -2201,6 +2202,7 @@ function startQuiz() {
     // Sélection du thème dans le moteur
     quizEngine.selectTheme(selectedTheme, maxQuestions, excludedQuestions);
     reviewItems = [];
+    questionTransitionLocked = false;
 
     if (!history[email]) history[email] = {};
     history[email][selectedTheme] = [
@@ -2220,6 +2222,7 @@ function startQuiz() {
 // =========================================================
 
 function afficherSituation() {
+    questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
     const answers = typeof resolveQuestionAnswers === "function"
         ? resolveQuestionAnswers(q)
@@ -2244,6 +2247,8 @@ function afficherSituation() {
         btn.innerText = optionText;
 
         btn.onclick = () => {
+            if (questionTransitionLocked) return;
+            questionTransitionLocked = true;
             verrouillerOptions();
             playAnswerSound(index === q.correct);
             if (index !== q.correct) {
@@ -2269,6 +2274,9 @@ function afficherSituation() {
     // Bouton skip
     skip.disabled = false;
     skip.onclick = () => {
+        if (questionTransitionLocked) return;
+        questionTransitionLocked = true;
+        verrouillerOptions();
         reviewItems.push({
             type: "skipped",
             question: q.q,
