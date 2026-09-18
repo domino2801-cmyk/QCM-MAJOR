@@ -35,3 +35,7 @@ test("result screen in app.js computes and shows max points from total questions
     assert.match(js, /const maxPts = total \* 4;/);
     assert.match(js, /setResultText\(\["brut-max"\], `\/ \$\{maxPts\}`\);/);
 });
+
+test("starting a new quiz resets the finalization lock", () => {
+    assert.match(js, /currentQuizRunId \+= 1;\s*finalizedQuizRunId = -1;/);
+});

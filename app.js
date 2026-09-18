@@ -2212,6 +2212,7 @@ function startQuiz() {
     reviewItems = [];
     questionTransitionLocked = false;
     currentQuizRunId += 1;
+    finalizedQuizRunId = -1;
 
     if (!history[email]) history[email] = {};
     history[email][selectedTheme] = [
