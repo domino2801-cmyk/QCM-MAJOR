@@ -2389,10 +2389,10 @@ async function bilanFinal() {
             const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
             const account = currentAuthenticatedAccount || getAccounts()[email];
             const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
+            const fallbackPreparedLabel = account?.name || (email !== "Candidat inconnu" ? email : fallbackResult.label);
             const preparedFallbackResult = normalizeResultRecord({
                 ...fallbackResult,
                 candidateId,
-                label: account?.name || (email !== "Candidat inconnu" ? email : fallbackResult.label),
                 email: email === "Candidat inconnu" ? "" : email,
                 name: account?.name || ""
             });
@@ -2400,6 +2400,10 @@ async function bilanFinal() {
                 ? storedResults
                 : [preparedFallbackResult, ...storedResults];
             const label = getCandidateLabel(account, candidateId);
+            preparedFallbackResult.label = label || fallbackPreparedLabel;
+            preparedFallbackResults = storedResults.some(result => result.id === preparedFallbackResult.id)
+                ? storedResults
+                : [preparedFallbackResult, ...storedResults];
             const resultRecord = {
                 ...preparedFallbackResult,
                 candidateId,
