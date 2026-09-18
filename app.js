@@ -2319,8 +2319,9 @@ function marquerBoutons(selected, correct) {
 // =========================================================
 
 async function bilanFinal() {
+    const quizRunId = currentQuizRunId;
+
     try {
-        const quizRunId = currentQuizRunId;
         if (finalizedQuizRunId === quizRunId) return;
 
         const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
@@ -2380,7 +2381,7 @@ async function bilanFinal() {
             renderGlobalRanking(getResults());
         }
     } catch (error) {
-        if (finalizedQuizRunId === currentQuizRunId) {
+        if (finalizedQuizRunId === quizRunId) {
             finalizedQuizRunId = -1;
         }
         throw error;
