@@ -2377,6 +2377,7 @@ async function bilanFinal() {
             renderGlobalRanking(getResults());
         } catch (error) {
             console.warn("Synchronisation distante du résultat indisponible.", error);
+            renderGlobalRanking(getResults());
         }
     } catch (error) {
         if (finalizedQuizRunId === currentQuizRunId) {
