@@ -30,3 +30,8 @@ test("quiz option locking and marking target #options-grid in app.js", () => {
     assert.doesNotMatch(js, /querySelectorAll\("#options \.btn, #skip-btn"\)/);
     assert.doesNotMatch(js, /querySelectorAll\("#options \.btn"\)/);
 });
+
+test("result screen in app.js computes and shows max points from total questions", () => {
+    assert.match(js, /const maxPts = total \* 4;/);
+    assert.match(js, /document\.getElementById\("brut-max"\)\.innerText = `\/ \$\{maxPts\}`;/);
+});
