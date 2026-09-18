@@ -461,7 +461,7 @@ test("final screen still renders when review rendering fails on the last answer"
     assert.equal(harness.warnings[0][0], "Rendu de la revue indisponible.");
     assert.equal(harness.getRankingPayload()[0].skipped, 0);
     assert.equal(harness.getRankingPayload()[0].total, 1);
-    assert.equal(harness.getRankingPayload()[0].synced, false);
+    assert.equal(harness.getRankingPayload()[0].score, 20);
 });
 
 function loadExportedConst(relativePath, exportName) {
