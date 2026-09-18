@@ -2393,6 +2393,7 @@ async function bilanFinal() {
             const preparedFallbackResult = normalizeResultRecord({
                 ...fallbackResult,
                 candidateId,
+                label: fallbackPreparedLabel,
                 email: email === "Candidat inconnu" ? "" : email,
                 name: account?.name || ""
             });
@@ -2407,7 +2408,7 @@ async function bilanFinal() {
             const resultRecord = {
                 ...preparedFallbackResult,
                 candidateId,
-                label,
+                label: preparedFallbackResult.label,
                 synced: undefined
             };
             const results = storedResults.some(result => result.id === resultRecord.id)
