@@ -1369,13 +1369,45 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     uiController.switchScreen("theme-screen");
 }
 
-function showAdminApp() {
+async function loadAdminData() {
+    if (!supabase || !getStoredSupabaseSession()?.access_token) return;
+
+    const [profiles, resultsLoaded] = await Promise.all([
+        supabaseRestRequest("/profiles?select=id,email,name,speciality", {
+            accessToken: getStoredSupabaseSession()?.access_token
+        }),
+        loadResultsFromSupabase()
+    ]);
+
+    if (Array.isArray(profiles)) {
+        profiles.forEach(profile => cacheAccount({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            specialty: profile.speciality
+        }));
+    }
+
+    if (!resultsLoaded) {
+        throw new Error("Les résultats administrateur n’ont pas pu être chargés.");
+    }
+}
+
+async function showAdminApp() {
     setAuthAudioPlaying(false);
     renderAdminAccounts();
     renderAdminQuestions();
     renderAdminResults();
     switchAdminSection("accounts");
     uiController.switchScreen("admin-screen");
+
+    try {
+        await loadAdminData();
+        renderAdminAccounts();
+        renderAdminResults();
+    } catch (error) {
+        console.warn("Chargement des données administrateur impossible.", error);
+    }
 }
 
 function switchAdminSection(section) {
