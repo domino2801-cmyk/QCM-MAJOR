@@ -2267,7 +2267,7 @@ function afficherSituation() {
                     correct: answers[q.correct]
                 });
             }
-            quizEngine.answer(index);
+            const encore = quizEngine.answer(index);
             try {
                 marquerBoutons(index, q.correct);
             } catch (error) {
@@ -2275,7 +2275,7 @@ function afficherSituation() {
             }
 
             setTimeout(() => {
-                if (quizEngine.getCurrent()) afficherSituation();
+                if (encore) afficherSituation();
                 else bilanFinal();
             }, 900);
         };
@@ -2294,8 +2294,8 @@ function afficherSituation() {
             question: q.q,
             correct: answers[q.correct]
         });
-        quizEngine.answer(null);
-        if (quizEngine.getCurrent()) afficherSituation();
+        const encore = quizEngine.answer(null);
+        if (encore) afficherSituation();
         else bilanFinal();
     };
 }
