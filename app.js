@@ -2008,14 +2008,14 @@ async function initializeApp() {
         setResults(Array.isArray(storedResults) ? storedResults : []);
         initializeAuth();
         authUiReady = true;
+        await syncSupabaseSessionFromUrl();
+        await restoreSupabaseSession();
         const loadedFromSupabase = await loadQuestionsFromSupabase();
         if (!loadedFromSupabase) applyQuestionOverrides();
         await loadResultsFromSupabase();
         updateThemeQuestionCounts();
         renderGlobalRanking(getResults());
         initializeAppInteractions();
-        await syncSupabaseSessionFromUrl();
-        await restoreSupabaseSession();
 
         if (isRecoveryModeFromUrl()) {
             uiController.switchScreen("auth-screen");

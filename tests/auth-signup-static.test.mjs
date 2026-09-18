@@ -165,6 +165,13 @@ test("supabase session refresh keeps auth listeners and getSession shape aligned
     assert.match(js, /data:\s*\{\s*session:\s*refreshed\?\.data\?\.session\s*\|\|\s*null\s*\}/);
 });
 
+test("app restores Supabase session before remote bootstrap loads", () => {
+    assert.match(
+        js,
+        /initializeAuth\(\);\s*authUiReady = true;\s*await syncSupabaseSessionFromUrl\(\);\s*await restoreSupabaseSession\(\);\s*const loadedFromSupabase = await loadQuestionsFromSupabase\(\);\s*if \(!loadedFromSupabase\) applyQuestionOverrides\(\);\s*await loadResultsFromSupabase\(\);/
+    );
+});
+
 function extractNamedFunction(name, globals = {}) {
     const asyncSignature = `async function ${name}`;
     const plainSignature = `function ${name}`;
