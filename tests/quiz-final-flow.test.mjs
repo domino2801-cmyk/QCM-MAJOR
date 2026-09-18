@@ -593,6 +593,18 @@ test("stale finalization does not overwrite a newer run after async save resolve
     assert.deepEqual(harness.getRankingPayload(), newerRunRanking);
 });
 
+test("stale bilanFinal call does not lock the current run", async () => {
+    const harness = createQuizFlowHarness();
+
+    harness.context.currentQuizRunId = 2;
+    harness.context.finalizedQuizRunId = -1;
+
+    await harness.context.bilanFinal(1);
+
+    assert.equal(harness.context.finalizedQuizRunId, -1);
+    assert.equal(harness.getActiveScreen(), "");
+});
+
 test("final screen still renders when review rendering fails on the last answer", async () => {
     const harness = createQuizFlowHarness({
         renderReviewBehavior: () => {

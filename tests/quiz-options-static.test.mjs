@@ -119,6 +119,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
             }
         },
         reviewItems: [],
+        currentQuizRunId: 1,
         playAnswerSound() {},
         verrouillerOptions() {},
         marquerBoutons() {},
@@ -258,6 +259,7 @@ test("afficherSituation uses the most complete answer set for mixed payloads", (
             }
         },
         reviewItems: [],
+        currentQuizRunId: 1,
         playAnswerSound() {},
         verrouillerOptions() {},
         marquerBoutons() {},

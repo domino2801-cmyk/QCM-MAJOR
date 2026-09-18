@@ -2224,18 +2224,19 @@ function startQuiz() {
     uiController.switchScreen("quiz-screen");
 
     // Affichage de la première question
-    afficherSituation();
+    afficherSituation(currentQuizRunId);
 }
 
 // =========================================================
 // AFFICHAGE D’UNE SITUATION TACTIQUE
 // =========================================================
 
-function afficherSituation() {
+function afficherSituation(quizRunId = currentQuizRunId) {
+    if (quizRunId !== currentQuizRunId) return;
     questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
     if (!q) {
-        bilanFinal();
+        bilanFinal(quizRunId);
         return;
     }
     const answers = typeof resolveQuestionAnswers === "function"
@@ -2281,8 +2282,8 @@ function afficherSituation() {
             }
 
             setTimeout(() => {
-                if (encore) afficherSituation();
-                else bilanFinal();
+                if (encore) afficherSituation(quizRunId);
+                else bilanFinal(quizRunId);
             }, 900);
         };
 
@@ -2302,8 +2303,8 @@ function afficherSituation() {
         });
         const encore = quizEngine.answer(null);
         setTimeout(() => {
-            if (encore) afficherSituation();
-            else bilanFinal();
+            if (encore) afficherSituation(quizRunId);
+            else bilanFinal(quizRunId);
         }, 900);
     };
 }
@@ -2335,8 +2336,8 @@ function marquerBoutons(selected, correct) {
 // BILAN FINAL
 // =========================================================
 
-async function bilanFinal() {
-    const quizRunId = currentQuizRunId;
+async function bilanFinal(quizRunId = currentQuizRunId) {
+    if (quizRunId !== currentQuizRunId) return;
     const isCurrentQuizRun = () => currentQuizRunId === quizRunId;
 
     try {
