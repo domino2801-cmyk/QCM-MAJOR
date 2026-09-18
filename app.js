@@ -2308,7 +2308,7 @@ function marquerBoutons(selected, correct) {
 // =========================================================
 
 async function bilanFinal() {
-    const total = quizEngine.questions.length;
+    const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
     const note = scoring.computeFinal(quizEngine.stats, total);
     const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
     const account = currentAuthenticatedAccount || getAccounts()[email];

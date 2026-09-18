@@ -38,9 +38,16 @@ export const scoring = {
     // -----------------------------------------------------
     // Calcul final sur 20
     // -----------------------------------------------------
+    getQuestionCount(stats, totalQuestions = 0) {
+        const answeredQuestions = stats.correct + stats.wrong + stats.skipped;
+
+        return Math.max(totalQuestions, answeredQuestions);
+    },
+
     computeFinal(stats, totalQuestions) {
 
-        const maxPoints = totalQuestions * 4;
+        const questionCount = this.getQuestionCount(stats, totalQuestions);
+        const maxPoints = questionCount * 4;
 
         if (maxPoints === 0) return 0;
 

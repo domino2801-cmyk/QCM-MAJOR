@@ -20,6 +20,18 @@ test("quiz scoring computes final note from total questions and not only answere
     assert.equal(scoring.computeFinal(quizStats, 3), 5);
 });
 
+test("quiz scoring never uses a denominator lower than seen questions", () => {
+    const quizStats = scoring.createStats();
+
+    quizStats.correct = 3;
+    quizStats.wrong = 1;
+    quizStats.skipped = 1;
+    quizStats.points = 11;
+
+    assert.equal(scoring.getQuestionCount(quizStats, 4), 5);
+    assert.equal(scoring.computeFinal(quizStats, 4), 11);
+});
+
 test("quiz scoring keeps negative final note when points are negative", () => {
     const quizStats = scoring.createStats();
 
