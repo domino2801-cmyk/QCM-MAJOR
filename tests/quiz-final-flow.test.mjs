@@ -146,7 +146,8 @@ function createQuizFlowHarness({ saveResultBehavior } = {}) {
             name: "Candidate Test"
         },
         questionTransitionLocked: false,
-        quizFinalizationLocked: false,
+        currentQuizRunId: 1,
+        finalizedQuizRunId: -1,
         reviewItems: [],
         quizEngine: {
             index: 0,

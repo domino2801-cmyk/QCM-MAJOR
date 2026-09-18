@@ -17,7 +17,8 @@ let selectedTheme = null;
 let maxQuestions = 0;
 let reviewItems = [];
 let questionTransitionLocked = false;
-let quizFinalizationLocked = false;
+let currentQuizRunId = 0;
+let finalizedQuizRunId = -1;
 let questionSourceReady = false;
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
@@ -2204,7 +2205,7 @@ function startQuiz() {
     quizEngine.selectTheme(selectedTheme, maxQuestions, excludedQuestions);
     reviewItems = [];
     questionTransitionLocked = false;
-    quizFinalizationLocked = false;
+    currentQuizRunId += 1;
 
     if (!history[email]) history[email] = {};
     history[email][selectedTheme] = [
@@ -2318,8 +2319,8 @@ function marquerBoutons(selected, correct) {
 // =========================================================
 
 async function bilanFinal() {
-    if (quizFinalizationLocked) return;
-    quizFinalizationLocked = true;
+    if (finalizedQuizRunId === currentQuizRunId) return;
+    finalizedQuizRunId = currentQuizRunId;
 
     const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
     const note = scoring.computeFinal(quizEngine.stats, total);
