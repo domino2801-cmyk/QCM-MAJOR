@@ -1608,7 +1608,7 @@ function renderGlobalRanking(results) {
     });
 }
 
-function renderGlobalEvolution(results, candidateId, periodDays = 0) {
+function renderGlobalEvolution(results, candidateId, candidateEmail = "", periodDays = 0) {
     const section = document.getElementById("global-evolution-section");
     const chart = document.getElementById("global-evolution-chart");
     const list = document.getElementById("global-evolution-list");
@@ -1616,8 +1616,11 @@ function renderGlobalEvolution(results, candidateId, periodDays = 0) {
     if (!section || !chart || !list) return;
 
     const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
+    const normalizedCandidateEmail = String(candidateEmail || "").trim().toLowerCase();
     const evolution = results
-        .filter(result => result.theme === "all" && result.candidateId === candidateId)
+        .filter(result => result.theme === "all")
+        .filter(result => result.candidateId === candidateId
+            || (normalizedCandidateEmail && String(result.email || "").trim().toLowerCase() === normalizedCandidateEmail))
         .filter(result => !cutoff || (result.createdAt && Date.parse(result.createdAt) >= cutoff))
         .sort((first, second) => String(first.createdAt).localeCompare(String(second.createdAt)));
     const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -2321,7 +2324,7 @@ async function initializeAppInteractions() {
 
         if (isOpening) {
             const periodDays = Number(document.getElementById("global-evolution-period")?.value || 0);
-            renderGlobalEvolution(getResults(), candidateId, periodDays);
+            renderGlobalEvolution(getResults(), candidateId, currentCandidateEmail || account?.email || "", periodDays);
         }
         section.classList.toggle("hidden", !isOpening);
         event.currentTarget.setAttribute("aria-expanded", String(isOpening));
@@ -2330,7 +2333,7 @@ async function initializeAppInteractions() {
     document.getElementById("global-evolution-period")?.addEventListener("change", event => {
         const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail];
         const candidateId = String(account?.id || currentCandidateEmail || "candidat-inconnu");
-        renderGlobalEvolution(getResults(), candidateId, Number(event.currentTarget.value || 0));
+        renderGlobalEvolution(getResults(), candidateId, currentCandidateEmail || account?.email || "", Number(event.currentTarget.value || 0));
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {

@@ -43,7 +43,9 @@ test("result screen in app.js computes and shows max points from total questions
 });
 
 test("result evolution only uses global campaign results", () => {
-    assert.match(js, /result\.theme === "all" && result\.candidateId === candidateId/);
+    assert.match(js, /result\.theme === "all"/);
+    assert.match(js, /result\.candidateId === candidateId/);
+    assert.match(js, /result\.email \|\| ""/);
     assert.match(js, /btn-evolution-result/);
     assert.match(js, /global-evolution-list/);
     assert.match(js, /Aucune note de Campagne Globale enregistrée/);
