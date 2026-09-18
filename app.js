@@ -1,178 +1,122 @@
-function startQuiz() {
-    if (!selectedTheme) {
-        console.warn("Aucun thème sélectionné pour démarrer la campagne.");
-        return;
-    }
+async function bilanFinal() {
+    const quizRunId = currentQuizRunId;
 
-    const pool = getQuestionPool(selectedTheme);
-    if (!Array.isArray(pool) || pool.length === 0) {
-        console.warn("Le thème sélectionné ne contient aucune question disponible.");
-        return;
-    }
+    try {
+        if (finalizedQuizRunId === quizRunId) return;
+        finalizedQuizRunId = quizRunId;
 
-    const email = currentAuthenticatedAccount?.email || "anonymous";
-    const history = getQuestionHistory();
-    const themeHistory = history[email]?.[selectedTheme] || [];
-    const currentHistory = themeHistory.filter(question =>
-        pool.some(item => item.q === question)
-    );
-    const excludedQuestions = currentHistory.length >= pool.length ? [] : currentHistory;
+        const resultScreen = document.getElementById("result-screen");
+        const scoreDisplay = document.getElementById("score-display");
 
-    // Sélection du thème dans le moteur
-    maxQuestions = Number.isFinite(maxQuestions) && maxQuestions > 0 ? maxQuestions : Math.min(pool.length, 20);
-    quizEngine.selectTheme(selectedTheme, maxQuestions, excludedQuestions);
-    reviewItems = [];
-    questionTransitionLocked = false;
-    currentQuizRunId += 1;
+        console.log("DEBUG bilanFinal start", {
+            selectedTheme,
+            quizRunId,
+            questionCount: quizEngine.questions.length,
+            index: quizEngine.index,
+            stats: quizEngine.stats,
+            resultScreenExists: !!resultScreen,
+            scoreDisplayExists: !!scoreDisplay,
+            finalizationLocked: finalizedQuizRunId === quizRunId
+        });
 
-    if (!history[email]) history[email] = {};
-    history[email][selectedTheme] = [
-        ...new Set([...excludedQuestions, ...quizEngine.questions.map(question => question.q)])
-    ];
-    localStorage.setItem(questionHistoryStorageKey, JSON.stringify(history));
+        if (!resultScreen || !scoreDisplay) {
+            console.warn("DEBUG: DOM du résultat non prêt avant finalisation.");
+            finalizedQuizRunId = -1;
+            return;
+        }
 
-    // Passage à l’écran quiz
-    uiController.switchScreen("quiz-screen");
-
-    // Affichage de la première question
-    afficherSituation();
-}
-
-function afficherSituation() {
-    const optionsGrid = document.getElementById("options-grid");
-    const skip = document.getElementById("skip-btn");
-
-    if (!optionsGrid || !skip) {
-        console.warn("Éléments du quiz introuvables : écran non initialisé.");
-        return;
-    }
-
-    questionTransitionLocked = false;
-    const q = quizEngine.getCurrent();
-    if (!q) {
-        bilanFinal();
-        return;
-    }
-    const answers = typeof resolveQuestionAnswers === "function"
-        ? resolveQuestionAnswers(q)
-        : (Array.isArray(q.r) ? q.r : []);
-
-    document.getElementById("progress").innerText =
-        `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
-
-    document.getElementById("live-points").innerText =
-        `Points : ${quizEngine.stats.points}`;
-
-    document.getElementById("question").innerText = q.q;
-
-    optionsGrid.innerHTML = "";
-
-    // Génération des options
-    answers.forEach((optionText, index) => {
-        const btn = document.createElement("button");
-        btn.className = "btn";
-        btn.innerText = optionText;
-
-        btn.onclick = () => {
-            if (questionTransitionLocked) return;
-            questionTransitionLocked = true;
-            verrouillerOptions();
-            playAnswerSound(index === q.correct);
-            if (index !== q.correct) {
-                reviewItems.push({
-                    type: "wrong",
-                    question: q.q,
-                    selected: optionText,
-                    correct: answers[q.correct]
-                });
-            }
-            const encore = quizEngine.answer(index);
-            try {
-                marquerBoutons(index, q.correct);
-            } catch (error) {
-                console.warn("Marquage des réponses indisponible.", error);
-            }
-
-            setTimeout(() => {
-                if (encore) afficherSituation();
-                else bilanFinal();
-            }, 900);
+        const setResultText = (ids, value) => {
+            const target = ids
+                .map(id => document.getElementById(id))
+                .find(Boolean);
+            if (target) target.innerText = value;
         };
 
-        optionsGrid.appendChild(btn);
-    });
+        const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
+        const note = scoring.computeFinal(quizEngine.stats, total);
+        const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
+        const account = currentAuthenticatedAccount || getAccounts()[email];
+        const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
+        const label = getCandidateLabel(account, candidateId);
+        const resultRecord = {
+            id: createRecordId("result"),
+            candidateId,
+            label,
+            email: email === "Candidat inconnu" ? "" : email,
+            name: account?.name || "",
+            theme: selectedTheme,
+            score: note,
+            correct: quizEngine.stats.correct,
+            wrong: quizEngine.stats.wrong,
+            skipped: quizEngine.stats.skipped,
+            total,
+            date: new Date().toLocaleString("fr-FR")
+        };
+        const storedResults = getResults();
+        const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
+        const results = storedResults.some(result => result.id === resultRecord.id)
+            ? storedResults
+            : [fallbackResult, ...storedResults];
 
-    // Bouton skip
-    skip.disabled = false;
-    skip.onclick = () => {
-        if (questionTransitionLocked) return;
-        questionTransitionLocked = true;
-        verrouillerOptions();
-        reviewItems.push({
-            type: "skipped",
-            question: q.q,
-            correct: answers[q.correct]
+        console.log("DEBUG before switchScreen", {
+            resultScreenExists: !!document.getElementById("result-screen"),
+            scoreNodeExists: !!document.getElementById("score-display"),
+            reviewNodeExists: !!document.getElementById("review-list"),
+            rankingNodeExists: !!document.getElementById("global-ranking-list")
         });
-        const encore = quizEngine.answer(null);
-        if (encore) afficherSituation();
-        else bilanFinal();
-    };
-}
 
-function renderGlobalRanking(results) {
-    const section = document.getElementById("global-ranking-section");
-    const list = document.getElementById("global-ranking-list");
-    if (!section || !list) return;
+        uiController.switchScreen("result-screen");
 
-    const bestScoresByCandidate = new Map();
+        setResultText(["score-display", "final-score"], `${note.toFixed(2)} / 20`);
+        setResultText(["stat-correct"], quizEngine.stats.correct);
+        setResultText(["stat-wrong"], quizEngine.stats.wrong);
+        setResultText(["stat-skipped"], quizEngine.stats.skipped);
 
-    results
-        .filter(result => result.theme === "all")
-        .forEach(result => {
-            const candidate = result.candidateId || result.label || result.email || "Candidat inconnu";
-            const currentBest = bestScoresByCandidate.get(candidate);
-            if (!currentBest || result.score > currentBest.score) {
-                bestScoresByCandidate.set(candidate, result);
+        const maxPts = total * 4;
+        setResultText(["stat-brut"], quizEngine.stats.points);
+        setResultText(["brut-max"], `/ ${maxPts}`);
+
+        console.log("DEBUG after result text set", {
+            scoreText: document.getElementById("score-display")?.innerText,
+            statCorrect: document.getElementById("stat-correct")?.innerText,
+            statWrong: document.getElementById("stat-wrong")?.innerText,
+            statSkipped: document.getElementById("stat-skipped")?.innerText
+        });
+
+        try {
+            console.log("DEBUG renderGlobalRanking call");
+            renderGlobalRanking(results);
+        } catch (error) {
+            console.warn("Rendu du classement indisponible.", error);
+        }
+
+        try {
+            console.log("DEBUG renderReview call");
+            renderReview();
+        } catch (error) {
+            console.warn("Rendu de la revue indisponible.", error);
+        }
+
+        try {
+            await saveResult(resultRecord);
+            try {
+                renderGlobalRanking(getResults());
+            } catch (error) {
+                console.warn("Actualisation du classement indisponible.", error);
             }
-        });
-
-    const ranking = [...bestScoresByCandidate.values()]
-        .sort((first, second) => second.score - first.score)
-        .slice(0, 3);
-
-    list.innerHTML = "";
-    section.classList.toggle("hidden", ranking.length === 0);
-
-    const rankingSymbols = ["🏆", "🥈", "🥉"];
-
-    ranking.forEach((result, index) => {
-        const item = document.createElement("li");
-        item.innerText = `${rankingSymbols[index]} ${result.label || result.name || result.email || "Candidat inconnu"} — ${result.score.toFixed(2)} / 20`;
-        list.appendChild(item);
-    });
-}
-
-function renderReview() {
-    const section = document.getElementById("review-section");
-    const list = document.getElementById("review-list");
-    if (!section || !list) return;
-
-    list.innerHTML = "";
-    section.classList.toggle("hidden", reviewItems.length === 0);
-
-    reviewItems.forEach(item => {
-        const article = document.createElement("article");
-        const title = document.createElement("strong");
-        const question = document.createElement("div");
-        const detail = document.createElement("div");
-
-        article.className = `review-item ${item.type}`;
-        title.innerText = item.type === "wrong" ? "Réponse fausse" : "Question passée";
-        question.innerText = item.question;
-        detail.innerText = item.type === "wrong"
-            ? `Votre réponse : ${item.selected} | Bonne réponse : ${item.correct}`
-            : `Bonne réponse : ${item.correct}`;
-        article.append(title, question, detail);
-        list.appendChild(article);
-    });
+        } catch (error) {
+            console.warn("Synchronisation distante du résultat indisponible.", error);
+            try {
+                renderGlobalRanking(getResults());
+            } catch (rankingError) {
+                console.warn("Actualisation du classement indisponible.", rankingError);
+            }
+        }
+    } catch (error) {
+        console.error("DEBUG bilanFinal crashed", error);
+        if (finalizedQuizRunId === quizRunId) {
+            finalizedQuizRunId = -1;
+        }
+        throw error;
+    }
 }
