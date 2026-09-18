@@ -160,6 +160,11 @@ test("register diagnostics cover invalid form inputs and hidden view toggling", 
     assert.match(css, /#auth-screen \.auth-view/);
 });
 
+test("supabase session refresh keeps auth listeners and getSession shape aligned", () => {
+    assert.match(js, /emitSupabaseAuthStateChange\("TOKEN_REFRESHED", stored\.session\)/);
+    assert.match(js, /data:\s*\{\s*session:\s*refreshed\?\.data\?\.session\s*\|\|\s*null\s*\}/);
+});
+
 function extractNamedFunction(name, globals = {}) {
     const asyncSignature = `async function ${name}`;
     const plainSignature = `function ${name}`;

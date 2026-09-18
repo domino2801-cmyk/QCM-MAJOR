@@ -293,6 +293,7 @@ if (supabase) {
         });
         const user = data?.user || (data?.access_token ? await fetchSupabaseUser(data.access_token).catch(() => null) : null);
         const stored = storeSupabaseSessionFromAuthResponse({ ...data, user });
+        emitSupabaseAuthStateChange("TOKEN_REFRESHED", stored.session);
         return { data: stored, error: null };
     };
 
