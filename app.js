@@ -2345,10 +2345,17 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             correct: answers[q.correct]
         });
         const encore = quizEngine.answer(null);
-        if (encore) afficherSituation(activeQuizRunId);
-        else void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
-            console.error("Finalisation du quiz impossible.", error);
-        });
+        try {
+            marquerBoutons(null, q.correct);
+        } catch (error) {
+            console.warn("Marquage des réponses indisponible.", error);
+        }
+        setTimeout(() => {
+            if (encore) afficherSituation(activeQuizRunId);
+            else void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
+                console.error("Finalisation du quiz impossible.", error);
+            });
+        }, 900);
     };
 }
 
@@ -2368,11 +2375,15 @@ function verrouillerOptions() {
 function marquerBoutons(selected, correct) {
     const btns = document.querySelectorAll("#options-grid .btn");
 
-    btns[selected].classList.add(
-        selected === correct ? "correct" : "incorrect"
-    );
+    if (btns[selected]) {
+        btns[selected].classList.add(
+            selected === correct ? "correct" : "incorrect"
+        );
+    }
 
-    btns[correct].classList.add("correct");
+    if (btns[correct]) {
+        btns[correct].classList.add("correct");
+    }
 }
 
 // =========================================================
