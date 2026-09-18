@@ -96,6 +96,7 @@ function createClassToggleNode() {
 }
 
 function createQuizFlowHarness({
+    questions,
     saveResultBehavior,
     persistResultLocally = true,
     renderGlobalRankingBehavior,
@@ -135,6 +136,7 @@ function createQuizFlowHarness({
         r: ["Alpha", "Bravo", "Charlie", "Delta"],
         correct: 1
     };
+    const quizQuestions = questions ?? [currentQuestion];
 
     const context = {
         Date,
@@ -158,7 +160,7 @@ function createQuizFlowHarness({
         reviewItems: [],
         quizEngine: {
             index: 0,
-            questions: [currentQuestion],
+            questions: quizQuestions,
             stats: scoring.createStats(),
             getCurrent() {
                 return this.questions[this.index];
@@ -292,6 +294,9 @@ function createQuizFlowHarness({
         scheduled,
         optionsGrid,
         skipButton,
+        progress,
+        livePoints,
+        question,
         scoreDisplay,
         statCorrect,
         statWrong,
@@ -392,6 +397,64 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.context.reviewItems.length, 1);
     assert.equal(harness.context.reviewItems[0].type, "skipped");
+});
+
+test("five-question path reaches the result screen with the full score breakdown", async () => {
+    const harness = createQuizFlowHarness({
+        questions: [
+            { q: "Situation 1", r: ["A1", "B1", "C1", "D1"], correct: 0 },
+            { q: "Situation 2", r: ["A2", "B2", "C2", "D2"], correct: 2 },
+            { q: "Situation 3", r: ["A3", "B3", "C3", "D3"], correct: 1 },
+            { q: "Situation 4", r: ["A4", "B4", "C4", "D4"], correct: 3 },
+            { q: "Situation 5", r: ["A5", "B5", "C5", "D5"], correct: 1 }
+        ]
+    });
+
+    harness.context.afficherSituation();
+    assert.equal(harness.progress.innerText, "Question 1 / 5");
+    assert.equal(harness.question.innerText, "Situation 1");
+
+    harness.optionsGrid.children[0].onclick();
+    await flushScheduled(harness.scheduled);
+    assert.equal(harness.progress.innerText, "Question 2 / 5");
+    assert.equal(harness.livePoints.innerText, "Points : 4");
+
+    harness.optionsGrid.children[0].onclick();
+    await flushScheduled(harness.scheduled);
+    assert.equal(harness.progress.innerText, "Question 3 / 5");
+    assert.equal(harness.livePoints.innerText, "Points : 3");
+
+    harness.skipButton.onclick();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(harness.progress.innerText, "Question 4 / 5");
+    assert.equal(harness.livePoints.innerText, "Points : 3");
+
+    harness.optionsGrid.children[3].onclick();
+    await flushScheduled(harness.scheduled);
+    assert.equal(harness.progress.innerText, "Question 5 / 5");
+    assert.equal(harness.livePoints.innerText, "Points : 7");
+
+    harness.optionsGrid.children[2].onclick();
+    await flushScheduled(harness.scheduled);
+
+    assert.deepEqual(harness.getAnswerSounds(), [true, false, true, false]);
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].score, 6);
+    assert.equal(harness.savedResults[0].correct, 2);
+    assert.equal(harness.savedResults[0].wrong, 2);
+    assert.equal(harness.savedResults[0].skipped, 1);
+    assert.equal(harness.savedResults[0].total, 5);
+    assert.equal(harness.scoreDisplay.innerText, "6.00 / 20");
+    assert.equal(harness.statCorrect.innerText, 2);
+    assert.equal(harness.statWrong.innerText, 2);
+    assert.equal(harness.statSkipped.innerText, 1);
+    assert.equal(harness.statBrut.innerText, 6);
+    assert.equal(harness.brutMax.innerText, "/ 20");
+    assert.equal(harness.context.reviewItems.length, 3);
+    assert.equal(harness.context.reviewItems[0].type, "wrong");
+    assert.equal(harness.context.reviewItems[1].type, "skipped");
+    assert.equal(harness.context.reviewItems[2].type, "wrong");
 });
 
 test("final screen renders immediately even if remote result sync stays pending", async () => {
