@@ -2423,6 +2423,7 @@ async function bilanFinal() {
 function renderReview() {
     const section = document.getElementById("review-section");
     const list = document.getElementById("review-list");
+    if (!section || !list) return;
     list.innerHTML = "";
     section.classList.toggle("hidden", reviewItems.length === 0);
 

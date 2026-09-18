@@ -102,7 +102,8 @@ function createQuizFlowHarness({
     renderGlobalRankingBehavior,
     renderReviewBehavior,
     useLegacyResultIds = false,
-    omitResultStatsNodes = false
+    omitResultStatsNodes = false,
+    omitReviewNodes = false
 } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
@@ -193,8 +194,8 @@ function createQuizFlowHarness({
                     "stat-skipped": omitResultStatsNodes ? null : statSkipped,
                     "stat-brut": omitResultStatsNodes ? null : statBrut,
                     "brut-max": omitResultStatsNodes ? null : brutMax,
-                    "review-section": reviewSection,
-                    "review-list": reviewList,
+                    "review-section": omitReviewNodes ? null : reviewSection,
+                    "review-list": omitReviewNodes ? null : reviewList,
                     ...resultNodes
                 }[id] ?? null;
             },
@@ -499,6 +500,22 @@ test("final screen still renders when remote result sync fails", async () => {
 test("final screen still renders with legacy final-score id", async () => {
     const harness = createQuizFlowHarness({
         useLegacyResultIds: true
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].correct, 1);
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+});
+
+test("final screen still renders when review nodes are absent", async () => {
+    const harness = createQuizFlowHarness({
+        omitReviewNodes: true
     });
 
     harness.context.afficherSituation();
