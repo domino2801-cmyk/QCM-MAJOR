@@ -30,6 +30,29 @@ body {
     min-height: 100vh;
 }
 
+.startup-loading {
+    align-items: center;
+    background: #000;
+    color: #fff;
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    z-index: 100;
+}
+
+.startup-loading span {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.startup-loading-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
 .container {
     width: 100%;
     max-width: 800px;
