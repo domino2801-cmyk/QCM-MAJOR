@@ -102,6 +102,7 @@ function createQuizFlowHarness({
     renderGlobalRankingBehavior,
     renderReviewBehavior,
     getAccountsBehavior,
+    getCandidateLabelBehavior,
     useLegacyResultIds = false,
     omitResultStatsNodes = false
 } = {}) {
@@ -243,7 +244,10 @@ function createQuizFlowHarness({
                 synced: rawResult.synced !== false
             };
         },
-        getCandidateLabel(account) {
+        getCandidateLabel(account, candidateId) {
+            if (typeof getCandidateLabelBehavior === "function") {
+                return getCandidateLabelBehavior(account, candidateId);
+            }
             return account?.name || "Candidat inconnu";
         },
         getAccounts() {
@@ -530,8 +534,8 @@ test("final screen still renders when result stat nodes are absent", async () =>
 
 test("final screen still renders even if result preparation fails after the last answer", async () => {
     const harness = createQuizFlowHarness({
-        getAccountsBehavior: () => {
-            throw new Error("accounts unavailable");
+        getCandidateLabelBehavior: () => {
+            throw new Error("label unavailable");
         }
     });
 
