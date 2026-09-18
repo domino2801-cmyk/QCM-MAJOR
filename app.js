@@ -2352,7 +2352,10 @@ async function bilanFinal() {
         } catch (error) {
             saveResultPromise = Promise.reject(error);
         }
-        const results = getResults();
+        const storedResults = getResults();
+        const results = storedResults.some(result => result.id === resultRecord.id)
+            ? storedResults
+            : [normalizeResultRecord({ ...resultRecord, synced: false }), ...storedResults];
 
         uiController.switchScreen("result-screen");
 

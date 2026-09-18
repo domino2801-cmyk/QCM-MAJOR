@@ -95,7 +95,7 @@ function createClassToggleNode() {
     };
 }
 
-function createQuizFlowHarness({ saveResultBehavior } = {}) {
+function createQuizFlowHarness({ saveResultBehavior, persistResultLocally = true } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
@@ -207,6 +207,24 @@ function createQuizFlowHarness({ saveResultBehavior } = {}) {
         createRecordId() {
             return "result-1";
         },
+        normalizeResultRecord(rawResult = {}) {
+            return {
+                id: rawResult.id || "result-1",
+                candidateId: rawResult.candidateId || "",
+                label: rawResult.label || "",
+                email: rawResult.email || "",
+                name: rawResult.name || "",
+                theme: rawResult.theme || "",
+                score: Number(rawResult.score || 0),
+                correct: Number(rawResult.correct || 0),
+                wrong: Number(rawResult.wrong || 0),
+                skipped: Number(rawResult.skipped || 0),
+                total: Number(rawResult.total || 0),
+                date: rawResult.date || new Date().toLocaleString("fr-FR"),
+                createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString(),
+                synced: rawResult.synced !== false
+            };
+        },
         getCandidateLabel(account) {
             return account?.name || "Candidat inconnu";
         },
@@ -214,7 +232,9 @@ function createQuizFlowHarness({ saveResultBehavior } = {}) {
             return {};
         },
         async saveResult(resultRecord) {
-            savedResults.push(resultRecord);
+            if (persistResultLocally) {
+                savedResults.push(resultRecord);
+            }
             if (typeof saveResultBehavior === "function") {
                 return saveResultBehavior(resultRecord, savedResults);
             }
@@ -386,6 +406,31 @@ test("final screen still renders when remote result sync fails", async () => {
     assert.equal(harness.scoreDisplay.innerText, "0.00 / 20");
     assert.equal(harness.warnings.length, 1);
     assert.equal(harness.warnings[0][0], "Synchronisation distante du résultat indisponible.");
+});
+
+test("final ranking includes the last result even before async save settles", async () => {
+    const harness = createQuizFlowHarness({
+        persistResultLocally: false,
+        saveResultBehavior: () => new Promise(() => {})
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.getRankingPayload().length, 1);
+    assert.equal(harness.getRankingPayload()[0].id, "result-1");
+    assert.equal(harness.getRankingPayload()[0].candidateId, "cand-1");
+    assert.equal(harness.getRankingPayload()[0].label, "Candidate Test");
+    assert.equal(harness.getRankingPayload()[0].theme, "all");
+    assert.equal(harness.getRankingPayload()[0].score, 20);
+    assert.equal(harness.getRankingPayload()[0].correct, 1);
+    assert.equal(harness.getRankingPayload()[0].wrong, 0);
+    assert.equal(harness.getRankingPayload()[0].skipped, 0);
+    assert.equal(harness.getRankingPayload()[0].total, 1);
+    assert.equal(harness.getRankingPayload()[0].synced, false);
 });
 
 function loadExportedConst(relativePath, exportName) {
