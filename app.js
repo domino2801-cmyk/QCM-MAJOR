@@ -1495,19 +1495,31 @@ function renderGlobalRanking(results) {
     const list = document.getElementById("global-ranking-list");
     if (!section || !list) return;
     const bestScoresByCandidate = new Map();
+    const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    });
 
     results
         .filter(result => result.theme === "all")
         .forEach(result => {
             const candidate = result.candidateId || result.label || result.email || "Candidat inconnu";
             const currentBest = bestScoresByCandidate.get(candidate);
-            if (!currentBest || result.score > currentBest.score) {
+            if (!currentBest
+                || result.score > currentBest.score
+                || (result.score === currentBest.score
+                    && String(result.createdAt).localeCompare(String(currentBest.createdAt)) > 0)) {
                 bestScoresByCandidate.set(candidate, result);
             }
         });
 
     const ranking = [...bestScoresByCandidate.values()]
-        .sort((first, second) => second.score - first.score)
+        .sort((first, second) => {
+            const scoreDifference = second.score - first.score;
+            if (scoreDifference !== 0) return scoreDifference;
+            return String(second.createdAt).localeCompare(String(first.createdAt));
+        })
         .slice(0, 3);
 
     list.innerHTML = "";
@@ -1516,8 +1528,27 @@ function renderGlobalRanking(results) {
     const rankingSymbols = ["🏆", "🥈", "🥉"];
 
     ranking.forEach((result, index) => {
+        const previousResult = ranking[index - 1];
+        const rank = previousResult && previousResult.score === result.score
+            ? index
+            : index + 1;
+        const date = result.createdAt && !Number.isNaN(Date.parse(result.createdAt))
+            ? rankingDateFormatter.format(new Date(result.createdAt))
+            : result.date;
         const item = document.createElement("li");
-        item.innerText = `${rankingSymbols[index]} ${result.label || result.name || result.email || "Candidat inconnu"} — ${result.score.toFixed(2)} / 20`;
+        const rankElement = document.createElement("span");
+        const candidateElement = document.createElement("span");
+        const scoreElement = document.createElement("strong");
+        const dateElement = document.createElement("small");
+
+        item.className = "global-ranking-item";
+        rankElement.className = "global-ranking-rank";
+        rankElement.innerText = rankingSymbols[rank - 1] || `${rank}.`;
+        candidateElement.className = "global-ranking-candidate";
+        candidateElement.innerText = result.name || result.label || result.email || "Pseudo non renseigné";
+        scoreElement.innerText = `${result.score.toFixed(2)} / 20`;
+        dateElement.innerText = date;
+        item.append(rankElement, candidateElement, scoreElement, dateElement);
         list.appendChild(item);
     });
 }
@@ -1526,6 +1557,7 @@ function renderGlobalEvolution(results, candidateId) {
     const section = document.getElementById("global-evolution-section");
     const chart = document.getElementById("global-evolution-chart");
     const list = document.getElementById("global-evolution-list");
+    const summary = document.getElementById("global-evolution-summary");
     if (!section || !chart || !list) return;
 
     const evolution = results
@@ -1539,7 +1571,23 @@ function renderGlobalEvolution(results, candidateId) {
 
     chart.innerHTML = "";
     list.innerHTML = "";
-    section.classList.toggle("hidden", evolution.length === 0);
+    if (summary) summary.innerText = "";
+    section.classList.remove("hidden");
+
+    if (evolution.length === 0) {
+        const emptyState = document.createElement("li");
+        emptyState.className = "global-evolution-empty";
+        emptyState.innerText = "Aucune note de Campagne Globale enregistrée.";
+        list.appendChild(emptyState);
+        return;
+    }
+
+    const scores = evolution.map(result => Number(result.score) || 0);
+    const average = scores.reduce((total, score) => total + score, 0) / scores.length;
+    const best = Math.max(...scores);
+    if (summary) {
+        summary.innerText = `Moyenne : ${average.toFixed(2)} / 20 • Meilleure note : ${best.toFixed(2)} / 20`;
+    }
 
     evolution.forEach(result => {
         const score = Math.max(0, Math.min(20, Number(result.score) || 0));
@@ -2077,6 +2125,7 @@ async function initializeApp() {
         setResults(Array.isArray(storedResults) ? storedResults : []);
         initializeAuth();
         authUiReady = true;
+        initializeAppInteractions();
         await syncSupabaseSessionFromUrl();
         await restoreSupabaseSession();
         const loadedFromSupabase = await loadQuestionsFromSupabase();
@@ -2084,7 +2133,6 @@ async function initializeApp() {
         await loadResultsFromSupabase();
         updateThemeQuestionCounts();
         renderGlobalRanking(getResults());
-        initializeAppInteractions();
 
         if (isRecoveryModeFromUrl()) {
             uiController.switchScreen("auth-screen");
@@ -2287,8 +2335,10 @@ function startQuiz() {
     const history = getQuestionHistory();
     const themeHistory = history[email]?.[selectedTheme] || [];
     const pool = getQuestionPool(selectedTheme);
-    const currentHistory = themeHistory.filter(question =>
-        pool.some(item => item.q === question)
+    const normalizeHistoryQuestion = question => String(question || "").trim().replace(/\s+/g, " ").toLowerCase();
+    const poolKeys = new Set(pool.map(question => normalizeHistoryQuestion(question.q)));
+    const currentHistory = [...new Set(themeHistory)].filter(question =>
+        poolKeys.has(normalizeHistoryQuestion(question))
     );
     const excludedQuestions = currentHistory.length >= pool.length ? [] : currentHistory;
 
@@ -2496,6 +2546,14 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         const maxPts = total * 4;
         setResultText(["stat-brut"], quizEngine.stats.points);
         setResultText(["brut-max"], `/ ${maxPts}`);
+
+        const evolutionButton = document.getElementById("btn-evolution-result");
+        const isGlobalCampaign = selectedTheme === "all";
+        evolutionButton?.classList.toggle("hidden", !isGlobalCampaign);
+        evolutionButton?.setAttribute("aria-hidden", String(!isGlobalCampaign));
+        if (!isGlobalCampaign) {
+            document.getElementById("global-evolution-section")?.classList.add("hidden");
+        }
 
         try {
             renderGlobalRanking(rankingResults);

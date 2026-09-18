@@ -23,15 +23,22 @@ export const engine = {
             }
         }
 
-        const shuffledPool = this.shuffle([...pool]);
-        const freshQuestions = shuffledPool.filter(question =>
-            !excludedQuestions.includes(question.q)
-        );
-        const previousQuestions = shuffledPool.filter(question =>
-            excludedQuestions.includes(question.q)
-        );
+        const seen = new Set();
+        const uniquePool = pool.filter(question => {
+            const key = this.questionKey(question.q);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+        const excluded = new Set(excludedQuestions.map(question => this.questionKey(question)));
 
-        return [...freshQuestions, ...previousQuestions].slice(0, qty);
+        return this.shuffle(uniquePool)
+            .filter(question => !excluded.has(this.questionKey(question.q)))
+            .slice(0, qty);
+    },
+
+    questionKey(questionText) {
+        return String(questionText || "").trim().replace(/\s+/g, " ").toLowerCase();
     },
 
     // -----------------------------------------------------

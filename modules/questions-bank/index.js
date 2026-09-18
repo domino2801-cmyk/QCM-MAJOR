@@ -37,11 +37,17 @@ export const questionsBank = {
 // ---------------------------------------------------------
 
 export function getAllQuestions() {
-    let all = [];
+    const seen = new Set();
+    const all = [];
 
     Object.values(questionsBank).forEach(theme => {
         if (theme && theme.questions) {
-            all = all.concat(theme.questions);
+            theme.questions.forEach(question => {
+                const key = question.q.trim().replace(/\s+/g, " ").toLowerCase();
+                if (seen.has(key)) return;
+                seen.add(key);
+                all.push(question);
+            });
         }
     });
 
