@@ -2319,58 +2319,67 @@ function marquerBoutons(selected, correct) {
 // =========================================================
 
 async function bilanFinal() {
-    if (finalizedQuizRunId === currentQuizRunId) return;
-    finalizedQuizRunId = currentQuizRunId;
-
-    const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
-    const note = scoring.computeFinal(quizEngine.stats, total);
-    const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
-    const account = currentAuthenticatedAccount || getAccounts()[email];
-    const candidateId = account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu");
-    const label = getCandidateLabel(account, candidateId);
-    const resultRecord = {
-        id: createRecordId("result"),
-        candidateId,
-        label,
-        email: email === "Candidat inconnu" ? "" : email,
-        name: account?.name || "",
-        theme: selectedTheme,
-        score: note,
-        correct: quizEngine.stats.correct,
-        wrong: quizEngine.stats.wrong,
-        skipped: quizEngine.stats.skipped,
-        total,
-        date: new Date().toLocaleString("fr-FR")
-    };
-
-    let saveResultPromise;
     try {
-        saveResultPromise = Promise.resolve(saveResult(resultRecord));
+        const quizRunId = currentQuizRunId;
+        if (finalizedQuizRunId === quizRunId) return;
+
+        const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
+        const note = scoring.computeFinal(quizEngine.stats, total);
+        const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
+        const account = currentAuthenticatedAccount || getAccounts()[email];
+        const candidateId = account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu");
+        const label = getCandidateLabel(account, candidateId);
+        const resultRecord = {
+            id: createRecordId("result"),
+            candidateId,
+            label,
+            email: email === "Candidat inconnu" ? "" : email,
+            name: account?.name || "",
+            theme: selectedTheme,
+            score: note,
+            correct: quizEngine.stats.correct,
+            wrong: quizEngine.stats.wrong,
+            skipped: quizEngine.stats.skipped,
+            total,
+            date: new Date().toLocaleString("fr-FR")
+        };
+
+        finalizedQuizRunId = quizRunId;
+
+        let saveResultPromise;
+        try {
+            saveResultPromise = Promise.resolve(saveResult(resultRecord));
+        } catch (error) {
+            saveResultPromise = Promise.reject(error);
+        }
+        const results = getResults();
+
+        uiController.switchScreen("result-screen");
+
+        document.getElementById("score-display").innerText =
+            `${note.toFixed(2)} / 20`;
+
+        document.getElementById("stat-correct").innerText = quizEngine.stats.correct;
+        document.getElementById("stat-wrong").innerText = quizEngine.stats.wrong;
+        document.getElementById("stat-skipped").innerText = quizEngine.stats.skipped;
+
+        const maxPts = total * 4;
+        document.getElementById("stat-brut").innerText = quizEngine.stats.points;
+        document.getElementById("brut-max").innerText = `/ ${maxPts}`;
+        renderGlobalRanking(results);
+        renderReview();
+
+        try {
+            await saveResultPromise;
+            renderGlobalRanking(getResults());
+        } catch (error) {
+            console.warn("Synchronisation distante du résultat indisponible.", error);
+        }
     } catch (error) {
-        saveResultPromise = Promise.reject(error);
-    }
-    const results = getResults();
-
-    uiController.switchScreen("result-screen");
-
-    document.getElementById("score-display").innerText =
-        `${note.toFixed(2)} / 20`;
-
-    document.getElementById("stat-correct").innerText = quizEngine.stats.correct;
-    document.getElementById("stat-wrong").innerText = quizEngine.stats.wrong;
-    document.getElementById("stat-skipped").innerText = quizEngine.stats.skipped;
-
-    const maxPts = total * 4;
-    document.getElementById("stat-brut").innerText = quizEngine.stats.points;
-    document.getElementById("brut-max").innerText = `/ ${maxPts}`;
-    renderGlobalRanking(results);
-    renderReview();
-
-    try {
-        await saveResultPromise;
-        renderGlobalRanking(getResults());
-    } catch (error) {
-        console.warn("Synchronisation distante du résultat indisponible.", error);
+        if (finalizedQuizRunId === currentQuizRunId) {
+            finalizedQuizRunId = -1;
+        }
+        throw error;
     }
 }
 
