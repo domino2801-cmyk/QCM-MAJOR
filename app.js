@@ -1333,7 +1333,7 @@ function switchAdminSection(section) {
 
 function renderAdminAccounts() {
     const accounts = getAccounts();
-    const list = document.getElementById("admin-accounts-list");
+    const list = document.getElementById("admin-accounts-table");
     list.innerHTML = "";
 
     Object.entries(accounts).forEach(([email, account]) => {
@@ -1384,7 +1384,7 @@ function resetQuestionForm() {
 
 function renderAdminQuestions() {
     const themeId = document.getElementById("admin-question-theme").value;
-    const list = document.getElementById("admin-questions-list");
+    const list = document.getElementById("admin-questions-table");
     const questions = questionsBank[themeId].questions;
     list.innerHTML = "";
 
@@ -1441,7 +1441,7 @@ function editQuestion(themeId, index) {
 }
 
 function renderAdminResults() {
-    const list = document.getElementById("admin-results-list");
+    const list = document.getElementById("admin-results-table");
     const results = getResults();
     list.innerHTML = "";
 
