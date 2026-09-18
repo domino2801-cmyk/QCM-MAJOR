@@ -2237,7 +2237,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
     if (!q) {
-        void bilanFinal(activeQuizRunId).catch(error => {
+        void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
             console.error("Finalisation du quiz impossible.", error);
         });
         return;
@@ -2286,7 +2286,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
 
             setTimeout(() => {
                 if (encore) afficherSituation(activeQuizRunId);
-                else void bilanFinal(activeQuizRunId).catch(error => {
+                else void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
                     console.error("Finalisation du quiz impossible.", error);
                 });
             }, 900);
@@ -2308,7 +2308,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         });
         const encore = quizEngine.answer(null);
         if (encore) afficherSituation(activeQuizRunId);
-        else void bilanFinal(activeQuizRunId).catch(error => {
+        else void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
             console.error("Finalisation du quiz impossible.", error);
         });
     };
