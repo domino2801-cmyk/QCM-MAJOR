@@ -507,6 +507,174 @@ test("final screen still renders when ranking refresh fails after save", async (
     assert.equal(harness.getRankingPayload()[0].score, 20);
 });
 
+test("final screen still renders when answer marking fails on the last answer", async () => {
+    const originalMarquerBoutons = extractFunction(appJs, "marquerBoutons");
+    const brokenMarquerBoutons = `${originalMarquerBoutons}\nmarquerBoutons = () => { throw new Error("marking exploded"); };`;
+    const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
+    const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
+    const afficherSituationSource = extractFunction(appJs, "afficherSituation");
+    const verrouillerOptionsSource = extractFunction(appJs, "verrouillerOptions");
+    const bilanFinalSource = extractFunction(appJs, "bilanFinal");
+    const progress = createTextNode();
+    const livePoints = createTextNode();
+    const question = createTextNode();
+    const scoreDisplay = createTextNode();
+    const statCorrect = createTextNode();
+    const statWrong = createTextNode();
+    const statSkipped = createTextNode();
+    const statBrut = createTextNode();
+    const brutMax = createTextNode();
+    const reviewSection = createClassToggleNode();
+    const reviewList = createContainer();
+    const optionsGrid = createContainer();
+    const skipButton = createButton();
+    const scheduled = [];
+    const savedResults = [];
+    const warnings = [];
+    let activeScreen = "";
+
+    const context = {
+        Date,
+        console: {
+            ...console,
+            warn(...args) {
+                warnings.push(args);
+            }
+        },
+        scoring,
+        selectedTheme: "all",
+        currentCandidateEmail: "candidat@example.com",
+        currentAuthenticatedAccount: {
+            id: "cand-1",
+            email: "candidat@example.com",
+            name: "Candidate Test"
+        },
+        questionTransitionLocked: false,
+        currentQuizRunId: 1,
+        finalizedQuizRunId: -1,
+        reviewItems: [],
+        quizEngine: {
+            index: 0,
+            questions: [{
+                q: "Dernière situation",
+                r: ["Alpha", "Bravo", "Charlie", "Delta"],
+                correct: 1
+            }],
+            stats: scoring.createStats(),
+            getCurrent() {
+                return this.questions[this.index];
+            },
+            answer(choice) {
+                const q = this.getCurrent();
+                scoring.applyAnswer(this.stats, choice, q.correct);
+                this.index += 1;
+                return this.index < this.questions.length;
+            }
+        },
+        document: {
+            getElementById(id) {
+                return {
+                    progress,
+                    "live-points": livePoints,
+                    question,
+                    "options-grid": optionsGrid,
+                    "skip-btn": skipButton,
+                    "score-display": scoreDisplay,
+                    "stat-correct": statCorrect,
+                    "stat-wrong": statWrong,
+                    "stat-skipped": statSkipped,
+                    "stat-brut": statBrut,
+                    "brut-max": brutMax,
+                    "review-section": reviewSection,
+                    "review-list": reviewList
+                }[id] ?? null;
+            },
+            createElement(tagName) {
+                assert.equal(tagName, "button");
+                return createButton();
+            },
+            querySelectorAll(selector) {
+                if (selector === "#options-grid .btn, #skip-btn") {
+                    return [...optionsGrid.children, skipButton];
+                }
+
+                if (selector === "#options-grid .btn") {
+                    return optionsGrid.children;
+                }
+
+                throw new Error(`Unexpected selector: ${selector}`);
+            }
+        },
+        playAnswerSound() {},
+        setTimeout(callback, delay) {
+            scheduled.push({ callback, delay });
+            return scheduled.length;
+        },
+        createRecordId() {
+            return "result-1";
+        },
+        normalizeResultRecord(rawResult = {}) {
+            return {
+                id: rawResult.id || "result-1",
+                candidateId: rawResult.candidateId || "",
+                label: rawResult.label || "",
+                email: rawResult.email || "",
+                name: rawResult.name || "",
+                theme: rawResult.theme || "",
+                score: Number(rawResult.score || 0),
+                correct: Number(rawResult.correct || 0),
+                wrong: Number(rawResult.wrong || 0),
+                skipped: Number(rawResult.skipped || 0),
+                total: Number(rawResult.total || 0),
+                date: rawResult.date || new Date().toLocaleString("fr-FR"),
+                createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString(),
+                synced: rawResult.synced !== false
+            };
+        },
+        getCandidateLabel(account) {
+            return account?.name || "Candidat inconnu";
+        },
+        getAccounts() {
+            return {};
+        },
+        async saveResult(resultRecord) {
+            savedResults.push(resultRecord);
+        },
+        getResults() {
+            return savedResults.slice();
+        },
+        uiController: {
+            switchScreen(screenId) {
+                activeScreen = screenId;
+            }
+        },
+        renderGlobalRanking() {},
+        renderReview() {}
+    };
+
+    vm.runInNewContext(
+        [
+            normalizeQuestionAnswersSource,
+            resolveQuestionAnswersSource,
+            verrouillerOptionsSource,
+            brokenMarquerBoutons,
+            bilanFinalSource,
+            afficherSituationSource
+        ].join("\n"),
+        context
+    );
+
+    context.afficherSituation();
+    optionsGrid.children[1].onclick();
+
+    await flushScheduled(scheduled);
+
+    assert.equal(activeScreen, "result-screen");
+    assert.equal(scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(savedResults.length, 1);
+    assert.equal(warnings[0][0], "Marquage des réponses indisponible.");
+});
+
 function loadExportedConst(relativePath, exportName) {
     const source = readFileSync(path.join(root, relativePath), "utf8");
     const script = new vm.Script(`${source.replace(`export const ${exportName} =`, `const ${exportName} =`)}\n${exportName};`);

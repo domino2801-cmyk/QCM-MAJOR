@@ -2228,6 +2228,10 @@ function startQuiz() {
 function afficherSituation() {
     questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
+    if (!q) {
+        bilanFinal();
+        return;
+    }
     const answers = typeof resolveQuestionAnswers === "function"
         ? resolveQuestionAnswers(q)
         : (Array.isArray(q.r) ? q.r : []);
@@ -2264,7 +2268,11 @@ function afficherSituation() {
                 });
             }
             const encore = quizEngine.answer(index);
-            marquerBoutons(index, q.correct);
+            try {
+                marquerBoutons(index, q.correct);
+            } catch (error) {
+                console.warn("Marquage des réponses indisponible.", error);
+            }
 
             setTimeout(() => {
                 if (encore) afficherSituation();
