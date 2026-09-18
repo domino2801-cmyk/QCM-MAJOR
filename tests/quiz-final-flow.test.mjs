@@ -552,6 +552,10 @@ test("final screen still renders even if result preparation fails after the last
     assert.equal(harness.statBrut.innerText, 4);
     assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.savedResults.length, 0);
+    assert.equal(harness.getRankingPayload().length, 1);
+    assert.equal(harness.getRankingPayload()[0].id, "result-1");
+    assert.equal(harness.getRankingPayload()[0].label, "Candidate Test");
+    assert.equal(harness.getRankingPayload()[0].score, 20);
     assert.equal(harness.warnings.length, 1);
     assert.equal(harness.warnings[0][0], "Préparation du résultat indisponible.");
 });

@@ -2360,14 +2360,37 @@ async function bilanFinal() {
             console.warn("Rendu de la revue indisponible.", error);
         }
 
+        const storedResults = getResults();
+        const fallbackEmail = currentCandidateEmail || currentAuthenticatedAccount?.email || "";
+        const fallbackCandidateId = String(
+            currentAuthenticatedAccount?.id || (fallbackEmail || "candidat-inconnu")
+        );
+        const fallbackResult = normalizeResultRecord({
+            id: createRecordId("result"),
+            candidateId: fallbackCandidateId,
+            label: currentAuthenticatedAccount?.name || fallbackEmail || "Candidat inconnu",
+            email: fallbackEmail,
+            name: currentAuthenticatedAccount?.name || "",
+            theme: selectedTheme,
+            score: note,
+            correct: quizEngine.stats.correct,
+            wrong: quizEngine.stats.wrong,
+            skipped: quizEngine.stats.skipped,
+            total,
+            date: new Date().toLocaleString("fr-FR"),
+            synced: false
+        });
+        const fallbackResults = storedResults.some(result => result.id === fallbackResult.id)
+            ? storedResults
+            : [fallbackResult, ...storedResults];
+
         try {
-            const storedResults = getResults();
             const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
             const account = currentAuthenticatedAccount || getAccounts()[email];
             const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
             const label = getCandidateLabel(account, candidateId);
             const resultRecord = {
-                id: createRecordId("result"),
+                id: fallbackResult.id,
                 candidateId,
                 label,
                 email: email === "Candidat inconnu" ? "" : email,
@@ -2380,10 +2403,9 @@ async function bilanFinal() {
                 total,
                 date: new Date().toLocaleString("fr-FR")
             };
-            const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
             const results = storedResults.some(result => result.id === resultRecord.id)
                 ? storedResults
-                : [fallbackResult, ...storedResults];
+                : [normalizeResultRecord({ ...resultRecord, synced: false }), ...storedResults];
 
             try {
                 renderGlobalRanking(results);
@@ -2409,7 +2431,7 @@ async function bilanFinal() {
         } catch (error) {
             console.warn("Préparation du résultat indisponible.", error);
             try {
-                renderGlobalRanking(getResults());
+                renderGlobalRanking(fallbackResults);
             } catch (rankingError) {
                 console.warn("Actualisation du classement indisponible.", rankingError);
             }
