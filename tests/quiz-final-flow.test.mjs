@@ -464,6 +464,49 @@ test("final screen still renders when review rendering fails on the last answer"
     assert.equal(harness.getRankingPayload()[0].score, 20);
 });
 
+test("final screen still renders when initial ranking rendering fails on the last answer", async () => {
+    const harness = createQuizFlowHarness({
+        renderGlobalRankingBehavior: () => {
+            throw new Error("ranking exploded");
+        }
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(harness.statCorrect.innerText, 1);
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.warnings[0][0], "Rendu du classement indisponible.");
+    assert.equal(harness.warnings[1][0], "Actualisation du classement indisponible.");
+});
+
+test("final screen still renders when ranking refresh fails after save", async () => {
+    let rankingCallCount = 0;
+    const harness = createQuizFlowHarness({
+        renderGlobalRankingBehavior: () => {
+            rankingCallCount += 1;
+            if (rankingCallCount === 2) {
+                throw new Error("ranking refresh exploded");
+            }
+        }
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.warnings[0][0], "Actualisation du classement indisponible.");
+    assert.equal(harness.getRankingPayload()[0].score, 20);
+});
+
 function loadExportedConst(relativePath, exportName) {
     const source = readFileSync(path.join(root, relativePath), "utf8");
     const script = new vm.Script(`${source.replace(`export const ${exportName} =`, `const ${exportName} =`)}\n${exportName};`);
