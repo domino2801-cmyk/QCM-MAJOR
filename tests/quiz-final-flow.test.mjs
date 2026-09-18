@@ -99,7 +99,9 @@ function createQuizFlowHarness({
     saveResultBehavior,
     persistResultLocally = true,
     renderGlobalRankingBehavior,
-    renderReviewBehavior
+    renderReviewBehavior,
+    useLegacyResultIds = false,
+    omitResultStatsNodes = false
 } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
@@ -170,20 +172,28 @@ function createQuizFlowHarness({
         },
         document: {
             getElementById(id) {
+                const resultNodes = useLegacyResultIds
+                    ? {
+                        "final-score": scoreDisplay
+                    }
+                    : {
+                        "score-display": scoreDisplay
+                    };
+
                 return {
                     progress,
                     "live-points": livePoints,
                     question,
                     "options-grid": optionsGrid,
                     "skip-btn": skipButton,
-                    "score-display": scoreDisplay,
-                    "stat-correct": statCorrect,
-                    "stat-wrong": statWrong,
-                    "stat-skipped": statSkipped,
-                    "stat-brut": statBrut,
-                    "brut-max": brutMax,
+                    "stat-correct": omitResultStatsNodes ? null : statCorrect,
+                    "stat-wrong": omitResultStatsNodes ? null : statWrong,
+                    "stat-skipped": omitResultStatsNodes ? null : statSkipped,
+                    "stat-brut": omitResultStatsNodes ? null : statBrut,
+                    "brut-max": omitResultStatsNodes ? null : brutMax,
                     "review-section": reviewSection,
-                    "review-list": reviewList
+                    "review-list": reviewList,
+                    ...resultNodes
                 }[id] ?? null;
             },
             createElement(tagName) {
@@ -418,6 +428,37 @@ test("final screen still renders when remote result sync fails", async () => {
     assert.equal(harness.scoreDisplay.innerText, "0.00 / 20");
     assert.equal(harness.warnings.length, 1);
     assert.equal(harness.warnings[0][0], "Synchronisation distante du résultat indisponible.");
+});
+
+test("final screen still renders with legacy final-score id", async () => {
+    const harness = createQuizFlowHarness({
+        useLegacyResultIds: true
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].correct, 1);
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+});
+
+test("final screen still renders when result stat nodes are absent", async () => {
+    const harness = createQuizFlowHarness({
+        omitResultStatsNodes: true
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
 });
 
 test("final ranking includes the last result even before async save settles", async () => {

@@ -2334,6 +2334,13 @@ async function bilanFinal() {
         if (finalizedQuizRunId === quizRunId) return;
         finalizedQuizRunId = quizRunId;
 
+        const setResultText = (ids, value) => {
+            const target = ids
+                .map(id => document.getElementById(id))
+                .find(Boolean);
+            if (target) target.innerText = value;
+        };
+
         const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
         const note = scoring.computeFinal(quizEngine.stats, total);
         const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
@@ -2362,16 +2369,14 @@ async function bilanFinal() {
 
         uiController.switchScreen("result-screen");
 
-        document.getElementById("score-display").innerText =
-            `${note.toFixed(2)} / 20`;
-
-        document.getElementById("stat-correct").innerText = quizEngine.stats.correct;
-        document.getElementById("stat-wrong").innerText = quizEngine.stats.wrong;
-        document.getElementById("stat-skipped").innerText = quizEngine.stats.skipped;
+        setResultText(["score-display", "final-score"], `${note.toFixed(2)} / 20`);
+        setResultText(["stat-correct"], quizEngine.stats.correct);
+        setResultText(["stat-wrong"], quizEngine.stats.wrong);
+        setResultText(["stat-skipped"], quizEngine.stats.skipped);
 
         const maxPts = total * 4;
-        document.getElementById("stat-brut").innerText = quizEngine.stats.points;
-        document.getElementById("brut-max").innerText = `/ ${maxPts}`;
+        setResultText(["stat-brut"], quizEngine.stats.points);
+        setResultText(["brut-max"], `/ ${maxPts}`);
 
         try {
             renderGlobalRanking(results);
