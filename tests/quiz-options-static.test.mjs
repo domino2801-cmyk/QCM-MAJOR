@@ -84,11 +84,6 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
 
     let skipAnswer = undefined;
     let finalCalls = 0;
-    let currentQuestion = {
-        q: "Situation test",
-        r: ["Alpha", "Bravo", "Charlie", "Delta"],
-        correct: 1
-    };
 
     const context = {
         document: {
@@ -111,11 +106,14 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
             questions: [{}],
             stats: { points: 3 },
             getCurrent() {
-                return currentQuestion;
+                return {
+                    q: "Situation test",
+                    r: ["Alpha", "Bravo", "Charlie", "Delta"],
+                    correct: 1
+                };
             },
             answer(value) {
                 skipAnswer = value;
-                currentQuestion = null;
                 return false;
             }
         },

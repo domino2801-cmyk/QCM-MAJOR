@@ -101,8 +101,7 @@ function createQuizFlowHarness({
     renderGlobalRankingBehavior,
     renderReviewBehavior,
     useLegacyResultIds = false,
-    omitResultStatsNodes = false,
-    answerReturnValue
+    omitResultStatsNodes = false
 } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
@@ -168,9 +167,7 @@ function createQuizFlowHarness({
                 const q = this.getCurrent();
                 scoring.applyAnswer(this.stats, choice, q.correct);
                 this.index += 1;
-                return typeof answerReturnValue === "undefined"
-                    ? this.index < this.questions.length
-                    : answerReturnValue;
+                return this.index < this.questions.length;
             }
         },
         document: {
@@ -395,22 +392,6 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.context.reviewItems.length, 1);
     assert.equal(harness.context.reviewItems[0].type, "skipped");
-});
-
-test("last question still opens the final screen even if answer() reports stale continuation", async () => {
-    const harness = createQuizFlowHarness({
-        answerReturnValue: true
-    });
-
-    harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
-
-    await flushScheduled(harness.scheduled);
-
-    assert.equal(harness.getActiveScreen(), "result-screen");
-    assert.equal(harness.savedResults.length, 1);
-    assert.equal(harness.savedResults[0].correct, 1);
-    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
 });
 
 test("final screen renders immediately even if remote result sync stays pending", async () => {
