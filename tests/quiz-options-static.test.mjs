@@ -85,6 +85,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
 
     let skipAnswer = undefined;
     let finalCalls = 0;
+    const markedAnswers = [];
 
     const context = {
         document: {
@@ -121,7 +122,9 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
         reviewItems: [],
         playAnswerSound() {},
         verrouillerOptions() {},
-        marquerBoutons() {},
+        marquerBoutons(selected, correct) {
+            markedAnswers.push({ selected, correct });
+        },
         bilanFinal() {
             finalCalls += 1;
         },
@@ -151,7 +154,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     assert.equal(skipAnswer, null);
     assert.equal(scheduled.length, 1);
     assert.equal(scheduled[0].delay, 900);
-    assert.equal(optionsGrid.children[1].classList.contains("correct"), true);
+    assert.deepEqual(markedAnswers, [{ selected: null, correct: 1 }]);
     scheduled[0].callback();
     assert.equal(finalCalls, 1);
     assert.equal(optionsGrid.children.length, 4);

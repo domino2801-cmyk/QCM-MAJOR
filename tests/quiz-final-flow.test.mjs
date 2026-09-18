@@ -429,7 +429,7 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
     harness.skipButton.onclick();
-    assert.equal(harness.optionsGrid.children[3].classList.contains("correct"), true);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     await flushScheduled(harness.scheduled);
     assert.equal(harness.progress.innerText, "Question 4 / 5");
