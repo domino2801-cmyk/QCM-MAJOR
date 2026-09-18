@@ -2323,6 +2323,7 @@ async function bilanFinal() {
 
     try {
         if (finalizedQuizRunId === quizRunId) return;
+        finalizedQuizRunId = quizRunId;
 
         const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
         const note = scoring.computeFinal(quizEngine.stats, total);
@@ -2344,8 +2345,6 @@ async function bilanFinal() {
             total,
             date: new Date().toLocaleString("fr-FR")
         };
-
-        finalizedQuizRunId = quizRunId;
 
         let saveResultPromise;
         try {
