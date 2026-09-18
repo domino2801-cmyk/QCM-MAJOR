@@ -985,7 +985,8 @@ function formatSpecialtyLabel(specialty) {
 }
 
 function getCandidateLabel(account, candidateId) {
-    return account?.name || `Candidat ${candidateId.slice(0, 8)}`;
+    const normalizedCandidateId = String(candidateId || "candidat-inconnu");
+    return account?.name || `Candidat ${normalizedCandidateId.slice(0, 8)}`;
 }
 
 function clearAuthMessages() {
@@ -2329,7 +2330,7 @@ async function bilanFinal() {
         const note = scoring.computeFinal(quizEngine.stats, total);
         const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
         const account = currentAuthenticatedAccount || getAccounts()[email];
-        const candidateId = account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu");
+        const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
         const label = getCandidateLabel(account, candidateId);
         const resultRecord = {
             id: createRecordId("result"),
@@ -2345,17 +2346,11 @@ async function bilanFinal() {
             total,
             date: new Date().toLocaleString("fr-FR")
         };
-
-        let saveResultPromise;
-        try {
-            saveResultPromise = Promise.resolve(saveResult(resultRecord));
-        } catch (error) {
-            saveResultPromise = Promise.reject(error);
-        }
         const storedResults = getResults();
+        const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
         const results = storedResults.some(result => result.id === resultRecord.id)
             ? storedResults
-            : [normalizeResultRecord({ ...resultRecord, synced: false }), ...storedResults];
+            : [fallbackResult, ...storedResults];
 
         uiController.switchScreen("result-screen");
 
@@ -2369,15 +2364,33 @@ async function bilanFinal() {
         const maxPts = total * 4;
         document.getElementById("stat-brut").innerText = quizEngine.stats.points;
         document.getElementById("brut-max").innerText = `/ ${maxPts}`;
-        renderGlobalRanking(results);
-        renderReview();
 
         try {
-            await saveResultPromise;
-            renderGlobalRanking(getResults());
+            renderGlobalRanking(results);
+        } catch (error) {
+            console.warn("Rendu du classement indisponible.", error);
+        }
+
+        try {
+            renderReview();
+        } catch (error) {
+            console.warn("Rendu de la revue indisponible.", error);
+        }
+
+        try {
+            await saveResult(resultRecord);
+            try {
+                renderGlobalRanking(getResults());
+            } catch (error) {
+                console.warn("Actualisation du classement indisponible.", error);
+            }
         } catch (error) {
             console.warn("Synchronisation distante du résultat indisponible.", error);
-            renderGlobalRanking(getResults());
+            try {
+                renderGlobalRanking(getResults());
+            } catch (rankingError) {
+                console.warn("Actualisation du classement indisponible.", rankingError);
+            }
         }
     } catch (error) {
         if (finalizedQuizRunId === quizRunId) {

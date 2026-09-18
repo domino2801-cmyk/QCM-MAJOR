@@ -95,7 +95,12 @@ function createClassToggleNode() {
     };
 }
 
-function createQuizFlowHarness({ saveResultBehavior, persistResultLocally = true } = {}) {
+function createQuizFlowHarness({
+    saveResultBehavior,
+    persistResultLocally = true,
+    renderGlobalRankingBehavior,
+    renderReviewBehavior
+} = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
@@ -248,9 +253,16 @@ function createQuizFlowHarness({ saveResultBehavior, persistResultLocally = true
             }
         },
         renderGlobalRanking(results) {
+            if (typeof renderGlobalRankingBehavior === "function") {
+                renderGlobalRankingBehavior(results);
+            }
             rankingPayload = results;
         },
-        renderReview() {}
+        renderReview() {
+            if (typeof renderReviewBehavior === "function") {
+                renderReviewBehavior();
+            }
+        }
     };
 
     vm.runInNewContext(
@@ -428,6 +440,25 @@ test("final ranking includes the last result even before async save settles", as
     assert.equal(harness.getRankingPayload()[0].score, 20);
     assert.equal(harness.getRankingPayload()[0].correct, 1);
     assert.equal(harness.getRankingPayload()[0].wrong, 0);
+});
+
+test("final screen still renders when review rendering fails on the last answer", async () => {
+    const harness = createQuizFlowHarness({
+        renderReviewBehavior: () => {
+            throw new Error("review exploded");
+        }
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(harness.statCorrect.innerText, 1);
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.warnings[0][0], "Rendu de la revue indisponible.");
     assert.equal(harness.getRankingPayload()[0].skipped, 0);
     assert.equal(harness.getRankingPayload()[0].total, 1);
     assert.equal(harness.getRankingPayload()[0].synced, false);
