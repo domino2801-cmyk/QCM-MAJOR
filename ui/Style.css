@@ -708,6 +708,26 @@ h1 {
     text-align: center;
 }
 
+.global-evolution-filter {
+    color: rgba(226, 232, 226, 0.8);
+    display: block;
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.global-evolution-period {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--primary);
+    color: var(--text);
+    display: block;
+    font: inherit;
+    margin: 0 auto 16px;
+    max-width: 260px;
+    padding: 8px 10px;
+    width: 100%;
+}
+
 .global-evolution-chart {
     align-items: end;
     border-bottom: 1px solid rgba(226, 232, 226, 0.45);

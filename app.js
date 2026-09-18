@@ -409,7 +409,7 @@ function normalizeResultRecord(rawResult = {}) {
 
     return {
         id: rawResult.id || createRecordId("result"),
-        candidateId: rawResult.candidate_id || rawResult.candidateId || "candidat-inconnu",
+        candidateId: rawResult.user_id || rawResult.candidate_id || rawResult.candidateId || "candidat-inconnu",
         label: rawResult.label || rawResult.name || rawResult.email || "Candidat inconnu",
         email: rawResult.email || "",
         name: rawResult.name || "",
@@ -648,13 +648,16 @@ async function syncQuestionMutation(payload) {
             const questions = (payload.questions || []).map(question => ({
                 id: question.id,
                 theme_id: question.themeId,
-                q: question.q,
-                r: question.r,
-                correct: question.correct
+                question: question.q,
+                answer_1: question.r[0] || "",
+                answer_2: question.r[1] || "",
+                answer_3: question.r[2] || "",
+                answer_4: question.r[3] || "",
+                correct_answer: question.r[question.correct] || ""
             }));
             if (questions.length === 0) return { seeded: 0 };
 
-            await supabaseRestRequest("/questions?on_conflict=id", {
+            await supabaseRestRequest("/question_bank?on_conflict=id", {
                 method: "POST",
                 accessToken,
                 prefer: "resolution=merge-duplicates,return=minimal",
@@ -665,16 +668,19 @@ async function syncQuestionMutation(payload) {
 
         if (payload.action === "create") {
             const question = payload.question;
-            await supabaseRestRequest("/questions", {
+            await supabaseRestRequest("/question_bank", {
                 method: "POST",
                 accessToken,
                 prefer: "return=minimal",
                 body: [{
                     id: question.id,
                     theme_id: question.themeId,
-                    q: question.q,
-                    r: question.r,
-                    correct: question.correct
+                    question: question.q,
+                    answer_1: question.r[0] || "",
+                    answer_2: question.r[1] || "",
+                    answer_3: question.r[2] || "",
+                    answer_4: question.r[3] || "",
+                    correct_answer: question.r[question.correct] || ""
                 }]
             });
             return { created: true };
@@ -682,21 +688,24 @@ async function syncQuestionMutation(payload) {
 
         if (payload.action === "update") {
             const question = payload.question;
-            await supabaseRestRequest(`/questions?id=eq.${encodeURIComponent(payload.id)}`, {
+            await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
                 method: "PATCH",
                 accessToken,
                 body: {
                     theme_id: question.themeId,
-                    q: question.q,
-                    r: question.r,
-                    correct: question.correct
+                    question: question.q,
+                    answer_1: question.r[0] || "",
+                    answer_2: question.r[1] || "",
+                    answer_3: question.r[2] || "",
+                    answer_4: question.r[3] || "",
+                    correct_answer: question.r[question.correct] || ""
                 }
             });
             return { updated: true };
         }
 
         if (payload.action === "delete") {
-            await supabaseRestRequest(`/questions?id=eq.${encodeURIComponent(payload.id)}`, {
+            await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
                 method: "DELETE",
                 accessToken
             });
@@ -726,7 +735,7 @@ async function syncQuestionMutation(payload) {
                 const idsFilter = duplicateIds
                     .map(duplicateId => `"${String(duplicateId).replace(/"/g, "")}"`)
                     .join(",");
-                await supabaseRestRequest(`/questions?id=in.(${idsFilter})`, {
+                await supabaseRestRequest(`/question_bank?id=in.(${idsFilter})`, {
                     method: "DELETE",
                     accessToken
                 });
@@ -744,19 +753,28 @@ async function syncQuestionMutation(payload) {
 async function fetchSupabaseQuestions() {
     if (!supabase) return { questions: [] };
     const accessToken = getStoredSupabaseSession()?.access_token;
-    const query = "/questions?select=id,theme_id,q,r,correct";
+    const query = "/question_bank?select=id,theme_id,question,answer_1,answer_2,answer_3,answer_4,correct_answer&active=eq.true";
 
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
             const data = await supabaseRestRequest(query, { accessToken });
             return {
                 questions: (Array.isArray(data) ? data : []).map(question => {
+                    const answers = [question.answer_1, question.answer_2, question.answer_3, question.answer_4]
+                        .map(answer => String(answer || ""));
+                    const correctAnswer = String(question.correct_answer || "");
+                    const correctIndex = answers.findIndex(answer => answer === correctAnswer);
+                    const numericCorrectIndex = Number(correctAnswer);
                     return {
                         id: String(question.id),
                         themeId: String(question.theme_id),
-                        q: String(question.q || ""),
-                        r: normalizeQuestionAnswers(question.r),
-                        correct: Number(question.correct || 0)
+                        q: String(question.question || ""),
+                        r: answers,
+                        correct: correctIndex >= 0
+                            ? correctIndex
+                            : Number.isInteger(numericCorrectIndex) && numericCorrectIndex > 0
+                                ? numericCorrectIndex - 1
+                                : 0
                     };
                 })
             };
@@ -785,7 +803,7 @@ async function loadQuestionsFromSupabase() {
             }))
         );
 
-        if (data.questions.length >= localQuestions.length) {
+        if (data.questions.length >= localQuestions.length || !getStoredSupabaseSession()?.access_token) {
             applyRemoteQuestions(data.questions);
             questionSourceReady = true;
             return true;
@@ -806,8 +824,7 @@ async function loadQuestionsFromSupabase() {
 function toSupabaseResultPayload(result) {
     return {
         id: result.id,
-        candidate_id: result.candidateId,
-        label: result.label,
+        user_id: result.candidateId,
         email: result.email,
         name: result.name,
         theme: result.theme,
@@ -815,8 +832,7 @@ function toSupabaseResultPayload(result) {
         correct: result.correct,
         wrong: result.wrong,
         skipped: result.skipped,
-        total: result.total,
-        date: result.date
+        total: result.total
     };
 }
 
@@ -843,6 +859,7 @@ function queueResultDelete(resultId) {
 async function flushPendingResultSync() {
     if (!supabase) return;
     const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!accessToken) return;
 
     const deleteIds = [...pendingResultSync.deletes];
     if (deleteIds.length > 0) {
@@ -885,7 +902,7 @@ async function loadResultsFromSupabase() {
     try {
         const accessToken = getStoredSupabaseSession()?.access_token;
         const data = await supabaseRestRequest(
-            "/quiz_results?select=id,candidate_id,label,email,name,theme,score,correct,wrong,skipped,total,date,created_at&order=created_at.desc",
+            "/quiz_results?select=id,user_id,email,name,theme,score,correct,wrong,skipped,total,created_at&order=created_at.desc",
             { accessToken }
         );
         if (!Array.isArray(data)) return false;
@@ -1591,15 +1608,17 @@ function renderGlobalRanking(results) {
     });
 }
 
-function renderGlobalEvolution(results, candidateId) {
+function renderGlobalEvolution(results, candidateId, periodDays = 0) {
     const section = document.getElementById("global-evolution-section");
     const chart = document.getElementById("global-evolution-chart");
     const list = document.getElementById("global-evolution-list");
     const summary = document.getElementById("global-evolution-summary");
     if (!section || !chart || !list) return;
 
+    const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
     const evolution = results
         .filter(result => result.theme === "all" && result.candidateId === candidateId)
+        .filter(result => !cutoff || (result.createdAt && Date.parse(result.createdAt) >= cutoff))
         .sort((first, second) => String(first.createdAt).localeCompare(String(second.createdAt)));
     const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
         day: "2-digit",
@@ -2300,9 +2319,18 @@ async function initializeAppInteractions() {
         const candidateId = String(account?.id || currentCandidateEmail || "candidat-inconnu");
         const isOpening = section.classList.contains("hidden");
 
-        if (isOpening) renderGlobalEvolution(getResults(), candidateId);
+        if (isOpening) {
+            const periodDays = Number(document.getElementById("global-evolution-period")?.value || 0);
+            renderGlobalEvolution(getResults(), candidateId, periodDays);
+        }
         section.classList.toggle("hidden", !isOpening);
         event.currentTarget.setAttribute("aria-expanded", String(isOpening));
+    });
+
+    document.getElementById("global-evolution-period")?.addEventListener("change", event => {
+        const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail];
+        const candidateId = String(account?.id || currentCandidateEmail || "candidat-inconnu");
+        renderGlobalEvolution(getResults(), candidateId, Number(event.currentTarget.value || 0));
     });
 
     document.getElementById("logout-btn").addEventListener("click", async () => {

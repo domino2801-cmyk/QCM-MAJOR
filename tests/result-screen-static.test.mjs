@@ -23,6 +23,7 @@ test("result screen exposes the ids expected by app.js", () => {
     assert.match(html, /id="btn-evolution-result"/);
     assert.match(html, /id="global-evolution-section"/);
     assert.match(html, /id="global-evolution-summary"/);
+    assert.match(html, /id="global-evolution-period"/);
     assert.match(html, /id="global-evolution-chart"/);
     assert.match(html, /id="global-evolution-list"/);
     assert.doesNotMatch(html, /id="final-score"/);
@@ -49,6 +50,7 @@ test("result evolution only uses global campaign results", () => {
     assert.match(js, /Moyenne :/);
     assert.match(js, /Meilleure note :/);
     assert.match(js, /selectedTheme === "all"/);
+    assert.match(js, /periodDays \* 24 \* 60 \* 60 \* 1000/);
 });
 
 test("global ranking displays the candidate pseudo before legacy labels", () => {
