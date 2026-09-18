@@ -2231,12 +2231,13 @@ function startQuiz() {
 // AFFICHAGE D’UNE SITUATION TACTIQUE
 // =========================================================
 
-function afficherSituation(quizRunId = currentQuizRunId) {
-    if (quizRunId !== currentQuizRunId) return;
+function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : 0) {
+    const activeQuizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : quizRunId;
+    if (quizRunId !== activeQuizRunId) return;
     questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
     if (!q) {
-        bilanFinal(quizRunId);
+        bilanFinal(activeQuizRunId);
         return;
     }
     const answers = typeof resolveQuestionAnswers === "function"
@@ -2282,8 +2283,8 @@ function afficherSituation(quizRunId = currentQuizRunId) {
             }
 
             setTimeout(() => {
-                if (encore) afficherSituation(quizRunId);
-                else bilanFinal(quizRunId);
+                if (encore) afficherSituation(activeQuizRunId);
+                else bilanFinal(activeQuizRunId);
             }, 900);
         };
 
@@ -2302,10 +2303,8 @@ function afficherSituation(quizRunId = currentQuizRunId) {
             correct: answers[q.correct]
         });
         const encore = quizEngine.answer(null);
-        setTimeout(() => {
-            if (encore) afficherSituation(quizRunId);
-            else bilanFinal(quizRunId);
-        }, 900);
+        if (encore) afficherSituation(activeQuizRunId);
+        else bilanFinal(activeQuizRunId);
     };
 }
 
@@ -2336,9 +2335,11 @@ function marquerBoutons(selected, correct) {
 // BILAN FINAL
 // =========================================================
 
-async function bilanFinal(quizRunId = currentQuizRunId) {
-    if (quizRunId !== currentQuizRunId) return;
-    const isCurrentQuizRun = () => currentQuizRunId === quizRunId;
+async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : 0) {
+    const activeQuizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : quizRunId;
+    if (quizRunId !== activeQuizRunId) return;
+    const isCurrentQuizRun = () =>
+        (typeof currentQuizRunId === "number" ? currentQuizRunId : activeQuizRunId) === quizRunId;
 
     try {
         if (finalizedQuizRunId === quizRunId) return;
