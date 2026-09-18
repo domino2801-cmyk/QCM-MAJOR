@@ -1192,7 +1192,9 @@ function handleProfileLookupFailure(messageId) {
 }
 
 function setAuthMessage(id, message) {
-    document.getElementById(id).innerText = message;
+    const messageNode = document.getElementById(id);
+    if (!messageNode) return;
+    messageNode.innerText = message;
 }
 
 function clearLegacyStartupSplashState() {
@@ -1313,8 +1315,11 @@ function playAnswerSound(isCorrect) {
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     setAuthAudioPlaying(false);
-    document.getElementById("account-summary").innerText =
-        `${account.name || "Candidat"} • ${email} • ${formatSpecialtyLabel(account.specialty)}`;
+    const accountSummary = document.getElementById("account-summary");
+    if (accountSummary) {
+        accountSummary.innerText =
+            `${account.name || "Candidat"} • ${email} • ${formatSpecialtyLabel(account.specialty)}`;
+    }
     uiController.switchScreen("theme-screen");
 }
 
@@ -1481,6 +1486,7 @@ function renderAdminResults() {
 function renderGlobalRanking(results) {
     const section = document.getElementById("global-ranking-section");
     const list = document.getElementById("global-ranking-list");
+    if (!section || !list) return;
     const bestScoresByCandidate = new Map();
 
     results
@@ -1510,13 +1516,16 @@ function renderGlobalRanking(results) {
 }
 
 function setTerminalState(label) {
-    document.getElementById("auth-terminal-state").innerText = label;
+    const terminalState = document.getElementById("auth-terminal-state");
+    if (!terminalState) return;
+    terminalState.innerText = label;
 }
 
 function showAuthView(view, options = {}) {
     const views = ["login", "register", "otp", "reset", "success", "admin"];
     views.forEach(currentView => {
         const viewElement = document.getElementById(`${currentView}-view`);
+        if (!viewElement) return;
         viewElement.classList.toggle("hidden", currentView !== view);
     });
 
@@ -1526,20 +1535,32 @@ function showAuthView(view, options = {}) {
 
     if (view === "reset") {
         const isPasswordUpdate = options.resetMode === "update";
-        document.getElementById("reset-request-form").classList.toggle("hidden", isPasswordUpdate);
-        document.getElementById("reset-password-form").classList.toggle("hidden", !isPasswordUpdate);
-        document.getElementById("reset-copy").innerText = isPasswordUpdate
-            ? "Définissez un nouveau mot de passe pour finaliser la récupération du compte."
-            : "Renseignez votre adresse email pour recevoir un lien de réinitialisation.";
+        document.getElementById("reset-request-form")?.classList.toggle("hidden", isPasswordUpdate);
+        document.getElementById("reset-password-form")?.classList.toggle("hidden", !isPasswordUpdate);
+        const resetCopy = document.getElementById("reset-copy");
+        if (resetCopy) {
+            resetCopy.innerText = isPasswordUpdate
+                ? "Définissez un nouveau mot de passe pour finaliser la récupération du compte."
+                : "Renseignez votre adresse email pour recevoir un lien de réinitialisation.";
+        }
         setTerminalState(isPasswordUpdate ? "MODE RESET RECOVERY" : "MODE RESET REQUEST");
     } else if (view === "otp") {
-        document.getElementById("otp-email-display").innerText = options.email || getPendingSignup()?.email || "";
+        const otpEmailDisplay = document.getElementById("otp-email-display");
+        if (otpEmailDisplay) {
+            otpEmailDisplay.innerText = options.email || getPendingSignup()?.email || "";
+        }
         setTerminalState("MODE OTP VERIFY");
         const codeInputs = [...document.querySelectorAll(".otp-digit")];
         if (codeInputs.length > 0) codeInputs[0].focus();
     } else if (view === "success") {
-        document.getElementById("success-copy").innerText = options.message || "Opération terminée avec succès.";
-        document.getElementById("success-action-btn").innerText = options.actionLabel || "Retour à la connexion";
+        const successCopy = document.getElementById("success-copy");
+        if (successCopy) {
+            successCopy.innerText = options.message || "Opération terminée avec succès.";
+        }
+        const successActionButton = document.getElementById("success-action-btn");
+        if (successActionButton) {
+            successActionButton.innerText = options.actionLabel || "Retour à la connexion";
+        }
         successAction = options.onAction || (() => {
             uiController.switchScreen("auth-screen");
             showAuthView("login");
