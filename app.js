@@ -343,7 +343,11 @@ if (supabase) {
         if (!user) {
             if (session.refresh_token) {
                 try {
-                    return await supabase.auth.refreshSession(session.refresh_token);
+                    const refreshed = await supabase.auth.refreshSession(session.refresh_token);
+                    return {
+                        data: { session: refreshed?.data?.session || null },
+                        error: refreshed?.error || null
+                    };
                 } catch {
                     clearStoredSupabaseSession();
                     return { data: { session: null }, error: null };
@@ -2295,8 +2299,10 @@ function afficherSituation() {
             correct: answers[q.correct]
         });
         const encore = quizEngine.answer(null);
-        if (encore) afficherSituation();
-        else bilanFinal();
+        setTimeout(() => {
+            if (encore) afficherSituation();
+            else bilanFinal();
+        }, 900);
     };
 }
 

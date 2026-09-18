@@ -379,6 +379,9 @@ test("last skipped question is counted once and saved in the final note", async 
     harness.skipButton.onclick();
     harness.skipButton.onclick();
 
+    assert.equal(harness.scheduled.length, 1);
+    assert.equal(harness.scheduled[0].delay, 900);
+
     await flushScheduled(harness.scheduled);
     await new Promise(resolve => setImmediate(resolve));
 
@@ -425,7 +428,7 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
     harness.skipButton.onclick();
-    await new Promise(resolve => setImmediate(resolve));
+    await flushScheduled(harness.scheduled);
     assert.equal(harness.progress.innerText, "Question 4 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
