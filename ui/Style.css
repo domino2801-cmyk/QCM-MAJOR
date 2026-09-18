@@ -587,6 +587,53 @@ h1 {
     text-align: center;
 }
 
+.question-rotation-status {
+    color: var(--accent);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0 auto 18px;
+    max-width: 620px;
+    text-align: center;
+}
+
+.connection-status {
+    color: #e7c86e;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin: 0 auto 12px;
+    max-width: 620px;
+    text-align: center;
+}
+
+.admin-search {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--primary);
+    box-sizing: border-box;
+    color: var(--text);
+    font: inherit;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    width: 100%;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--accent);
+    cursor: pointer;
+    display: block;
+    font: inherit;
+    margin: 0 auto;
+    max-width: 100%;
+    padding: 10px 14px;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+    background: rgba(159, 170, 132, 0.12);
+    border-color: var(--accent);
+}
+
 .global-ranking h2 {
     color: #FFF;
     font-size: 1.1rem;

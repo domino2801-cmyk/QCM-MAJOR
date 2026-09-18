@@ -580,6 +580,35 @@ function getQuestionPool(themeId) {
     return questionsBank[themeIndex]?.questions || [];
 }
 
+function normalizeQuestionHistoryKey(question) {
+    return String(question || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function updateQuestionRotationStatus(themeId) {
+    const status = document.getElementById("question-rotation-status");
+    if (!status) return;
+
+    const poolKeys = new Set(getQuestionPool(themeId).map(question => normalizeQuestionHistoryKey(question.q)));
+    const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
+    const history = getQuestionHistory();
+    const usedKeys = new Set((history[email]?.[themeId] || [])
+        .map(normalizeQuestionHistoryKey)
+        .filter(question => poolKeys.has(question)));
+    const remaining = Math.max(poolKeys.size - usedKeys.size, 0);
+
+    status.classList.remove("hidden");
+    status.innerText = remaining === 0
+        ? `Rotation complète : ${poolKeys.size} question(s) déjà utilisées. Un nouveau cycle commencera à la prochaine campagne.`
+        : `${remaining} question(s) inédites disponibles sur ${poolKeys.size}.`;
+}
+
+function setConnectionStatus(message = "") {
+    const status = document.getElementById("connection-status");
+    if (!status) return;
+    status.innerText = message;
+    status.classList.toggle("hidden", !message);
+}
+
 function applyQuestionOverrides() {
     const overrides = getQuestionOverrides();
     Object.entries(overrides).forEach(([themeId, questions]) => {
@@ -1346,9 +1375,12 @@ function renderAdminAccounts() {
     const list = document.getElementById("admin-accounts-table");
     const accountCount = document.getElementById("admin-account-count");
     if (!list) return;
+    const search = document.getElementById("admin-accounts-search")?.value.trim().toLowerCase() || "";
     list.innerHTML = "";
 
     Object.entries(accounts).forEach(([email, account]) => {
+        const searchable = `${account.name || ""} ${email} ${account.specialty || ""}`.toLowerCase();
+        if (search && !searchable.includes(search)) return;
         const row = document.createElement("tr");
         const nameCell = document.createElement("td");
         const emailCell = document.createElement("td");
@@ -1402,9 +1434,12 @@ function renderAdminQuestions() {
     if (!themeField || !list) return;
     const themeId = themeField.value;
     const questions = questionsBank[themeId].questions;
+    const search = document.getElementById("admin-questions-search")?.value.trim().toLowerCase() || "";
     list.innerHTML = "";
 
     questions.forEach((question, index) => {
+        const searchable = `${question.q} ${normalizeQuestionAnswers(question.r).join(" ")}`.toLowerCase();
+        if (search && !searchable.includes(search)) return;
         const row = document.createElement("tr");
         const questionCell = document.createElement("td");
         const answersCell = document.createElement("td");
@@ -1460,9 +1495,12 @@ function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const results = getResults();
     if (!list) return;
+    const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
     list.innerHTML = "";
 
     results.forEach((result, index) => {
+        const searchable = `${result.name || ""} ${result.label || ""} ${result.email || ""} ${result.score} ${result.date}`.toLowerCase();
+        if (search && !searchable.includes(search)) return;
         const row = document.createElement("tr");
         const candidateCell = document.createElement("td");
         const scoreCell = document.createElement("td");
@@ -2129,8 +2167,14 @@ async function initializeApp() {
         await syncSupabaseSessionFromUrl();
         await restoreSupabaseSession();
         const loadedFromSupabase = await loadQuestionsFromSupabase();
-        if (!loadedFromSupabase) applyQuestionOverrides();
-        await loadResultsFromSupabase();
+        if (!loadedFromSupabase) {
+            applyQuestionOverrides();
+            setConnectionStatus("Mode hors connexion : questions locales utilisées.");
+        }
+        const loadedResultsFromSupabase = await loadResultsFromSupabase();
+        if (!loadedResultsFromSupabase && supabase) {
+            setConnectionStatus("Mode hors connexion : résultats locaux utilisés.");
+        }
         updateThemeQuestionCounts();
         renderGlobalRanking(getResults());
 
@@ -2178,6 +2222,7 @@ async function initializeAppInteractions() {
             btn.classList.add("selected");
 
             selectedTheme = themeId;
+            updateQuestionRotationStatus(themeId);
 
             // Récupération du nombre de questions
             const qtyInput = document.getElementById(`qty-${themeId}`);
@@ -2195,7 +2240,49 @@ async function initializeAppInteractions() {
     // =========================================================
 
     startButton?.addEventListener("click", () => {
+        const pool = getQuestionPool(selectedTheme);
+        const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
+        const history = getQuestionHistory();
+        const used = new Set((history[email]?.[selectedTheme] || []).map(normalizeQuestionHistoryKey));
+        const available = new Set(pool
+            .map(question => normalizeQuestionHistoryKey(question.q))
+            .filter(question => !used.has(question))).size;
+        if (maxQuestions > available && available > 0) {
+            const confirmed = window.confirm(`Il ne reste que ${available} question(s) inédite(s), mais vous en demandez ${maxQuestions}. Continuer avec les questions disponibles ?`);
+            if (!confirmed) return;
+        }
+        if (available === 0 && pool.length > 0) {
+            const confirmed = window.confirm("Toutes les questions de ce thème ont déjà été utilisées. Commencer un nouveau cycle ?");
+            if (!confirmed) return;
+        }
         startQuiz(); // Appel sonar + moteur
+    });
+
+    ["admin-accounts-search", "admin-questions-search", "admin-results-search"].forEach(id => {
+        document.getElementById(id)?.addEventListener("input", () => {
+            if (id === "admin-accounts-search") renderAdminAccounts();
+            if (id === "admin-questions-search") renderAdminQuestions();
+            if (id === "admin-results-search") renderAdminResults();
+        });
+    });
+
+    document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
+        const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
+        const confirmed = window.confirm("Réinitialiser votre historique de questions pour tous les thèmes ?");
+        if (!confirmed) return;
+
+        const history = getQuestionHistory();
+        delete history[email];
+        localStorage.setItem(questionHistoryStorageKey, JSON.stringify(history));
+
+        const status = document.getElementById("question-rotation-status");
+        if (selectedTheme) {
+            updateQuestionRotationStatus(selectedTheme);
+            if (status) status.innerText = `Historique réinitialisé. ${status.innerText}`;
+        } else if (status) {
+            status.classList.remove("hidden");
+            status.innerText = "Historique réinitialisé. Sélectionnez un thème pour voir les questions disponibles.";
+        }
     });
 
     document.getElementById("btn-new-mission")?.addEventListener("click", () => {
@@ -2335,10 +2422,9 @@ function startQuiz() {
     const history = getQuestionHistory();
     const themeHistory = history[email]?.[selectedTheme] || [];
     const pool = getQuestionPool(selectedTheme);
-    const normalizeHistoryQuestion = question => String(question || "").trim().replace(/\s+/g, " ").toLowerCase();
-    const poolKeys = new Set(pool.map(question => normalizeHistoryQuestion(question.q)));
+    const poolKeys = new Set(pool.map(question => normalizeQuestionHistoryKey(question.q)));
     const currentHistory = [...new Set(themeHistory)].filter(question =>
-        poolKeys.has(normalizeHistoryQuestion(question))
+        poolKeys.has(normalizeQuestionHistoryKey(question))
     );
     const excludedQuestions = currentHistory.length >= pool.length ? [] : currentHistory;
 

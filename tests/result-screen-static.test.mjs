@@ -57,3 +57,12 @@ test("global ranking displays the candidate pseudo before legacy labels", () => 
     assert.match(js, /rankingDateFormatter/);
     assert.match(js, /previousResult\.score === result\.score/);
 });
+
+test("theme screen exposes question rotation availability", () => {
+    assert.match(html, /id="question-rotation-status"/);
+    assert.match(html, /id="reset-question-history-btn"/);
+    assert.match(js, /updateQuestionRotationStatus/);
+    assert.match(js, /Rotation complète/);
+    assert.match(js, /question\(s\) inédites disponibles/);
+    assert.match(js, /Réinitialiser votre historique de questions/);
+});
