@@ -103,6 +103,12 @@ function createQuizFlowHarness({
     renderReviewBehavior,
     getAccountsBehavior,
     getCandidateLabelBehavior,
+    currentCandidateEmail = "candidat@example.com",
+    currentAuthenticatedAccount = {
+        id: "cand-1",
+        email: "candidat@example.com",
+        name: "Candidate Test"
+    },
     useLegacyResultIds = false,
     omitResultStatsNodes = false
 } = {}) {
@@ -150,12 +156,8 @@ function createQuizFlowHarness({
         },
         scoring,
         selectedTheme: "all",
-        currentCandidateEmail: "candidat@example.com",
-        currentAuthenticatedAccount: {
-            id: "cand-1",
-            email: "candidat@example.com",
-            name: "Candidate Test"
-        },
+        currentCandidateEmail,
+        currentAuthenticatedAccount,
         questionTransitionLocked: false,
         currentQuizRunId: 1,
         finalizedQuizRunId: -1,
@@ -558,6 +560,33 @@ test("final screen still renders even if result preparation fails after the last
     assert.equal(harness.getRankingPayload()[0].score, 20);
     assert.equal(harness.warnings.length, 1);
     assert.equal(harness.warnings[0][0], "Préparation du résultat indisponible.");
+});
+
+test("result preparation fallback keeps account label from the accounts store", async () => {
+    const harness = createQuizFlowHarness({
+        currentAuthenticatedAccount: null,
+        getAccountsBehavior: () => ({
+            "candidat@example.com": {
+                id: "cand-store",
+                email: "candidat@example.com",
+                name: "Candidate Store"
+            }
+        }),
+        getCandidateLabelBehavior: () => {
+            throw new Error("label unavailable");
+        }
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.getRankingPayload().length, 1);
+    assert.equal(harness.getRankingPayload()[0].candidateId, "cand-store");
+    assert.equal(harness.getRankingPayload()[0].label, "Candidate Store");
+    assert.equal(harness.getRankingPayload()[0].email, "candidat@example.com");
 });
 
 test("final ranking includes the last result even before async save settles", async () => {

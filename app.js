@@ -2383,25 +2383,28 @@ async function bilanFinal() {
         const fallbackResults = storedResults.some(result => result.id === fallbackResult.id)
             ? storedResults
             : [fallbackResult, ...storedResults];
+        let preparedFallbackResults = fallbackResults;
 
         try {
             const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
             const account = currentAuthenticatedAccount || getAccounts()[email];
             const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
+            const preparedFallbackResult = normalizeResultRecord({
+                ...fallbackResult,
+                candidateId,
+                label: account?.name || (email !== "Candidat inconnu" ? email : fallbackResult.label),
+                email: email === "Candidat inconnu" ? "" : email,
+                name: account?.name || ""
+            });
+            preparedFallbackResults = storedResults.some(result => result.id === preparedFallbackResult.id)
+                ? storedResults
+                : [preparedFallbackResult, ...storedResults];
             const label = getCandidateLabel(account, candidateId);
             const resultRecord = {
-                id: fallbackResult.id,
+                ...preparedFallbackResult,
                 candidateId,
                 label,
-                email: email === "Candidat inconnu" ? "" : email,
-                name: account?.name || "",
-                theme: selectedTheme,
-                score: note,
-                correct: quizEngine.stats.correct,
-                wrong: quizEngine.stats.wrong,
-                skipped: quizEngine.stats.skipped,
-                total,
-                date: new Date().toLocaleString("fr-FR")
+                synced: undefined
             };
             const results = storedResults.some(result => result.id === resultRecord.id)
                 ? storedResults
@@ -2431,7 +2434,7 @@ async function bilanFinal() {
         } catch (error) {
             console.warn("Préparation du résultat indisponible.", error);
             try {
-                renderGlobalRanking(fallbackResults);
+                renderGlobalRanking(preparedFallbackResults);
             } catch (rankingError) {
                 console.warn("Actualisation du classement indisponible.", rankingError);
             }
