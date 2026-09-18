@@ -486,7 +486,7 @@ test("final screen still renders when remote result sync fails", async () => {
 
     harness.context.afficherSituation();
     harness.skipButton.onclick();
-    await new Promise(resolve => setImmediate(resolve));
+    await flushScheduled(harness.scheduled);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);

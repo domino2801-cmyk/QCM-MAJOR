@@ -84,6 +84,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
 
     let skipAnswer = undefined;
     let finalCalls = 0;
+    const scheduled = [];
 
     const context = {
         document: {
@@ -124,8 +125,8 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
         bilanFinal() {
             finalCalls += 1;
         },
-        setTimeout() {
-            throw new Error("setTimeout should not be used while rendering options");
+        setTimeout(callback, delay) {
+            scheduled.push({ callback, delay });
         },
         console
     };
@@ -143,8 +144,13 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     assert.equal(skipButton.innerText, "Passer");
     assert.equal(skipButton.disabled, false);
     assert.equal(typeof skipButton.onclick, "function");
+    assert.equal(scheduled.length, 0);
 
     skipButton.onclick();
+
+    assert.equal(scheduled.length, 1);
+    assert.equal(scheduled[0].delay, 900);
+    scheduled[0].callback();
 
     assert.equal(skipAnswer, null);
     assert.equal(finalCalls, 1);
