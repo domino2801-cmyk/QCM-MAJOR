@@ -17,6 +17,7 @@ let selectedTheme = null;
 let maxQuestions = 0;
 let reviewItems = [];
 let questionTransitionLocked = false;
+let quizFinalizationLocked = false;
 let questionSourceReady = false;
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
@@ -2203,6 +2204,7 @@ function startQuiz() {
     quizEngine.selectTheme(selectedTheme, maxQuestions, excludedQuestions);
     reviewItems = [];
     questionTransitionLocked = false;
+    quizFinalizationLocked = false;
 
     if (!history[email]) history[email] = {};
     history[email][selectedTheme] = [
@@ -2316,6 +2318,9 @@ function marquerBoutons(selected, correct) {
 // =========================================================
 
 async function bilanFinal() {
+    if (quizFinalizationLocked) return;
+    quizFinalizationLocked = true;
+
     const total = scoring.getQuestionCount(quizEngine.stats, quizEngine.questions.length);
     const note = scoring.computeFinal(quizEngine.stats, total);
     const email = currentCandidateEmail || currentAuthenticatedAccount?.email || "Candidat inconnu";
@@ -2337,7 +2342,12 @@ async function bilanFinal() {
         date: new Date().toLocaleString("fr-FR")
     };
 
-    await saveResult(resultRecord);
+    let saveResultPromise;
+    try {
+        saveResultPromise = Promise.resolve(saveResult(resultRecord));
+    } catch (error) {
+        saveResultPromise = Promise.reject(error);
+    }
     const results = getResults();
 
     uiController.switchScreen("result-screen");
@@ -2354,6 +2364,13 @@ async function bilanFinal() {
     document.getElementById("brut-max").innerText = `/ ${maxPts}`;
     renderGlobalRanking(results);
     renderReview();
+
+    try {
+        await saveResultPromise;
+        renderGlobalRanking(getResults());
+    } catch (error) {
+        console.warn("Synchronisation distante du résultat indisponible.", error);
+    }
 }
 
 function renderReview() {

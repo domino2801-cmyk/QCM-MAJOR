@@ -95,7 +95,7 @@ function createClassToggleNode() {
     };
 }
 
-function createQuizFlowHarness() {
+function createQuizFlowHarness({ saveResultBehavior } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
@@ -118,6 +118,7 @@ function createQuizFlowHarness() {
     const skipButton = createButton();
     const scheduled = [];
     const savedResults = [];
+    const warnings = [];
     let activeScreen = "";
     let rankingPayload = null;
     let answerSounds = [];
@@ -130,7 +131,12 @@ function createQuizFlowHarness() {
 
     const context = {
         Date,
-        console,
+        console: {
+            ...console,
+            warn(...args) {
+                warnings.push(args);
+            }
+        },
         scoring,
         selectedTheme: "all",
         currentCandidateEmail: "candidat@example.com",
@@ -140,6 +146,7 @@ function createQuizFlowHarness() {
             name: "Candidate Test"
         },
         questionTransitionLocked: false,
+        quizFinalizationLocked: false,
         reviewItems: [],
         quizEngine: {
             index: 0,
@@ -207,6 +214,9 @@ function createQuizFlowHarness() {
         },
         async saveResult(resultRecord) {
             savedResults.push(resultRecord);
+            if (typeof saveResultBehavior === "function") {
+                return saveResultBehavior(resultRecord, savedResults);
+            }
         },
         getResults() {
             return savedResults.slice();
@@ -247,6 +257,7 @@ function createQuizFlowHarness() {
         brutMax,
         reviewSection,
         savedResults,
+        warnings,
         getActiveScreen: () => activeScreen,
         getRankingPayload: () => rankingPayload,
         getAnswerSounds: () => answerSounds
@@ -338,6 +349,42 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.context.reviewItems.length, 1);
     assert.equal(harness.context.reviewItems[0].type, "skipped");
+});
+
+test("final screen renders immediately even if remote result sync stays pending", async () => {
+    const harness = createQuizFlowHarness({
+        saveResultBehavior: () => new Promise(() => {})
+    });
+
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[1].onclick();
+
+    await flushScheduled(harness.scheduled);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].correct, 1);
+    assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
+    assert.equal(harness.statCorrect.innerText, 1);
+    assert.equal(harness.statWrong.innerText, 0);
+    assert.equal(harness.statSkipped.innerText, 0);
+});
+
+test("final screen still renders when remote result sync fails", async () => {
+    const harness = createQuizFlowHarness({
+        saveResultBehavior: () => Promise.reject(new Error("offline"))
+    });
+
+    harness.context.afficherSituation();
+    harness.skipButton.onclick();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].skipped, 1);
+    assert.equal(harness.scoreDisplay.innerText, "0.00 / 20");
+    assert.equal(harness.warnings.length, 1);
+    assert.equal(harness.warnings[0][0], "Synchronisation distante du résultat indisponible.");
 });
 
 function loadExportedConst(relativePath, exportName) {
