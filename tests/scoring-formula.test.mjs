@@ -20,13 +20,19 @@ test("quiz scoring computes final note from total questions and not only answere
     assert.equal(scoring.computeFinal(quizStats, 3), 5);
 });
 
-test("quiz scoring clamps negative final note to zero", () => {
+test("quiz scoring keeps negative final note when points are negative", () => {
     const quizStats = scoring.createStats();
 
     quizStats.wrong = 2;
     quizStats.points = -2;
 
-    assert.equal(scoring.computeFinal(quizStats, 2), 0);
+    assert.equal(scoring.computeFinal(quizStats, 2), -5);
+});
+
+test("quiz scoring returns 0 when there is no question", () => {
+    const quizStats = scoring.createStats();
+
+    assert.equal(scoring.computeFinal(quizStats, 0), 0);
 });
 
 test("quiz scoring applyAnswer keeps the tactical barème", () => {
