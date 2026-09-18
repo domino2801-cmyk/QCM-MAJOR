@@ -2256,6 +2256,10 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
 
     const optionsGrid = document.getElementById("options-grid");
     const skip = document.getElementById("skip-btn");
+    if (!optionsGrid || !skip) {
+        console.warn("Éléments du quiz introuvables : écran non initialisé.");
+        return;
+    }
     optionsGrid.innerHTML = "";
 
     // Génération des options
@@ -2380,7 +2384,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         };
         const storedResults = getResults();
         const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
-        const results = storedResults.some(result => result.id === resultRecord.id)
+        const rankingResults = storedResults.some(result => result.id === resultRecord.id)
             ? storedResults
             : [fallbackResult, ...storedResults];
 
@@ -2396,7 +2400,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         setResultText(["brut-max"], `/ ${maxPts}`);
 
         try {
-            renderGlobalRanking(results);
+            renderGlobalRanking(rankingResults);
         } catch (error) {
             console.warn("Rendu du classement indisponible.", error);
         }
