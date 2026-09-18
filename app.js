@@ -1344,6 +1344,8 @@ function switchAdminSection(section) {
 function renderAdminAccounts() {
     const accounts = getAccounts();
     const list = document.getElementById("admin-accounts-table");
+    const accountCount = document.getElementById("admin-account-count");
+    if (!list) return;
     list.innerHTML = "";
 
     Object.entries(accounts).forEach(([email, account]) => {
@@ -1373,7 +1375,9 @@ function renderAdminAccounts() {
         list.appendChild(row);
     });
 
-    document.getElementById("admin-account-count").innerText = Object.keys(accounts).length;
+    if (accountCount) {
+        accountCount.innerText = Object.keys(accounts).length;
+    }
 }
 
 function saveCurrentThemeQuestions(themeId) {
@@ -1393,8 +1397,10 @@ function resetQuestionForm() {
 }
 
 function renderAdminQuestions() {
-    const themeId = document.getElementById("admin-question-theme").value;
+    const themeField = document.getElementById("admin-question-theme");
     const list = document.getElementById("admin-questions-table");
+    if (!themeField || !list) return;
+    const themeId = themeField.value;
     const questions = questionsBank[themeId].questions;
     list.innerHTML = "";
 
@@ -1453,6 +1459,7 @@ function editQuestion(themeId, index) {
 function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const results = getResults();
+    if (!list) return;
     list.innerHTML = "";
 
     results.forEach((result, index) => {
@@ -2071,6 +2078,8 @@ async function initializeAppInteractions() {
     // SÉLECTION DU THÉÂTRE D’OPÉRATION
     // =========================================================
 
+    const startButton = document.getElementById("start-btn");
+
     document.querySelectorAll(".btn-theme").forEach(btn => {
         btn.addEventListener("click", () => {
             const themeId = btn.dataset.theme;
@@ -2086,7 +2095,9 @@ async function initializeAppInteractions() {
             maxQuestions = qtyInput ? parseInt(qtyInput.value, 10) : 20;
 
             // Activation du bouton d’engagement
-            document.getElementById("start-btn").disabled = false;
+            if (startButton) {
+                startButton.disabled = false;
+            }
         });
     });
 
@@ -2094,7 +2105,7 @@ async function initializeAppInteractions() {
     // DÉBUT DE LA CAMPAGNE
     // =========================================================
 
-    document.getElementById("start-btn").addEventListener("click", () => {
+    startButton?.addEventListener("click", () => {
         startQuiz(); // Appel sonar + moteur
     });
 
@@ -2266,21 +2277,23 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     const answers = typeof resolveQuestionAnswers === "function"
         ? resolveQuestionAnswers(q)
         : (Array.isArray(q.r) ? q.r : []);
-
-    document.getElementById("progress").innerText =
-        `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
-
-    document.getElementById("live-points").innerText =
-        `Points : ${quizEngine.stats.points}`;
-
-    document.getElementById("question").innerText = q.q;
-
+    const progressNode = document.getElementById("progress");
+    const livePointsNode = document.getElementById("live-points");
+    const questionNode = document.getElementById("question");
     const optionsGrid = document.getElementById("options-grid");
     const skip = document.getElementById("skip-btn");
-    if (!optionsGrid || !skip) {
+    if (!progressNode || !livePointsNode || !questionNode || !optionsGrid || !skip) {
         console.warn("Éléments du quiz introuvables : écran non initialisé.");
         return;
     }
+
+    progressNode.innerText =
+        `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
+
+    livePointsNode.innerText =
+        `Points : ${quizEngine.stats.points}`;
+
+    questionNode.innerText = q.q;
     optionsGrid.innerHTML = "";
 
     // Génération des options
