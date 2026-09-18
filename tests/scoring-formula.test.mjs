@@ -20,6 +20,18 @@ test("quiz scoring computes final note from total questions and not only answere
     assert.equal(scoring.computeFinal(quizStats, 3), 5);
 });
 
+test("quiz scoring returns 6/20 for 2 correct, 2 wrong and 1 skipped", () => {
+    const quizStats = scoring.createStats();
+
+    quizStats.correct = 2;
+    quizStats.wrong = 2;
+    quizStats.skipped = 1;
+    quizStats.points = 6;
+
+    assert.equal(scoring.getQuestionCount(quizStats, 5), 5);
+    assert.equal(scoring.computeFinal(quizStats, 5), 6);
+});
+
 test("quiz scoring never uses a denominator lower than seen questions", () => {
     const quizStats = scoring.createStats();
 
