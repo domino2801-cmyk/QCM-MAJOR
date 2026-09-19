@@ -46,6 +46,12 @@ test("login screen keeps a close-app button with fallback content", () => {
     assert.equal(body.innerHTML, "<main class=\"app-closed\"><h1>Application fermée</h1></main>");
 });
 
+test("theme selection uses a single dropdown selector instead of five buttons", () => {
+    assert.match(html, /id="theme-select"/);
+    assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="1"/);
+    assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="5"/);
+});
+
 test("btn-new-mission returns to theme selection and resets the current selection", () => {
     assert.match(html, /id="btn-new-mission"/);
 
@@ -65,7 +71,7 @@ test("btn-new-mission returns to theme selection and resets the current selectio
                     };
                 }
 
-                if (id === "theme-all-btn") {
+                if (id === "theme-select") {
                     return {
                         focus() {
                             context.focusCalled = true;
@@ -114,7 +120,7 @@ test("btn-new-mission listener registration stays null-safe", () => {
         runStatement(statement, {
             document: {
                 getElementById(id) {
-                    assert.match(id, /^(btn-new-mission|theme-all-btn)$/);
+                    assert.match(id, /^(btn-new-mission|theme-select)$/);
                     return null;
                 }
             },

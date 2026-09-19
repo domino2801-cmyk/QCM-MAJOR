@@ -63,9 +63,11 @@ export const uiController = {
     // Réinitialisation de la sélection des thèmes
     // -----------------------------------------------------
     resetThemeSelection() {
-        document.querySelectorAll(".btn-theme").forEach(btn => {
-            btn.classList.remove("selected");
-        });
+        const themeSelect = document.getElementById("theme-select");
+        if (themeSelect) themeSelect.value = "";
+
+        const qtyInput = document.getElementById("qty-theme");
+        if (qtyInput) qtyInput.value = 5;
 
         const startBtn = document.getElementById("start-btn");
         if (startBtn) startBtn.disabled = true;

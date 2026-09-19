@@ -193,13 +193,20 @@
                 <p class="subtitle">Préparation au combat du BM4</p>
                 <p id="account-summary" class="account-summary-under"> </p>
                 <p id="connection-status" class="connection-status" aria-live="polite"></p>
-            <div class="theme-grid">
-                <div class="theme-card global-card"><button id="theme-all-btn" class="btn-theme" data-theme="all">Campagne Globale</button><input type="number" id="qty-all" value="50" min="1" max="218"></div>
-                <div class="theme-card"><button class="btn-theme" data-theme="1">1. Organisation et Commandement</button><input type="number" id="qty-1" value="5" min="1" max="43"></div>
-                <div class="theme-card"><button class="btn-theme" data-theme="2">2. Matériels, Armements et Technologies</button><input type="number" id="qty-2" value="5" min="1" max="46"></div>
-                <div class="theme-card"><button class="btn-theme" data-theme="3">3. Lois de Programmation Militaire</button><input type="number" id="qty-3" value="5" min="1" max="24"></div>
-                <div class="theme-card"><button class="btn-theme" data-theme="4">4. Opérations Extérieures</button><input type="number" id="qty-4" value="5" min="1" max="35"></div>
-                <div class="theme-card"><button class="btn-theme" data-theme="5">5. Histoire & Traditions</button><input type="number" id="qty-5" value="5" min="1" max="70"></div>
+            <div class="theme-selector-panel">
+                <label for="theme-select" class="theme-select-label">Thème</label>
+                <div class="theme-select-row">
+                    <select id="theme-select" aria-label="Choisir un thème">
+                        <option value="">Sélectionner un thème</option>
+                        <option value="all">Campagne Globale</option>
+                        <option value="1">1. Organisation et Commandement</option>
+                        <option value="2">2. Matériels, Armements et Technologies</option>
+                        <option value="3">3. Lois de Programmation Militaire</option>
+                        <option value="4">4. Opérations Extérieures</option>
+                        <option value="5">5. Histoire &amp; Traditions</option>
+                    </select>
+                    <input type="number" id="qty-theme" value="5" min="1" max="43" aria-label="Nombre de questions">
+                </div>
             </div>
             <p id="question-rotation-status" class="question-rotation-status hidden" aria-live="polite"></p>
             <button id="start-btn" class="btn-main" disabled>Engager la Campagne</button>

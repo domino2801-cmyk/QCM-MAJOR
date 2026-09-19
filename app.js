@@ -975,24 +975,38 @@ async function clearResults() {
 }
 
 function updateThemeQuestionCounts() {
-    document.querySelectorAll(".btn-theme").forEach(button => {
-        const themeId = button.dataset.theme;
+    const themeSelect = document.getElementById("theme-select");
+    if (!themeSelect) return;
+
+    const themeTitles = {
+        all: "Campagne Globale",
+        1: "1. Organisation et Commandement",
+        2: "2. Matériels, Armements et Technologies",
+        3: "3. Lois de Programmation Militaire",
+        4: "4. Opérations Extérieures",
+        5: "5. Histoire & Traditions"
+    };
+
+    Object.entries(themeTitles).forEach(([themeId, label]) => {
+        const option = [...themeSelect.options].find(entry => entry.value === themeId);
+        if (!option) return;
+
         const count = themeId === "all"
             ? getAllQuestions().length
             : getQuestionPool(themeId).length;
-        const label = button.dataset.label || button.innerText.trim();
-        const quantityInput = document.getElementById(`qty-${themeId}`);
-
-        button.dataset.label = label.replace(/\s+\(\d+ questions?\)$/, "");
-        button.innerText = themeId === "all"
-            ? `${button.dataset.label} (${count} questions)`
-            : button.dataset.label;
-
-        if (quantityInput) {
-            quantityInput.max = count;
-            quantityInput.value = Math.min(parseInt(quantityInput.value, 10) || 1, count);
-        }
+        option.textContent = `${label} (${count} questions)`;
     });
+
+    const qtyInput = document.getElementById("qty-theme");
+    if (!qtyInput) return;
+
+    const currentThemeId = themeSelect.value || "1";
+    const maxQuestionsCount = currentThemeId === "all"
+        ? getAllQuestions().length
+        : getQuestionPool(currentThemeId).length;
+
+    qtyInput.max = maxQuestionsCount;
+    qtyInput.value = Math.min(parseInt(qtyInput.value, 10) || 1, maxQuestionsCount);
 }
 
 function hasSupabaseAuth() {
@@ -2255,27 +2269,34 @@ async function initializeAppInteractions() {
     // =========================================================
 
     const startButton = document.getElementById("start-btn");
+    const themeSelect = document.getElementById("theme-select");
+    const qtyInput = document.getElementById("qty-theme");
 
-    document.querySelectorAll(".btn-theme").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const themeId = btn.dataset.theme;
+    const applySelectedTheme = () => {
+        const themeId = themeSelect?.value || "";
 
-            // Désélection visuelle
-            document.querySelectorAll(".btn-theme").forEach(b => b.classList.remove("selected"));
-            btn.classList.add("selected");
+        if (!themeId) {
+            selectedTheme = null;
+            maxQuestions = 0;
+            if (startButton) startButton.disabled = true;
+            return;
+        }
 
-            selectedTheme = themeId;
-            updateQuestionRotationStatus(themeId);
+        selectedTheme = themeId;
+        updateQuestionRotationStatus(themeId);
+        maxQuestions = qtyInput ? parseInt(qtyInput.value, 10) || 1 : 20;
 
-            // Récupération du nombre de questions
-            const qtyInput = document.getElementById(`qty-${themeId}`);
-            maxQuestions = qtyInput ? parseInt(qtyInput.value, 10) : 20;
+        if (startButton) {
+            startButton.disabled = false;
+        }
+    };
 
-            // Activation du bouton d’engagement
-            if (startButton) {
-                startButton.disabled = false;
-            }
-        });
+    themeSelect?.addEventListener("change", applySelectedTheme);
+    qtyInput?.addEventListener("input", () => {
+        if (themeSelect?.value) {
+            maxQuestions = parseInt(qtyInput.value, 10) || 1;
+            if (startButton) startButton.disabled = false;
+        }
     });
 
     // =========================================================
@@ -2333,7 +2354,7 @@ async function initializeAppInteractions() {
         maxQuestions = 0;
         uiController.resetThemeSelection();
         uiController.switchScreen("theme-screen");
-        document.getElementById("theme-all-btn")?.focus();
+        document.getElementById("theme-select")?.focus();
     });
 
     document.getElementById("btn-evolution-result")?.addEventListener("click", event => {
