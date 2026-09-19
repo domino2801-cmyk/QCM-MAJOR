@@ -11,7 +11,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=theme-visual-20260919">
+    <link rel="stylesheet" href="ui/Style.css?v=theme-visual-20260919-centered-labels">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Chargement de l’application">
@@ -194,6 +194,7 @@
                 <p id="account-summary" class="account-summary-under"> </p>
                 <p id="connection-status" class="connection-status" aria-live="polite"></p>
             <div class="theme-selector-panel">
+                <button id="theme-global-btn" class="theme-global-btn" type="button">QCM type examen BM4</button>
                 <div class="theme-select-row">
                     <div class="theme-field">
                         <label for="theme-select" class="theme-select-label">Thème</label>
@@ -211,7 +212,6 @@
                         <input type="number" id="qty-theme" value="5" min="1" max="5" aria-label="Nombre de questions">
                     </div>
                 </div>
-                <button id="theme-global-btn" class="theme-global-btn" type="button">Campagne Globale • 50 questions</button>
             </div>
             <p id="question-rotation-status" class="question-rotation-status hidden" aria-live="polite"></p>
             <button id="start-btn" class="btn-main" disabled>Engager la Campagne</button>

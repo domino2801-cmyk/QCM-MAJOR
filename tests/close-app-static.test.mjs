@@ -52,10 +52,9 @@ test("theme selection uses a single dropdown selector instead of five buttons", 
     assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="5"/);
 });
 
-test("global campaign keeps a dedicated button with a default of 50 questions", () => {
+test("BM4 exam-style campaign keeps a dedicated button", () => {
     assert.match(html, /id="theme-global-btn"/);
-    assert.match(html, /Campagne Globale/);
-    assert.match(html, /Campagne Globale.*50 questions/);
+    assert.match(html, /QCM type examen BM4/);
     assert.match(html, /id="qty-theme" value="5"/);
 });
 
