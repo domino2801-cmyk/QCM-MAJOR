@@ -480,6 +480,27 @@ h1 {
     z-index: 1;
 }
 
+.theme-global-btn {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    border: 1px solid rgba(255, 207, 85, 0.5);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.18), rgba(255, 224, 138, 0.08));
+    color: var(--accent);
+    font-family: inherit;
+    font-weight: 700;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-global-btn:hover,
+.theme-global-btn.active {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.28), rgba(255, 224, 138, 0.12));
+    box-shadow: 0 0 0 1px rgba(255, 207, 85, 0.4), 0 0 18px rgba(255, 193, 7, 0.14);
+}
+
 #theme-select,
 #qty-theme {
     background: rgba(6, 12, 19, 0.96);
@@ -1488,5 +1509,111 @@ body {
 
     .review-item {
         overflow-wrap: anywhere;
+    }
+}
+
+#theme-screen {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#theme-screen .brand-lockup img {
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.36));
+}
+
+#theme-screen h1 {
+    margin-bottom: 12px;
+    border-bottom-color: rgba(159, 170, 132, 0.35);
+}
+
+#theme-screen .subtitle {
+    max-width: 560px;
+    margin: 0 auto 26px;
+    color: rgba(237, 242, 247, 0.72);
+    font-style: normal;
+    font-size: 0.86rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#theme-screen .account-summary-under,
+#theme-screen .connection-status {
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.theme-selector-panel {
+    max-width: 680px;
+    padding: 26px;
+    gap: 18px;
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(10, 22, 35, 0.98), rgba(14, 28, 40, 0.94));
+    border-color: rgba(159, 170, 132, 0.34);
+    box-shadow: 0 22px 44px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.theme-select-row {
+    grid-template-columns: minmax(0, 1fr) 150px;
+    gap: 16px;
+}
+
+.theme-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.theme-select-label {
+    display: block;
+    width: 100%;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-align: center;
+}
+
+#theme-select,
+#qty-theme {
+    min-height: 54px;
+    border-radius: 10px;
+    background: rgba(4, 12, 21, 0.92);
+}
+
+#qty-theme {
+    color: #ffdf73;
+}
+
+.theme-global-btn {
+    min-height: 52px;
+    border-radius: 10px;
+    letter-spacing: 0.04em;
+}
+
+#theme-screen > .btn-main {
+    max-width: 680px;
+    display: block;
+    margin: 0 auto;
+}
+
+@media (max-width: 600px) {
+    #theme-screen {
+        padding: 20px 8px 30px;
+    }
+
+    .theme-selector-panel {
+        padding: 18px 14px;
+        border-radius: 14px;
+    }
+
+    .theme-select-row {
+        grid-template-columns: minmax(0, 1fr) 112px;
+        gap: 10px;
+    }
+
+    #theme-select,
+    #qty-theme {
+        min-height: 50px;
+        padding: 12px 10px;
+        font-size: 0.9rem;
     }
 }

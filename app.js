@@ -979,7 +979,6 @@ function updateThemeQuestionCounts() {
     if (!themeSelect) return;
 
     const themeTitles = {
-        all: "Campagne Globale",
         1: "1. Organisation et Commandement",
         2: "2. Matériels, Armements et Technologies",
         3: "3. Lois de Programmation Militaire",
@@ -991,22 +990,15 @@ function updateThemeQuestionCounts() {
         const option = [...themeSelect.options].find(entry => entry.value === themeId);
         if (!option) return;
 
-        const count = themeId === "all"
-            ? getAllQuestions().length
-            : getQuestionPool(themeId).length;
-        option.textContent = `${label} (${count} questions)`;
+        option.textContent = label;
     });
 
     const qtyInput = document.getElementById("qty-theme");
-    if (!qtyInput) return;
-
-    const currentThemeId = themeSelect.value || "1";
-    const maxQuestionsCount = currentThemeId === "all"
-        ? getAllQuestions().length
-        : getQuestionPool(currentThemeId).length;
-
-    qtyInput.max = maxQuestionsCount;
-    qtyInput.value = Math.min(parseInt(qtyInput.value, 10) || 1, maxQuestionsCount);
+    if (qtyInput) {
+        const currentThemeId = themeSelect.value || "1";
+        const maxQuestionsCount = getQuestionPool(currentThemeId).length;
+        qtyInput.max = maxQuestionsCount;
+    }
 }
 
 function hasSupabaseAuth() {
@@ -2271,6 +2263,17 @@ async function initializeAppInteractions() {
     const startButton = document.getElementById("start-btn");
     const themeSelect = document.getElementById("theme-select");
     const qtyInput = document.getElementById("qty-theme");
+    const globalButton = document.getElementById("theme-global-btn");
+
+    const enableStartButton = (themeId) => {
+        selectedTheme = themeId;
+        updateQuestionRotationStatus(themeId);
+        maxQuestions = parseInt(qtyInput?.value, 10) || 5;
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+    };
 
     const applySelectedTheme = () => {
         const themeId = themeSelect?.value || "";
@@ -2278,25 +2281,43 @@ async function initializeAppInteractions() {
         if (!themeId) {
             selectedTheme = null;
             maxQuestions = 0;
+            if (globalButton) globalButton.classList.remove("active");
             if (startButton) startButton.disabled = true;
             return;
         }
 
-        selectedTheme = themeId;
-        updateQuestionRotationStatus(themeId);
-        maxQuestions = qtyInput ? parseInt(qtyInput.value, 10) || 1 : 20;
-
-        if (startButton) {
-            startButton.disabled = false;
+        if (qtyInput) {
+            const maxAllowed = getQuestionPool(themeId).length;
+            qtyInput.max = maxAllowed;
+            qtyInput.value = String(Math.min(parseInt(qtyInput.value, 10) || 5, maxAllowed));
         }
+
+        if (globalButton) globalButton.classList.remove("active");
+        enableStartButton(themeId);
     };
 
     themeSelect?.addEventListener("change", applySelectedTheme);
     qtyInput?.addEventListener("input", () => {
-        if (themeSelect?.value) {
-            maxQuestions = parseInt(qtyInput.value, 10) || 1;
-            if (startButton) startButton.disabled = false;
+        if (!themeSelect?.value) return;
+
+        const maxAllowed = getQuestionPool(themeSelect.value).length;
+        const requested = parseInt(qtyInput.value, 10) || 1;
+        maxQuestions = Math.min(Math.max(requested, 1), maxAllowed);
+        qtyInput.value = String(maxQuestions);
+        if (startButton) startButton.disabled = false;
+    });
+
+    globalButton?.addEventListener("click", () => {
+        if (themeSelect) themeSelect.value = "";
+        selectedTheme = "all";
+        maxQuestions = 50;
+        if (qtyInput) {
+            qtyInput.max = getAllQuestions().length;
+            qtyInput.value = "50";
         }
+        if (globalButton) globalButton.classList.add("active");
+        if (startButton) startButton.disabled = false;
+        updateQuestionRotationStatus("all");
     });
 
     // =========================================================

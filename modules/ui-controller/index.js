@@ -69,6 +69,9 @@ export const uiController = {
         const qtyInput = document.getElementById("qty-theme");
         if (qtyInput) qtyInput.value = 5;
 
+        const globalBtn = document.getElementById("theme-global-btn");
+        if (globalBtn) globalBtn.classList.remove("active");
+
         const startBtn = document.getElementById("start-btn");
         if (startBtn) startBtn.disabled = true;
     }
