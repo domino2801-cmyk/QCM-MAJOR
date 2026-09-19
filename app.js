@@ -1251,8 +1251,34 @@ function setAuthMessage(id, message) {
     messageNode.innerText = message;
 }
 
+let startupProgressTimer = null;
+let startupLoadingHidden = false;
+
+function startStartupProgress() {
+    const startupLoading = document.getElementById("startup-loading");
+    if (!startupLoading) return;
+
+    let progress = 8;
+    startupLoading.style.setProperty("--splash-progress", String(progress / 100));
+    startupProgressTimer = window.setInterval(() => {
+        progress = Math.min(progress + (progress < 70 ? 4 : 1), 92);
+        startupLoading.style.setProperty("--splash-progress", String(progress / 100));
+    }, 180);
+}
+
 function hideStartupLoading() {
-    document.getElementById("startup-loading")?.classList.add("startup-loading-hidden");
+    const startupLoading = document.getElementById("startup-loading");
+    if (!startupLoading || startupLoadingHidden) return;
+
+    startupLoadingHidden = true;
+    if (startupProgressTimer) {
+        window.clearInterval(startupProgressTimer);
+        startupProgressTimer = null;
+    }
+    startupLoading.style.setProperty("--splash-progress", "1");
+    window.setTimeout(() => {
+        startupLoading.classList.add("startup-loading-hidden");
+    }, 1000);
 }
 
 function getRegisterValidationMessage(field) {
@@ -2801,6 +2827,7 @@ function renderReview() {
 // =========================================================
 
 if (typeof document !== "undefined") {
+    startStartupProgress();
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initializeApp);
     } else {
