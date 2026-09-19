@@ -641,10 +641,9 @@ function applyRemoteQuestions(questions) {
 async function syncQuestionMutation(payload) {
     if (!supabase) return null;
 
-    try {
-        const accessToken = getStoredSupabaseSession()?.access_token;
+    const accessToken = getStoredSupabaseSession()?.access_token;
 
-        if (payload.action === "seed") {
+    if (payload.action === "seed") {
             const questions = (payload.questions || []).map(question => ({
                 id: question.id,
                 theme_id: question.themeId,
@@ -663,10 +662,10 @@ async function syncQuestionMutation(payload) {
                 prefer: "resolution=merge-duplicates,return=minimal",
                 body: questions
             });
-            return { seeded: questions.length };
-        }
+        return { seeded: questions.length };
+    }
 
-        if (payload.action === "create") {
+    if (payload.action === "create") {
             const question = payload.question;
             await supabaseRestRequest("/question_bank", {
                 method: "POST",
@@ -683,11 +682,12 @@ async function syncQuestionMutation(payload) {
                     correct_answer: question.r[question.correct] || ""
                 }]
             });
-            return { created: true };
-        }
+        return { created: true };
+    }
 
-        if (payload.action === "update") {
+    if (payload.action === "update") {
             const question = payload.question;
+            if (!payload.id) throw new Error("Identifiant Supabase de la question introuvable.");
             await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
                 method: "PATCH",
                 accessToken,
@@ -701,18 +701,18 @@ async function syncQuestionMutation(payload) {
                     correct_answer: question.r[question.correct] || ""
                 }
             });
-            return { updated: true };
-        }
+        return { updated: true };
+    }
 
-        if (payload.action === "delete") {
+    if (payload.action === "delete") {
             await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
                 method: "DELETE",
                 accessToken
             });
-            return { deleted: true };
-        }
+        return { deleted: true };
+    }
 
-        if (payload.action === "cleanup") {
+    if (payload.action === "cleanup") {
             const data = await fetchSupabaseQuestions();
             if (!Array.isArray(data.questions)) return { removed: 0 };
 
@@ -741,10 +741,7 @@ async function syncQuestionMutation(payload) {
                 });
             }
 
-            return { removed: duplicateIds.length };
-        }
-    } catch {
-        // La copie locale reste disponible si Supabase est temporairement indisponible.
+        return { removed: duplicateIds.length };
     }
 
     return null;
@@ -821,10 +818,10 @@ async function loadQuestionsFromSupabase() {
     }
 }
 
-function toSupabaseResultPayload(result) {
+function toSupabaseResultPayload(result, candidateColumn = "user_id") {
     return {
         id: result.id,
-        user_id: result.candidateId,
+        [candidateColumn]: result.candidateId,
         email: result.email,
         name: result.name,
         theme: result.theme,
@@ -875,18 +872,33 @@ async function flushPendingResultSync() {
     }
 
     const upsertIds = [...pendingResultSync.upserts];
-    const upserts = upsertIds
+    const upsertResults = upsertIds
         .map(resultId => getResults().find(result => result.id === resultId))
-        .filter(Boolean)
-        .map(toSupabaseResultPayload);
-    if (upserts.length > 0) {
-        await supabaseRestRequest("/quiz_results?on_conflict=id", {
-            method: "POST",
-            accessToken,
-            prefer: "resolution=merge-duplicates,return=minimal",
-            body: upserts
-        });
-        const syncedIds = new Set(upserts.map(result => result.id));
+        .filter(Boolean);
+    if (upsertResults.length > 0) {
+        let upserts;
+        try {
+            upserts = upsertResults.map(result => toSupabaseResultPayload(result, "user_id"));
+            await supabaseRestRequest("/quiz_results?on_conflict=id", {
+                method: "POST",
+                accessToken,
+                prefer: "resolution=merge-duplicates,return=minimal",
+                body: upserts
+            });
+        } catch (primaryError) {
+            try {
+                upserts = upsertResults.map(result => toSupabaseResultPayload(result, "candidate_id"));
+                await supabaseRestRequest("/quiz_results?on_conflict=id", {
+                    method: "POST",
+                    accessToken,
+                    prefer: "resolution=merge-duplicates,return=minimal",
+                    body: upserts
+                });
+            } catch {
+                throw primaryError;
+            }
+        }
+        const syncedIds = new Set(upsertResults.map(result => result.id));
         setResults(getResults().map(result => (
             syncedIds.has(result.id) ? { ...result, synced: true } : result
         )));
@@ -896,15 +908,27 @@ async function flushPendingResultSync() {
     persistPendingResultSync();
 }
 
-async function loadResultsFromSupabase() {
+async function loadResultsFromSupabase({ throwOnError = false } = {}) {
     if (!supabase) return false;
 
     try {
         const accessToken = getStoredSupabaseSession()?.access_token;
-        const data = await supabaseRestRequest(
-            "/quiz_results?select=id,user_id,email,name,theme,score,correct,wrong,skipped,total,created_at&order=created_at.desc",
-            { accessToken }
-        );
+        let data;
+        try {
+            data = await supabaseRestRequest(
+                "/quiz_results?select=id,user_id,email,name,theme,score,correct,wrong,skipped,total,created_at&order=created_at.desc",
+                { accessToken }
+            );
+        } catch (primaryError) {
+            try {
+                data = await supabaseRestRequest(
+                    "/quiz_results?select=id,candidate_id,email,name,theme,score,correct,wrong,skipped,total,created_at&order=created_at.desc",
+                    { accessToken }
+                );
+            } catch {
+                throw primaryError;
+            }
+        }
         if (!Array.isArray(data)) return false;
         const remoteResults = data
             .map(normalizeResultRecord)
@@ -928,8 +952,11 @@ async function loadResultsFromSupabase() {
         setResults([...mergedById.values()]);
         await flushPendingResultSync();
         return true;
-    } catch {
-        return false;
+    } catch (error) {
+        if (!throwOnError) return false;
+        const syncError = new Error(`Lecture des résultats impossible : ${error?.message || "Supabase a refusé la lecture."}`);
+        syncError.cause = error;
+        throw syncError;
     }
 }
 
@@ -1174,17 +1201,27 @@ async function upsertProfileForUser(user, profile = {}) {
             throw new Error("Configuration Supabase incomplète : confirmez la protection RLS du profil avant l’activation.");
         }
 
-        await supabaseRestRequest("/profiles?on_conflict=id", {
+        const profileBase = {
+            id: user.id,
+            email: account.email,
+            name: account.name
+        };
+        const profileRequest = payload => supabaseRestRequest("/profiles?on_conflict=id", {
             method: "POST",
             accessToken: getStoredSupabaseSession()?.access_token,
             prefer: "resolution=merge-duplicates,return=representation",
-            body: [{
-                id: user.id,
-                email: account.email,
-                name: account.name,
-                speciality: account.specialty
-            }]
+            body: [payload]
         });
+
+        try {
+            await profileRequest({ ...profileBase, speciality: account.specialty });
+        } catch (primaryError) {
+            try {
+                await profileRequest({ ...profileBase, specialty: account.specialty });
+            } catch {
+                throw primaryError;
+            }
+        }
     }
 
     cacheAccount(account);
@@ -1206,9 +1243,17 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
         throw error;
     }
     if (profileMissing) {
-        const error = new Error("Profil candidat non finalisé.");
-        error.code = profileNotReadyErrorCode;
-        throw error;
+        try {
+            const repairedAccount = await upsertProfileForUser(user, fallback);
+            currentCandidateEmail = repairedAccount.email;
+            currentAuthenticatedAccount = repairedAccount;
+            showAuthenticatedApp(repairedAccount.email, repairedAccount);
+            return;
+        } catch {
+            const error = new Error("Profil candidat non finalisé.");
+            error.code = profileNotReadyErrorCode;
+            throw error;
+        }
     }
     const mergedAccount = {
         ...fallback,
@@ -1399,20 +1444,43 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
 async function loadAdminData() {
     if (!supabase || !getStoredSupabaseSession()?.access_token) return;
 
-    const [profiles, resultsLoaded] = await Promise.all([
-        supabaseRestRequest("/profiles?select=id,email,name,speciality", {
-            accessToken: getStoredSupabaseSession()?.access_token
-        }),
-        loadResultsFromSupabase()
-    ]);
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    let profiles;
+
+    try {
+        profiles = await supabaseRestRequest("/profiles?select=id,email,name,speciality", {
+            accessToken
+        });
+    } catch (primaryError) {
+        try {
+            profiles = await supabaseRestRequest("/profiles?select=id,email,name,specialty", {
+                accessToken
+            });
+        } catch {
+            throw new Error(`Lecture des comptes impossible : ${primaryError.message}`);
+        }
+    }
+
+    const resultsLoaded = await loadResultsFromSupabase({ throwOnError: true });
 
     if (Array.isArray(profiles)) {
+        const synchronizedAccounts = {};
         profiles.forEach(profile => cacheAccount({
             id: profile.id,
             email: profile.email,
             name: profile.name,
-            specialty: profile.speciality
+            specialty: profile.speciality || profile.specialty
         }));
+        profiles.forEach(profile => {
+            const account = {
+                id: profile.id,
+                email: profile.email,
+                name: profile.name,
+                specialty: profile.speciality || profile.specialty
+            };
+            if (account.email) synchronizedAccounts[normalizeEmail(account.email)] = account;
+        });
+        cachedAccounts = synchronizedAccounts;
     }
 
     if (!resultsLoaded) {
@@ -1432,8 +1500,10 @@ async function showAdminApp() {
         await loadAdminData();
         renderAdminAccounts();
         renderAdminResults();
+        setAuthMessage("admin-data-status", "Données administrateur synchronisées avec Supabase.");
     } catch (error) {
         console.warn("Chargement des données administrateur impossible.", error);
+        setAuthMessage("admin-data-status", error?.message || "Impossible de charger les comptes depuis Supabase.");
     }
 }
 
@@ -1571,11 +1641,32 @@ function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const results = getResults();
     if (!list) return;
+    const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
+    const selectedCandidate = candidateFilter?.value || "";
+
+    if (candidateFilter) {
+        const candidates = new Map();
+        results.forEach(result => {
+            const value = String(result.email || result.candidateId || result.name || result.label || "").trim();
+            if (!value) return;
+            const label = result.name || result.label || result.email || value;
+            candidates.set(value, `${label}${result.email && result.name ? ` • ${result.email}` : ""}`);
+        });
+        candidateFilter.innerHTML = "";
+        candidateFilter.appendChild(new Option("Tous les candidats", ""));
+        [...candidates.entries()]
+            .sort((first, second) => first[1].localeCompare(second[1], "fr"))
+            .forEach(([value, label]) => candidateFilter.appendChild(new Option(label, value)));
+        candidateFilter.value = candidates.has(selectedCandidate) ? selectedCandidate : "";
+    }
+
     list.innerHTML = "";
 
     results.forEach((result, index) => {
+        const candidateKey = String(result.email || result.candidateId || result.name || result.label || "").trim();
         const searchable = `${result.name || ""} ${result.label || ""} ${result.email || ""} ${result.score} ${result.date}`.toLowerCase();
+        if (selectedCandidate && candidateKey !== selectedCandidate) return;
         if (search && !searchable.includes(search)) return;
         const row = document.createElement("tr");
         const candidateCell = document.createElement("td");
@@ -1607,28 +1698,17 @@ function renderAdminResults() {
 function renderGlobalRanking(results) {
     const section = document.getElementById("global-ranking-section");
     const list = document.getElementById("global-ranking-list");
-    if (!section || !list) return;
-    const bestScoresByCandidate = new Map();
+    const loginSection = document.getElementById("login-global-ranking-section");
+    const loginList = document.getElementById("login-global-ranking-list");
+    if ((!section || !list) && (!loginSection || !loginList)) return;
     const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric"
     });
 
-    results
+    const ranking = results
         .filter(result => result.theme === "all")
-        .forEach(result => {
-            const candidate = result.candidateId || result.label || result.email || "Candidat inconnu";
-            const currentBest = bestScoresByCandidate.get(candidate);
-            if (!currentBest
-                || result.score > currentBest.score
-                || (result.score === currentBest.score
-                    && String(result.createdAt).localeCompare(String(currentBest.createdAt)) > 0)) {
-                bestScoresByCandidate.set(candidate, result);
-            }
-        });
-
-    const ranking = [...bestScoresByCandidate.values()]
         .sort((first, second) => {
             const scoreDifference = second.score - first.score;
             if (scoreDifference !== 0) return scoreDifference;
@@ -1636,8 +1716,12 @@ function renderGlobalRanking(results) {
         })
         .slice(0, 3);
 
-    list.innerHTML = "";
-    section.classList.toggle("hidden", ranking.length === 0);
+    [list, loginList].filter(Boolean).forEach(target => {
+        target.innerHTML = "";
+    });
+    [section, loginSection].filter(Boolean).forEach(target => {
+        target.classList.toggle("hidden", ranking.length === 0);
+    });
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
 
@@ -1663,7 +1747,9 @@ function renderGlobalRanking(results) {
         scoreElement.innerText = `${result.score.toFixed(2)} / 20`;
         dateElement.innerText = date;
         item.append(rankElement, candidateElement, scoreElement, dateElement);
-        list.appendChild(item);
+        [list, loginList].filter(Boolean).forEach(target => {
+            target.appendChild(item.cloneNode(true));
+        });
     });
 }
 
@@ -1728,6 +1814,90 @@ function renderGlobalEvolution(results, candidateId, candidateEmail = "", period
         chart.appendChild(bar);
         list.appendChild(item);
     });
+}
+
+function renderCandidateHistory(results, candidateId, candidateEmail = "", periodDays = 0) {
+    const charts = document.getElementById("candidate-history-charts");
+    const recommendation = document.getElementById("candidate-history-recommendation");
+    const summary = document.getElementById("candidate-history-summary");
+    if (!charts || !recommendation) return;
+
+    const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
+    const normalizedEmail = String(candidateEmail || "").trim().toLowerCase();
+    const history = results
+        .filter(result => result.candidateId === candidateId
+            || (normalizedEmail && String(result.email || "").trim().toLowerCase() === normalizedEmail))
+        .filter(result => !cutoff || (result.createdAt && Date.parse(result.createdAt) >= cutoff))
+        .sort((first, second) => String(first.createdAt).localeCompare(String(second.createdAt)));
+
+    charts.innerHTML = "";
+    recommendation.innerText = "";
+    if (summary) summary.innerText = "";
+
+    const themeLabels = [
+        ["all", "Campagne Globale"],
+        ["1", "Thème 1 • Organisation et Commandement"],
+        ["2", "Thème 2 • Matériels, Armements et Technologies"],
+        ["3", "Thème 3 • Lois de Programmation Militaire"],
+        ["4", "Thème 4 • Opérations Extérieures"],
+        ["5", "Thème 5 • Histoire & Traditions"]
+    ];
+
+    const totalScores = history.map(result => Number(result.score) || 0);
+    if (summary && totalScores.length > 0) {
+        const average = totalScores.reduce((total, score) => total + score, 0) / totalScores.length;
+        summary.innerText = `${history.length} résultat(s) • Moyenne : ${average.toFixed(2)} / 20`;
+    }
+
+    const appendBars = (chart, themeResults) => {
+        if (themeResults.length === 0) {
+            chart.classList.add("candidate-history-chart-empty");
+            chart.innerText = "Aucun résultat";
+            return;
+        }
+
+        themeResults.forEach(result => {
+            const score = Math.max(0, Math.min(20, Number(result.score) || 0));
+            const bar = document.createElement("div");
+            bar.className = `global-evolution-bar ${score > 10 ? "score-good" : score >= 5 ? "score-warning" : "score-critical"}`;
+            bar.style.height = `${Math.max(score * 5, 3)}%`;
+            bar.title = `${score.toFixed(2)} / 20`;
+            bar.setAttribute("aria-label", `${score.toFixed(2)} / 20`);
+            const value = document.createElement("span");
+            value.innerText = score.toFixed(2);
+            bar.appendChild(value);
+            chart.appendChild(bar);
+        });
+    };
+
+    const globalSection = document.createElement("section");
+    const globalTitle = document.createElement("h3");
+    const globalChart = document.createElement("div");
+    globalSection.className = "candidate-history-chart-section";
+    globalTitle.innerText = themeLabels[0][1];
+    globalChart.className = "global-evolution-chart";
+    globalChart.setAttribute("role", "img");
+    globalChart.setAttribute("aria-label", "Histogramme Campagne Globale");
+    appendBars(globalChart, history.filter(result => result.theme === "all"));
+    globalSection.append(globalTitle, globalChart);
+    charts.appendChild(globalSection);
+
+    const themeAverages = themeLabels.slice(1)
+        .map(([themeId, label]) => {
+            const scores = history
+                .filter(result => String(result.theme) === themeId)
+                .map(result => Number(result.score) || 0);
+            return {
+                label,
+                average: scores.length > 0 ? scores.reduce((total, score) => total + score, 0) / scores.length : null
+            };
+        })
+        .filter(theme => theme.average !== null)
+        .sort((first, second) => first.average - second.average);
+    recommendation.innerText = themeAverages.length > 0
+        ? `Thème à travailler : ${themeAverages[0].label} (${themeAverages[0].average.toFixed(2)} / 20 de moyenne)`
+        : "Thème à travailler : aucun résultat par thème disponible.";
+
 }
 
 function setTerminalState(label) {
@@ -2377,6 +2547,8 @@ async function initializeAppInteractions() {
         });
     });
 
+    document.getElementById("admin-results-candidate-filter")?.addEventListener("change", renderAdminResults);
+
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
         const confirmed = window.confirm("Réinitialiser votre historique de questions pour tous les thèmes ?");
@@ -2417,6 +2589,36 @@ async function initializeAppInteractions() {
         }
         section.classList.toggle("hidden", !isOpening);
         event.currentTarget.setAttribute("aria-expanded", String(isOpening));
+    });
+
+    document.getElementById("btn-history-theme")?.addEventListener("click", event => {
+        const panel = document.getElementById("candidate-history-panel");
+        if (!panel) return;
+        const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail];
+        const candidateId = String(account?.id || currentCandidateEmail || "candidat-inconnu");
+        renderCandidateHistory(
+            getResults(),
+            candidateId,
+            currentCandidateEmail || account?.email || "",
+            Number(document.getElementById("candidate-history-period")?.value || 0)
+        );
+        uiController.switchScreen("history-screen");
+        event.currentTarget.setAttribute("aria-expanded", "true");
+    });
+
+    document.getElementById("btn-back-to-campaign")?.addEventListener("click", () => {
+        uiController.switchScreen("theme-screen");
+        document.getElementById("btn-history-theme")?.setAttribute("aria-expanded", "false");
+    });
+
+    document.getElementById("candidate-history-period")?.addEventListener("change", event => {
+        const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail];
+        renderCandidateHistory(
+            getResults(),
+            String(account?.id || currentCandidateEmail || "candidat-inconnu"),
+            currentCandidateEmail || account?.email || "",
+            Number(event.currentTarget.value || 0)
+        );
     });
 
     document.getElementById("global-evolution-period")?.addEventListener("change", event => {
@@ -2485,6 +2687,22 @@ async function initializeAppInteractions() {
         renderGlobalRanking(getResults());
     });
 
+    document.getElementById("refresh-admin-accounts-btn")?.addEventListener("click", async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        setAuthMessage("admin-data-status", "Synchronisation des comptes avec Supabase...");
+        try {
+            await loadAdminData();
+            renderAdminAccounts();
+            renderAdminResults();
+            setAuthMessage("admin-data-status", "Comptes synchronisés depuis Supabase.");
+        } catch (error) {
+            setAuthMessage("admin-data-status", error?.message || "Impossible de synchroniser les comptes.");
+        } finally {
+            button.disabled = false;
+        }
+    });
+
     document.getElementById("question-form").addEventListener("submit", async event => {
         event.preventDefault();
         const themeId = document.getElementById("admin-question-theme").value;
@@ -2500,31 +2718,37 @@ async function initializeAppInteractions() {
         };
         const questions = questionsBank[themeId].questions;
 
-        if (editingQuestionIndex === null) {
-            questions.push(question);
+        try {
             if (questionSourceReady) {
-                await syncQuestionMutation({
-                    action: "create",
-                    question: { ...question, themeId }
-                });
-            }
-        } else {
-            questions[editingQuestionIndex] = question;
-            if (questionSourceReady) {
-                await syncQuestionMutation({
-                    action: "update",
+                const syncResult = await syncQuestionMutation({
+                    action: editingQuestionIndex === null ? "create" : "update",
                     id: question.id,
                     question: { ...question, themeId }
                 });
-            }
-        }
 
-        saveCurrentThemeQuestions(themeId);
-        document.getElementById("admin-question-theme").value = themeId;
-        setAuthMessage("question-message", "Question enregistrée.");
-        resetQuestionForm();
-        document.getElementById("admin-question-theme").value = themeId;
-        renderAdminQuestions();
+                if (!syncResult?.created && !syncResult?.updated) {
+                    throw new Error("Supabase n’a pas confirmé l’enregistrement de la question.");
+                }
+            }
+
+            if (editingQuestionIndex === null) {
+                questions.push(question);
+            } else {
+                questions[editingQuestionIndex] = question;
+            }
+
+            saveCurrentThemeQuestions(themeId);
+            document.getElementById("admin-question-theme").value = themeId;
+            setAuthMessage("question-message", "Question enregistrée dans Supabase.");
+            resetQuestionForm();
+            document.getElementById("admin-question-theme").value = themeId;
+            renderAdminQuestions();
+        } catch (error) {
+            setAuthMessage(
+                "question-message",
+                `Enregistrement impossible : ${error?.message || "Supabase n’a pas accepté la modification."}`
+            );
+        }
     });
 
     document.getElementById("close-app").addEventListener("click", () => {
