@@ -33,6 +33,10 @@ body {
 .startup-loading {
     align-items: center;
     background: #000;
+    background-image: url('../public/splash/android/android-1440x2560.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
     color: #fff;
     display: flex;
     inset: 0;
@@ -42,15 +46,38 @@ body {
 }
 
 .startup-loading span {
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    position: absolute;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    width: 1px;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
 }
 
 .startup-loading-hidden {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+    .startup-loading {
+        background-image: url('../public/splash/ios/iphone-12-1170x2532.png');
+    }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) and (orientation: portrait) {
+    .startup-loading {
+        background-image: url('../public/splash/ios/ipad-pro-11-1668x2388.png');
+    }
+}
+
+@media (min-width: 1101px) {
+    .startup-loading {
+        background-image: url('../public/splash/android/android-tablet-1600x2560.png');
+    }
 }
 
 .container {

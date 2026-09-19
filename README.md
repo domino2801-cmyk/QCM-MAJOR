@@ -51,6 +51,9 @@ QCM-MAJOR/
 │
 ├── public/
 │   ├── images/                # Logos, décor, icônes
+│   ├── splash/
+│   │   ├── ios/               # Splash screens iPhone et iPad
+│   │   └── android/           # Splash screens Android téléphone et tablette
 │   └── audio/                 # Sonar, sons tactiques
 │
 ├── modules/
@@ -75,6 +78,12 @@ QCM-MAJOR/
 │       └── index.js           # Changement d’écran, marquage visuel
 
 ```
+
+### Splash screens mobile
+
+Les images de démarrage sont rangées dans `public/splash/ios/` et `public/splash/android/`.
+Les splash screens iOS sont déclarés dans `index.html` avec leurs dimensions et ratios d'écran.
+Pour Android, le navigateur/PWA utilise les icônes du `manifest.json` et sa couleur de fond ; les images Android sont conservées dans le dépôt pour une future intégration native (Capacitor ou équivalent), sans être utilisées par une balise iOS.
 
 ## 🛠️ Technologies Utilisées
 
