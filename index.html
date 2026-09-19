@@ -188,7 +188,6 @@
         </div>
 
         <div id="theme-screen" class="screen">
-            <div class="account-bar"><button id="logout-btn" type="button">Déconnexion</button></div>
             <div class="brand-lockup"><img src="public/images/logo2.png" width="100" alt=""><h1>Question pour un Major</h1></div>
                 <p class="subtitle">Préparation au combat du BM4</p>
                 <p id="account-summary" class="account-summary-under"> </p>
@@ -199,7 +198,7 @@
                     <div class="theme-field">
                         <label for="theme-select" class="theme-select-label">Thème</label>
                         <select id="theme-select" aria-label="Choisir un thème">
-                            <option value="">Sélection</option>
+                            <option value="">Choisissez votre thème</option>
                             <option value="1">1. Organisation et Commandement</option>
                             <option value="2">2. Matériels, Armements et Technologies</option>
                             <option value="3">3. Lois de Programmation Militaire</option>
@@ -215,7 +214,10 @@
             </div>
             <p id="question-rotation-status" class="question-rotation-status hidden" aria-live="polite"></p>
             <button id="start-btn" class="btn-main" disabled>Engager la Campagne</button>
-            <button id="reset-question-history-btn" class="btn-secondary" type="button">Réinitialiser mon historique</button>
+            <div class="theme-bottom-actions">
+                <button id="reset-question-history-btn" class="btn-secondary" type="button">Réinitialiser mon historique</button>
+                <button id="logout-btn" class="btn-secondary" type="button">Déconnexion du candidat</button>
+            </div>
         </div>
 
         <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div class="options-grid" id="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button></div>
