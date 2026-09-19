@@ -3,8 +3,8 @@
   "short_name": "QCM",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b1f33",
-  "theme_color": "#0b1f33",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "public/icons/icon-192.png",
