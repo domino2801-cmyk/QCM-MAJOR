@@ -21,7 +21,7 @@ test("startup splash appears before the application", () => {
     assert.match(css, /\.startup-loading::after/);
     assert.match(css, /--splash-progress/);
     assert.match(js, /startupProgressTimer/);
-    assert.match(js, /setTimeout\(\(\) => \\{/);
+    assert.match(js, /setTimeout\(\(\) => \{/);
 });
 
 test("mobile splash assets are stored and declared for iOS", () => {
