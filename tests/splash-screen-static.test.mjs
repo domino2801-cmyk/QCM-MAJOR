@@ -18,6 +18,8 @@ test("startup splash appears before the application", () => {
     assert.match(css, /public\/splash\/android\/android-1440x2560\.png/);
     assert.match(css, /public\/splash\/ios\/iphone-12-1170x2532\.png/);
     assert.match(css, /public\/splash\/ios\/ipad-pro-11-1668x2388\.png/);
+    assert.match(css, /\.startup-loading::after/);
+    assert.match(css, /splash-loading-progress/);
 });
 
 test("mobile splash assets are stored and declared for iOS", () => {
