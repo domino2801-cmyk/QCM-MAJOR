@@ -12,7 +12,8 @@ const js = readFileSync(`${root}/app.js`, "utf8");
 
 test("startup splash appears before the application", () => {
     assert.match(html, /id="startup-loading"/);
-    assert.match(html, /Chargement\.\.\./);
+    assert.match(html, /aria-label="Écran de démarrage de l’application"/);
+    assert.doesNotMatch(html, /<span>Chargement\.\.\.<\/span>/);
     assert.doesNotMatch(html, /script type="module" src="startup-splash-bootstrap\.js"/);
     assert.match(css, /public\/splash\/android\/android-1440x2560\.png/);
     assert.match(css, /public\/splash\/ios\/iphone-12-1170x2532\.png/);
