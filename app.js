@@ -1446,16 +1446,27 @@ async function loadAdminData() {
 
     const accessToken = getStoredSupabaseSession()?.access_token;
     let profiles;
+    const loadProfiles = async specialtyColumn => {
+        const pageSize = 1000;
+        const allProfiles = [];
+
+        for (let offset = 0; ; offset += pageSize) {
+            const page = await supabaseRestRequest(
+                `/profiles?select=id,email,name,${specialtyColumn}&order=id&limit=${pageSize}&offset=${offset}`,
+                { accessToken }
+            );
+            if (!Array.isArray(page)) return allProfiles;
+
+            allProfiles.push(...page);
+            if (page.length < pageSize) return allProfiles;
+        }
+    };
 
     try {
-        profiles = await supabaseRestRequest("/profiles?select=id,email,name,speciality", {
-            accessToken
-        });
+        profiles = await loadProfiles("speciality");
     } catch (primaryError) {
         try {
-            profiles = await supabaseRestRequest("/profiles?select=id,email,name,specialty", {
-                accessToken
-            });
+            profiles = await loadProfiles("specialty");
         } catch {
             throw new Error(`Lecture des comptes impossible : ${primaryError.message}`);
         }
