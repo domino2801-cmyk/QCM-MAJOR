@@ -55,18 +55,21 @@ test("signup flow still stores pending signup and switches to OTP", () => {
         setAuthMessage: (id, message) => {
             if (id === "register-message") registerMessageField.innerText = message;
         },
+        getFriendlyAuthError: (error, fallback) => error?.message || fallback || "Erreur d’authentification",
         getRequiredFormElement: (_, name) => fields[name] || null,
         normalizeEmail: email => email.trim().toLowerCase(),
         supabase: {
             auth: {
                 signUp: async payload => {
                     signUpPayload = payload;
+                    return { data: { user: { id: "user-123" }, session: { access_token: "token-123" } } };
                 }
             }
         },
         setPendingSignup: value => {
             pendingSignup = value;
         },
+        upsertProfileForUser: async () => ({ email: "test@example.com", name: "Caporal", specialty: "INF" }),
         clearAuthMessages: () => {
             registerMessageField.innerText = "";
         },

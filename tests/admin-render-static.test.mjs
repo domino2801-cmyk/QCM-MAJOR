@@ -86,6 +86,99 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
 });
 
 function extractNamedFunction(name, globals = {}) {
-    const script = new vm.Script(`(${js.includes(\`async function ${name}\`) ? js.slice(js.indexOf(\`async function ${name}\`), js.indexOf("}\n", js.indexOf(\`async function ${name}\`)) + 2) : js.slice(js.indexOf(\`function ${name}\`), js.indexOf("}\n", js.indexOf(\`function ${name}\`)) + 2)})`);
+    const asyncSignature = `async function ${name}`;
+    const plainSignature = `function ${name}`;
+    const start = js.includes(asyncSignature)
+        ? js.indexOf(asyncSignature)
+        : js.indexOf(plainSignature);
+    assert.notEqual(start, -1, `Unable to find function ${name}`);
+
+    let cursor = js.indexOf("(", start);
+    let parenDepth = 0;
+    let inString = null;
+    let escaped = false;
+
+    while (cursor < js.length) {
+        const character = js[cursor];
+
+        if (inString) {
+            if (escaped) {
+                escaped = false;
+            } else if (character === "\\") {
+                escaped = true;
+            } else if (character === inString) {
+                inString = null;
+            }
+            cursor += 1;
+            continue;
+        }
+
+        if (character === "'" || character === '"' || character === "`") {
+            inString = character;
+            cursor += 1;
+            continue;
+        }
+
+        if (character === "(") {
+            parenDepth += 1;
+        } else if (character === ")") {
+            parenDepth -= 1;
+            if (parenDepth === 0) {
+                let bodyCursor = cursor + 1;
+                while (/[\s]/.test(js[bodyCursor] || "")) bodyCursor += 1;
+                if (js[bodyCursor] === "{") {
+                    break;
+                }
+            }
+        }
+
+        cursor += 1;
+    }
+
+    assert.ok(cursor < js.length, `Unable to find the body of ${name}`);
+
+    const bodyStart = js.indexOf("{", cursor);
+    let depth = 0;
+    let bodyCursor = bodyStart;
+    inString = null;
+    escaped = false;
+
+    while (bodyCursor < js.length) {
+        const character = js[bodyCursor];
+
+        if (inString) {
+            if (escaped) {
+                escaped = false;
+            } else if (character === "\\") {
+                escaped = true;
+            } else if (character === inString) {
+                inString = null;
+            }
+            bodyCursor += 1;
+            continue;
+        }
+
+        if (character === "'" || character === '"' || character === "`") {
+            inString = character;
+            bodyCursor += 1;
+            continue;
+        }
+
+        if (character === "{") {
+            depth += 1;
+        } else if (character === "}") {
+            depth -= 1;
+            if (depth === 0) {
+                break;
+            }
+        }
+
+        bodyCursor += 1;
+    }
+
+    assert.ok(bodyCursor < js.length, `Unable to close the body for ${name}`);
+
+    const functionSource = js.slice(start, bodyCursor + 1);
+    const script = new vm.Script(`(${functionSource})`);
     return script.runInNewContext(globals);
 }
