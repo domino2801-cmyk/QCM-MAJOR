@@ -10,9 +10,11 @@ const root = path.resolve(testDirectory, "..");
 const appJs = readFileSync(`${root}/app.js`, "utf8");
 const { uiController } = await import(pathToFileURL(`${root}/modules/ui-controller/index.js`).href);
 
-test("theme buttons keep the question count only for the global campaign", () => {
+test("theme selection keeps the exam question count only for the global campaign", () => {
     assert.match(appJs, /themeId === "all"/);
-    assert.match(appJs, /button\.innerText = themeId === "all"/);
+    assert.match(appJs, /globalButton\?\.addEventListener\("click"/);
+    assert.match(appJs, /maxQuestions = 50/);
+    assert.match(appJs, /qtyInput\.value = "50"/);
 });
 
 function extractFunction(source, functionName) {

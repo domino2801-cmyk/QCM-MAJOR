@@ -1193,7 +1193,7 @@ async function fetchProfileForUser(user) {
     }
 }
 
-async function upsertProfileForUser(user, profile = {}) {
+async function upsertProfileForUser(user, profile = {}, accessToken = getStoredSupabaseSession()?.access_token) {
     const account = buildAccountFromUser(user, profile);
 
     if (supabase && user?.id) {
@@ -1208,7 +1208,7 @@ async function upsertProfileForUser(user, profile = {}) {
         };
         const profileRequest = payload => supabaseRestRequest("/profiles?on_conflict=id", {
             method: "POST",
-            accessToken: getStoredSupabaseSession()?.access_token,
+            accessToken,
             prefer: "resolution=merge-duplicates,return=representation",
             body: [payload]
         });
@@ -1439,6 +1439,7 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
             `${account.name || "Candidat"} • ${email} • ${formatSpecialtyLabel(account.specialty)}`;
     }
     uiController.switchScreen("theme-screen");
+    renderGlobalRanking(getResults());
 }
 
 async function loadAdminData() {
@@ -1711,7 +1712,9 @@ function renderGlobalRanking(results) {
     const list = document.getElementById("global-ranking-list");
     const loginSection = document.getElementById("login-global-ranking-section");
     const loginList = document.getElementById("login-global-ranking-list");
-    if ((!section || !list) && (!loginSection || !loginList)) return;
+    const themeSection = document.getElementById("theme-global-ranking-section");
+    const themeList = document.getElementById("theme-global-ranking-list");
+    if ((!section || !list) && (!loginSection || !loginList) && (!themeSection || !themeList)) return;
     const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
         day: "2-digit",
         month: "2-digit",
@@ -1727,10 +1730,10 @@ function renderGlobalRanking(results) {
         })
         .slice(0, 3);
 
-    [list, loginList].filter(Boolean).forEach(target => {
+    [list, loginList, themeList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
-    [section, loginSection].filter(Boolean).forEach(target => {
+    [section, loginSection, themeSection].filter(Boolean).forEach(target => {
         target.classList.toggle("hidden", ranking.length === 0);
     });
 
@@ -1973,6 +1976,8 @@ function showAuthView(view, options = {}) {
     if (view !== "admin") {
         setAuthAudioPlaying(true);
     }
+
+    renderGlobalRanking(getResults());
 }
 
 function ensureSupabaseConfigured(messageId) {
@@ -2110,7 +2115,7 @@ async function handleRegisterSubmit(event) {
 
     try {
         setAuthMessage("register-message", "");
-        await supabase.auth.signUp({
+        const { data } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -2119,6 +2124,9 @@ async function handleRegisterSubmit(event) {
         });
 
         setPendingSignup({ name, email, specialty });
+        if (data?.user && data?.session?.access_token) {
+            await upsertProfileForUser(data.user, { name, email, specialty }, data.session.access_token);
+        }
         clearAuthMessages();
         clearOtpInputs();
         showAuthView("otp", { email });
