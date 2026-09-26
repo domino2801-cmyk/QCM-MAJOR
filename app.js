@@ -1714,7 +1714,12 @@ function renderGlobalRanking(results) {
     const loginList = document.getElementById("login-global-ranking-list");
     const themeSection = document.getElementById("theme-global-ranking-section");
     const themeList = document.getElementById("theme-global-ranking-list");
-    if ((!section || !list) && (!loginSection || !loginList) && (!themeSection || !themeList)) return;
+    const historySection = document.getElementById("history-global-ranking-section");
+    const historyList = document.getElementById("history-global-ranking-list");
+    if ((!section || !list)
+        && (!loginSection || !loginList)
+        && (!themeSection || !themeList)
+        && (!historySection || !historyList)) return;
     const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
         day: "2-digit",
         month: "2-digit",
@@ -1730,10 +1735,10 @@ function renderGlobalRanking(results) {
         })
         .slice(0, 3);
 
-    [list, loginList, themeList].filter(Boolean).forEach(target => {
+    [list, loginList, themeList, historyList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
-    [section, loginSection, themeSection].filter(Boolean).forEach(target => {
+    [section, loginSection, themeSection, historySection].filter(Boolean).forEach(target => {
         target.classList.toggle("hidden", ranking.length === 0);
     });
 
@@ -1761,9 +1766,12 @@ function renderGlobalRanking(results) {
         scoreElement.innerText = `${result.score.toFixed(2)} / 20`;
         dateElement.innerText = date;
         item.append(rankElement, candidateElement, scoreElement, dateElement);
-        [list, loginList].filter(Boolean).forEach(target => {
+        [list, loginList, historyList].filter(Boolean).forEach(target => {
             target.appendChild(item.cloneNode(true));
         });
+        if (themeList) {
+            themeList.appendChild(item.cloneNode(true));
+        }
     });
 }
 
