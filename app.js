@@ -1043,7 +1043,9 @@ async function deleteResult(resultId) {
         // Conserver la copie locale si la suppression distante échoue.
     }
 
-    await loadPublicGlobalRanking();
+    if (typeof loadPublicGlobalRanking === "function") {
+        await loadPublicGlobalRanking();
+    }
 }
 
 async function clearResults() {
@@ -1058,7 +1060,9 @@ async function clearResults() {
         // Conserver la copie locale si le nettoyage distant échoue.
     }
 
-    await loadPublicGlobalRanking();
+    if (typeof loadPublicGlobalRanking === "function") {
+        await loadPublicGlobalRanking();
+    }
 }
 
 function updateThemeQuestionCounts() {
@@ -3095,7 +3099,13 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         try {
             await saveResult(resultRecord);
             if (!isCurrentQuizRun()) return;
-            await loadPublicGlobalRanking();
+            if (typeof loadPublicGlobalRanking === "function") {
+                try {
+                    await loadPublicGlobalRanking();
+                } catch (error) {
+                    console.warn("Actualisation du classement indisponible.", error);
+                }
+            }
             try {
                 renderGlobalRanking(getResults());
             } catch (error) {
@@ -3104,8 +3114,14 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         } catch (error) {
             console.warn("Synchronisation distante du résultat indisponible.", error);
             if (!isCurrentQuizRun()) return;
+            if (typeof loadPublicGlobalRanking === "function") {
+                try {
+                    await loadPublicGlobalRanking();
+                } catch (rankingError) {
+                    console.warn("Actualisation du classement indisponible.", rankingError);
+                }
+            }
             try {
-                await loadPublicGlobalRanking();
                 renderGlobalRanking(getResults());
             } catch (rankingError) {
                 console.warn("Actualisation du classement indisponible.", rankingError);
