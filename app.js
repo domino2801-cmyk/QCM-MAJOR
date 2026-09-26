@@ -1003,7 +1003,8 @@ async function loadPublicGlobalRanking({ throwOnError = false } = {}) {
 
     try {
         const data = await supabaseRestRequest(
-            "/public_global_campaign_top3?select=display_name,score,created_at&order=score.desc,created_at.desc"
+            "/rpc/get_public_global_campaign_top3",
+            { method: "POST" }
         );
         if (!Array.isArray(data)) return false;
         setPublicGlobalRanking(data);
