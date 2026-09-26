@@ -12,7 +12,7 @@ as $$
     select
         coalesce(
             nullif(trim(name), ''),
-            nullif(trim(label), ''),
+            nullif(trim(to_jsonb(quiz_results) ->> 'label'), ''),
             'Candidat inconnu'
         ) as display_name,
         score::double precision,
