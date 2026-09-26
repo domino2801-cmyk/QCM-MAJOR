@@ -43,6 +43,10 @@
                         <button class="auth-tab active" type="button" data-auth-mode="login">Connexion</button>
                         <button class="auth-tab" type="button" data-auth-mode="register">Créer un compte</button>
                     </div>
+                    <section id="login-global-ranking-section" class="global-ranking" aria-labelledby="login-global-ranking-title">
+                        <h2 id="login-global-ranking-title">Top 3 campagne globale</h2>
+                        <ol id="login-global-ranking-list" class="global-ranking-list"></ol>
+                    </section>
                     <form id="login-form" class="auth-form">
                         <label for="login-email">Mail personnel du candidat</label>
                         <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
@@ -54,10 +58,6 @@
                     <div class="auth-actions">
                         <button id="login-forgot-password-btn" class="auth-link" type="button">Mot de passe oublié</button>
                     </div>
-                    <section id="login-global-ranking-section" class="global-ranking" aria-labelledby="login-global-ranking-title">
-                        <h2 id="login-global-ranking-title">Top 3 campagne globale</h2>
-                        <ol id="login-global-ranking-list" class="global-ranking-list"></ol>
-                    </section>
                 </section>
                 <section id="register-view" class="auth-view hidden">
                     <div class="auth-tabs" role="tablist" aria-label="Création de compte">

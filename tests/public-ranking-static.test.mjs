@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
+const html = readFileSync(`${root}/index.html`, "utf8");
 const js = readFileSync(`${root}/app.js`, "utf8");
 const readme = readFileSync(`${root}/README.md`, "utf8");
 const migration = readFileSync(
@@ -46,4 +47,13 @@ test("login Top 3 uses the public ranking cache without opening private results"
     assert.match(js, /appendRanking\(historyList, effectiveGlobalRanking\);/);
     assert.match(readme, /fonction RPC publique `get_public_global_campaign_top3\(\)`/);
     assert.match(readme, /sans ouvrir `quiz_results` en lecture anonyme/);
+});
+
+test("candidate login screen keeps the Top 3 above the login form", () => {
+    const rankingIndex = html.indexOf('id="login-global-ranking-section"');
+    const formIndex = html.indexOf('id="login-form"');
+
+    assert.notEqual(rankingIndex, -1);
+    assert.notEqual(formIndex, -1);
+    assert.ok(rankingIndex < formIndex);
 });
