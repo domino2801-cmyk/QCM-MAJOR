@@ -70,6 +70,7 @@ let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
 let publicGlobalRankingCache = [];
+let publicRankingRefreshPromise = null;
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
 let pendingResultSync = {
@@ -1030,6 +1031,23 @@ async function refreshPublicGlobalRanking({ clearOnError = false } = {}) {
         }
         return false;
     }
+}
+
+function refreshVisibleLoginGlobalRanking() {
+    if (!hasSupabaseAuth() || publicRankingRefreshPromise) return publicRankingRefreshPromise;
+
+    publicRankingRefreshPromise = refreshPublicGlobalRanking()
+        .catch(() => false)
+        .then(() => {
+            if (!document.getElementById("login-view")?.classList.contains("hidden")) {
+                renderGlobalRanking(getResults());
+            }
+        })
+        .finally(() => {
+            publicRankingRefreshPromise = null;
+        });
+
+    return publicRankingRefreshPromise;
 }
 
 async function saveResult(result) {
@@ -2080,6 +2098,10 @@ function showAuthView(view, options = {}) {
     }
 
     renderGlobalRanking(getResults());
+
+    if (view === "login" && authUiReady) {
+        void refreshVisibleLoginGlobalRanking();
+    }
 }
 
 function ensureSupabaseConfigured(messageId) {

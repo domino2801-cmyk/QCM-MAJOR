@@ -57,3 +57,11 @@ test("candidate login screen keeps the Top 3 above the login form", () => {
     assert.notEqual(formIndex, -1);
     assert.ok(rankingIndex < formIndex);
 });
+
+test("login view retries the public Top 3 refresh when the auth screen is shown again", () => {
+    assert.match(js, /let publicRankingRefreshPromise = null;/);
+    assert.match(js, /function refreshVisibleLoginGlobalRanking\(\)/);
+    assert.match(js, /if \(!hasSupabaseAuth\(\) \|\| publicRankingRefreshPromise\) return publicRankingRefreshPromise;/);
+    assert.match(js, /if \(!document\.getElementById\("login-view"\)\?\.classList\.contains\("hidden"\)\) \{\s*renderGlobalRanking\(getResults\(\)\);/s);
+    assert.match(js, /if \(view === "login" && authUiReady\) \{\s*void refreshVisibleLoginGlobalRanking\(\);\s*\}/s);
+});
