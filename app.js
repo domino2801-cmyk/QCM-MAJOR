@@ -1815,14 +1815,15 @@ function renderGlobalRanking(results) {
         })
         .slice(0, 3);
     const loginRanking = getPublicGlobalRanking();
+    const effectiveGlobalRanking = loginRanking.length > 0 ? loginRanking : ranking;
 
     [list, loginList, themeList, historyList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
-    section?.classList.toggle("hidden", ranking.length === 0);
-    themeSection?.classList.toggle("hidden", ranking.length === 0);
-    historySection?.classList.toggle("hidden", ranking.length === 0);
-    loginSection?.classList.toggle("hidden", loginRanking.length === 0);
+    section?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
+    themeSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
+    historySection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
+    loginSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
     const appendRanking = (target, rankingItems) => {
@@ -1854,10 +1855,10 @@ function renderGlobalRanking(results) {
         });
     };
 
-    appendRanking(list, ranking);
-    appendRanking(themeList, ranking);
-    appendRanking(historyList, ranking);
-    appendRanking(loginList, loginRanking);
+    appendRanking(list, effectiveGlobalRanking);
+    appendRanking(themeList, effectiveGlobalRanking);
+    appendRanking(historyList, effectiveGlobalRanking);
+    appendRanking(loginList, effectiveGlobalRanking);
 }
 
 function renderGlobalEvolution(results, candidateId, candidateEmail = "", periodDays = 0) {
