@@ -442,7 +442,7 @@ function normalizePublicRankingRecord(rawResult = {}) {
         theme: rawResult.theme || "all",
         score: Number(rawResult.score || 0),
         date: rawResult.date || "",
-        createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString()
+        createdAt: rawResult.created_at || rawResult.createdAt || ""
     };
 }
 
