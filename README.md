@@ -131,6 +131,7 @@ Prérequis côté Supabase :
 * Prévoir une table `profiles` avec au minimum `id`, `email`, `name` et une colonne de spécialité nommée `specialty` ou `speciality`, ainsi que des politiques RLS permettant à l’utilisateur authentifié de lire/écrire son propre profil.
 * Prévoir une table `questions` (colonnes : `id` unique, `theme_id`, `q`, `r`, `correct`) avec `r` stocké comme tableau JSON/JSONB et règles de lecture/écriture adaptées à l’administration.
 * Prévoir une table `quiz_results` (colonnes : `id` unique, `candidate_id`, `label`, `email`, `name`, `theme`, `score`, `correct`, `wrong`, `skipped`, `total`, `date`, `created_at`) avec `created_at` alimenté automatiquement (timestamp par défaut) pour l’ordre d’affichage.
+* Exécuter aussi la migration qui crée la vue publique `public_global_campaign_top3` (champs `display_name`, `score`, `created_at`) et accorde `SELECT` à `anon`/`authenticated` pour afficher le Top 3 de connexion sans ouvrir `quiz_results` en lecture anonyme.
 * Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
 * Les comptes administrateurs doivent aussi être couverts par des règles RLS côté Supabase, cohérentes avec les claims `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 

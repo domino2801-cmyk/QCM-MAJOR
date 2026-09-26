@@ -24,6 +24,7 @@ const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
 const resultsStorageKey = "bm4-results";
 const resultsSyncStorageKey = "bm4-results-sync-v1";
+const publicRankingStorageKey = "bm4-public-ranking-v1";
 const questionHistoryStorageKey = "bm4-question-history";
 const supabaseSessionStorageKey = "bm4-supabase-session";
 const specialtyLabels = {
@@ -68,6 +69,7 @@ let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
+let publicGlobalRankingCache = [];
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
 let pendingResultSync = {
@@ -425,6 +427,25 @@ function normalizeResultRecord(rawResult = {}) {
     };
 }
 
+function normalizePublicRankingRecord(rawResult = {}) {
+    if (!rawResult || typeof rawResult !== "object") return null;
+
+    const displayName = typeof rawResult.display_name === "string" && rawResult.display_name.trim()
+        ? rawResult.display_name.trim()
+        : rawResult.name || rawResult.label || rawResult.email || "Candidat inconnu";
+
+    return {
+        id: rawResult.id || createRecordId("public-ranking"),
+        label: displayName,
+        email: "",
+        name: displayName,
+        theme: rawResult.theme || "all",
+        score: Number(rawResult.score || 0),
+        date: rawResult.date || "",
+        createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString()
+    };
+}
+
 function setResults(results) {
     resultsCache = results
         .map(normalizeResultRecord)
@@ -439,6 +460,23 @@ function setResults(results) {
 
 function getResults() {
     return resultsCache;
+}
+
+function setPublicGlobalRanking(results) {
+    publicGlobalRankingCache = (Array.isArray(results) ? results : [])
+        .map(normalizePublicRankingRecord)
+        .filter(Boolean)
+        .sort((first, second) => {
+            const scoreDifference = second.score - first.score;
+            if (scoreDifference !== 0) return scoreDifference;
+            return String(second.createdAt).localeCompare(String(first.createdAt));
+        })
+        .slice(0, 3);
+    localStorage.setItem(publicRankingStorageKey, JSON.stringify(publicGlobalRankingCache));
+}
+
+function getPublicGlobalRanking() {
+    return publicGlobalRankingCache;
 }
 
 function getQuestionHistory() {
@@ -960,6 +998,24 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
     }
 }
 
+async function loadPublicGlobalRanking({ throwOnError = false } = {}) {
+    if (!supabase) return false;
+
+    try {
+        const data = await supabaseRestRequest(
+            "/public_global_campaign_top3?select=display_name,score,created_at&order=score.desc,created_at.desc"
+        );
+        if (!Array.isArray(data)) return false;
+        setPublicGlobalRanking(data);
+        return true;
+    } catch (error) {
+        if (!throwOnError) return false;
+        const rankingError = new Error(`Lecture du Top 3 public impossible : ${error?.message || "Supabase a refusé la lecture."}`);
+        rankingError.cause = error;
+        throw rankingError;
+    }
+}
+
 async function saveResult(result) {
     const normalizedResult = normalizeResultRecord({ ...result, synced: false });
     const nextResults = [normalizedResult, ...getResults()];
@@ -986,6 +1042,8 @@ async function deleteResult(resultId) {
     } catch {
         // Conserver la copie locale si la suppression distante échoue.
     }
+
+    await loadPublicGlobalRanking();
 }
 
 async function clearResults() {
@@ -999,6 +1057,8 @@ async function clearResults() {
     } catch {
         // Conserver la copie locale si le nettoyage distant échoue.
     }
+
+    await loadPublicGlobalRanking();
 }
 
 function updateThemeQuestionCounts() {
@@ -1734,45 +1794,50 @@ function renderGlobalRanking(results) {
             return String(second.createdAt).localeCompare(String(first.createdAt));
         })
         .slice(0, 3);
+    const loginRanking = getPublicGlobalRanking();
 
     [list, loginList, themeList, historyList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
-    [section, loginSection, themeSection, historySection].filter(Boolean).forEach(target => {
-        target.classList.toggle("hidden", ranking.length === 0);
-    });
+    section?.classList.toggle("hidden", ranking.length === 0);
+    themeSection?.classList.toggle("hidden", ranking.length === 0);
+    historySection?.classList.toggle("hidden", ranking.length === 0);
+    loginSection?.classList.toggle("hidden", loginRanking.length === 0);
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
+    const appendRanking = (target, rankingItems) => {
+        if (!target) return;
 
-    ranking.forEach((result, index) => {
-        const previousResult = ranking[index - 1];
-        const rank = previousResult && previousResult.score === result.score
-            ? index
-            : index + 1;
-        const date = result.createdAt && !Number.isNaN(Date.parse(result.createdAt))
-            ? rankingDateFormatter.format(new Date(result.createdAt))
-            : result.date;
-        const item = document.createElement("li");
-        const rankElement = document.createElement("span");
-        const candidateElement = document.createElement("span");
-        const scoreElement = document.createElement("strong");
-        const dateElement = document.createElement("small");
+        rankingItems.forEach((result, index) => {
+            const previousResult = rankingItems[index - 1];
+            const rank = previousResult && previousResult.score === result.score
+                ? index
+                : index + 1;
+            const date = result.createdAt && !Number.isNaN(Date.parse(result.createdAt))
+                ? rankingDateFormatter.format(new Date(result.createdAt))
+                : result.date;
+            const item = document.createElement("li");
+            const rankElement = document.createElement("span");
+            const candidateElement = document.createElement("span");
+            const scoreElement = document.createElement("strong");
+            const dateElement = document.createElement("small");
 
-        item.className = "global-ranking-item";
-        rankElement.className = "global-ranking-rank";
-        rankElement.innerText = rankingSymbols[rank - 1] || `${rank}.`;
-        candidateElement.className = "global-ranking-candidate";
-        candidateElement.innerText = result.name || result.label || result.email || "Pseudo non renseigné";
-        scoreElement.innerText = `${result.score.toFixed(2)} / 20`;
-        dateElement.innerText = date;
-        item.append(rankElement, candidateElement, scoreElement, dateElement);
-        [list, loginList, historyList].filter(Boolean).forEach(target => {
-            target.appendChild(item.cloneNode(true));
+            item.className = "global-ranking-item";
+            rankElement.className = "global-ranking-rank";
+            rankElement.innerText = rankingSymbols[rank - 1] || `${rank}.`;
+            candidateElement.className = "global-ranking-candidate";
+            candidateElement.innerText = result.name || result.label || result.email || "Pseudo non renseigné";
+            scoreElement.innerText = `${result.score.toFixed(2)} / 20`;
+            dateElement.innerText = date;
+            item.append(rankElement, candidateElement, scoreElement, dateElement);
+            target.appendChild(item);
         });
-        if (themeList) {
-            themeList.appendChild(item.cloneNode(true));
-        }
-    });
+    };
+
+    appendRanking(list, ranking);
+    appendRanking(themeList, ranking);
+    appendRanking(historyList, ranking);
+    appendRanking(loginList, loginRanking);
 }
 
 function renderGlobalEvolution(results, candidateId, candidateEmail = "", periodDays = 0) {
@@ -2427,12 +2492,14 @@ function initializeAuth() {
 async function initializeApp() {
     try {
         const storedResults = getStoredJson(localStorage, resultsStorageKey, []);
+        const storedPublicRanking = getStoredJson(localStorage, publicRankingStorageKey, []);
         const storedSyncState = getStoredJson(localStorage, resultsSyncStorageKey, { upserts: [], deletes: [] });
         pendingResultSync = {
             upserts: Array.isArray(storedSyncState?.upserts) ? storedSyncState.upserts : [],
             deletes: Array.isArray(storedSyncState?.deletes) ? storedSyncState.deletes : []
         };
         setResults(Array.isArray(storedResults) ? storedResults : []);
+        setPublicGlobalRanking(Array.isArray(storedPublicRanking) ? storedPublicRanking : []);
         initializeAuth();
         authUiReady = true;
         initializeAppInteractions();
@@ -2443,6 +2510,7 @@ async function initializeApp() {
             applyQuestionOverrides();
             setConnectionStatus("Mode hors connexion : questions locales utilisées.");
         }
+        await loadPublicGlobalRanking();
         const loadedResultsFromSupabase = await loadResultsFromSupabase();
         if (!loadedResultsFromSupabase && supabase) {
             setConnectionStatus("Mode hors connexion : résultats locaux utilisés.");
@@ -3027,6 +3095,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         try {
             await saveResult(resultRecord);
             if (!isCurrentQuizRun()) return;
+            await loadPublicGlobalRanking();
             try {
                 renderGlobalRanking(getResults());
             } catch (error) {
@@ -3036,6 +3105,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
             console.warn("Synchronisation distante du résultat indisponible.", error);
             if (!isCurrentQuizRun()) return;
             try {
+                await loadPublicGlobalRanking();
                 renderGlobalRanking(getResults());
             } catch (rankingError) {
                 console.warn("Actualisation du classement indisponible.", rankingError);
