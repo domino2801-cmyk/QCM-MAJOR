@@ -469,7 +469,7 @@ function setPublicGlobalRanking(results) {
         .sort((first, second) => {
             const scoreDifference = second.score - first.score;
             if (scoreDifference !== 0) return scoreDifference;
-            return String(second.createdAt).localeCompare(String(first.createdAt));
+            return String(first.createdAt).localeCompare(String(second.createdAt));
         })
         .slice(0, 3);
     localStorage.setItem(publicRankingStorageKey, JSON.stringify(publicGlobalRankingCache));
@@ -1811,7 +1811,7 @@ function renderGlobalRanking(results) {
         .sort((first, second) => {
             const scoreDifference = second.score - first.score;
             if (scoreDifference !== 0) return scoreDifference;
-            return String(second.createdAt).localeCompare(String(first.createdAt));
+            return String(first.createdAt).localeCompare(String(second.createdAt));
         })
         .slice(0, 3);
     const loginRanking = getPublicGlobalRanking();

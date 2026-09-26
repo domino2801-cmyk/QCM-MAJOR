@@ -19,7 +19,7 @@ as $$
         created_at::text
     from public.quiz_results
     where theme = 'all'
-    order by score desc, created_at desc
+    order by score desc, created_at asc
     limit 3;
 $$;
 
