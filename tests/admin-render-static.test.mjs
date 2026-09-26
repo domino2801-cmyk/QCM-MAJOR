@@ -132,6 +132,7 @@ test("showAdminApp refreshes the ranking before and after admin sync", async () 
     await fn();
 
     assert.deepEqual(context.calls.filter(entry => Array.isArray(entry) && entry[0] === "ranking").length, 2);
+    assert.equal(context.calls.filter(entry => entry === "questions").length, 2);
     assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "screen" && entry[1] === "admin-screen"));
     assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "message" && entry[1] === "admin-data-status"));
 });

@@ -1592,6 +1592,7 @@ async function showAdminApp() {
     try {
         await loadAdminData();
         renderAdminAccounts();
+        renderAdminQuestions();
         renderAdminResults();
         renderGlobalRanking(getResults());
         setAuthMessage("admin-data-status", "Données administrateur synchronisées avec Supabase.");
