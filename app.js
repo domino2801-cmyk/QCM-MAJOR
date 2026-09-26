@@ -1585,6 +1585,7 @@ async function showAdminApp() {
     renderAdminAccounts();
     renderAdminQuestions();
     renderAdminResults();
+    renderGlobalRanking(getResults());
     switchAdminSection("accounts");
     uiController.switchScreen("admin-screen");
 
@@ -1592,6 +1593,7 @@ async function showAdminApp() {
         await loadAdminData();
         renderAdminAccounts();
         renderAdminResults();
+        renderGlobalRanking(getResults());
         setAuthMessage("admin-data-status", "Données administrateur synchronisées avec Supabase.");
     } catch (error) {
         console.warn("Chargement des données administrateur impossible.", error);
@@ -1792,12 +1794,15 @@ function renderGlobalRanking(results) {
     const list = document.getElementById("global-ranking-list");
     const loginSection = document.getElementById("login-global-ranking-section");
     const loginList = document.getElementById("login-global-ranking-list");
+    const adminSection = document.getElementById("admin-global-ranking-section");
+    const adminList = document.getElementById("admin-global-ranking-list");
     const themeSection = document.getElementById("theme-global-ranking-section");
     const themeList = document.getElementById("theme-global-ranking-list");
     const historySection = document.getElementById("history-global-ranking-section");
     const historyList = document.getElementById("history-global-ranking-list");
     if ((!section || !list)
         && (!loginSection || !loginList)
+        && (!adminSection || !adminList)
         && (!themeSection || !themeList)
         && (!historySection || !historyList)) return;
     const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
@@ -1817,13 +1822,14 @@ function renderGlobalRanking(results) {
     const loginRanking = getPublicGlobalRanking();
     const effectiveGlobalRanking = loginRanking.length > 0 ? loginRanking : ranking;
 
-    [list, loginList, themeList, historyList].filter(Boolean).forEach(target => {
+    [list, loginList, adminList, themeList, historyList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
     section?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     themeSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     historySection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     loginSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
+    adminSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
     const appendRanking = (target, rankingItems) => {
@@ -1859,6 +1865,7 @@ function renderGlobalRanking(results) {
     appendRanking(themeList, effectiveGlobalRanking);
     appendRanking(historyList, effectiveGlobalRanking);
     appendRanking(loginList, effectiveGlobalRanking);
+    appendRanking(adminList, effectiveGlobalRanking);
 }
 
 function renderGlobalEvolution(results, candidateId, candidateEmail = "", periodDays = 0) {

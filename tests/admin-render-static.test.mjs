@@ -19,8 +19,11 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="history-screen"/);
     assert.match(html, /id="btn-back-to-campaign"/);
     assert.match(html, /id="login-global-ranking-section"/);
+    assert.match(html, /id="admin-global-ranking-section"/);
+    assert.match(html, /id="admin-global-ranking-list"/);
     assert.match(html, /id="theme-global-ranking-section"/);
     assert.match(html, /id="theme-global-ranking-list"/);
+    assert.match(js, /getElementById\("admin-global-ranking-list"\)/);
     assert.match(js, /getElementById\("theme-global-ranking-list"\)/);
     assert.match(html, /id="reset-question-history-btn"/);
     assert.doesNotMatch(html, /id="candidate-history-theme-filter"/);
@@ -83,6 +86,54 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
     assert.deepEqual(context.calls[0], ["switch", "theme-screen"]);
     assert.deepEqual(context.calls[1][0], "render");
     assert.equal(context.calls[1][1].length, 3);
+});
+
+test("showAdminApp refreshes the ranking before and after admin sync", async () => {
+    const context = {
+        calls: [],
+        setAuthAudioPlaying() {},
+        renderAdminAccounts() {
+            context.calls.push("accounts");
+        },
+        renderAdminQuestions() {
+            context.calls.push("questions");
+        },
+        renderAdminResults() {
+            context.calls.push("results");
+        },
+        renderGlobalRanking(results) {
+            context.calls.push(["ranking", results]);
+        },
+        getResults() {
+            return [{ id: "r1", name: "A", theme: "all", score: 18 }];
+        },
+        switchAdminSection(section) {
+            context.calls.push(["section", section]);
+        },
+        uiController: {
+            switchScreen(screenId) {
+                context.calls.push(["screen", screenId]);
+            }
+        },
+        async loadAdminData() {
+            context.calls.push("load");
+        },
+        setAuthMessage(id, message) {
+            context.calls.push(["message", id, message]);
+        },
+        console: {
+            warn() {
+                context.calls.push("warn");
+            }
+        }
+    };
+
+    const fn = extractNamedFunction("showAdminApp", context);
+    await fn();
+
+    assert.deepEqual(context.calls.filter(entry => Array.isArray(entry) && entry[0] === "ranking").length, 2);
+    assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "screen" && entry[1] === "admin-screen"));
+    assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "message" && entry[1] === "admin-data-status"));
 });
 
 function extractNamedFunction(name, globals = {}) {
