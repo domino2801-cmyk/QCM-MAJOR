@@ -1016,6 +1016,21 @@ async function loadPublicGlobalRanking({ throwOnError = false } = {}) {
     }
 }
 
+async function refreshPublicGlobalRanking({ clearOnError = false } = {}) {
+    try {
+        const loaded = await loadPublicGlobalRanking({ throwOnError: true });
+        if (!loaded && clearOnError) {
+            setPublicGlobalRanking([]);
+        }
+        return loaded;
+    } catch {
+        if (clearOnError) {
+            setPublicGlobalRanking([]);
+        }
+        return false;
+    }
+}
+
 async function saveResult(result) {
     const normalizedResult = normalizeResultRecord({ ...result, synced: false });
     const nextResults = [normalizedResult, ...getResults()];
@@ -1043,8 +1058,8 @@ async function deleteResult(resultId) {
         // Conserver la copie locale si la suppression distante échoue.
     }
 
-    if (typeof loadPublicGlobalRanking === "function") {
-        await loadPublicGlobalRanking();
+    if (typeof refreshPublicGlobalRanking === "function") {
+        await refreshPublicGlobalRanking({ clearOnError: true });
     }
 }
 
@@ -1060,8 +1075,8 @@ async function clearResults() {
         // Conserver la copie locale si le nettoyage distant échoue.
     }
 
-    if (typeof loadPublicGlobalRanking === "function") {
-        await loadPublicGlobalRanking();
+    if (typeof refreshPublicGlobalRanking === "function") {
+        await refreshPublicGlobalRanking({ clearOnError: true });
     }
 }
 
