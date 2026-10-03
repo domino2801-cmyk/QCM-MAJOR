@@ -71,6 +71,7 @@ let cachedAccounts = {};
 let resultsCache = [];
 let publicGlobalRankingCache = [];
 let publicRankingRefreshPromise = null;
+let publicRankingState = "loading";
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
 let pendingResultSync = {
@@ -433,13 +434,16 @@ function normalizePublicRankingRecord(rawResult = {}) {
 
     const displayName = typeof rawResult.display_name === "string" && rawResult.display_name.trim()
         ? rawResult.display_name.trim()
-        : rawResult.name || rawResult.label || rawResult.email || "Candidat inconnu";
+        : rawResult.name || rawResult.label || "Candidat inconnu";
+    const publicName = typeof displayName === "string" && !displayName.includes("@")
+        ? displayName
+        : "Pseudo non renseigné";
 
     return {
         id: rawResult.id || createRecordId("public-ranking"),
-        label: displayName,
+        label: publicName,
         email: "",
-        name: displayName,
+        name: publicName,
         theme: rawResult.theme || "all",
         score: Number(rawResult.score || 0),
         date: rawResult.date || "",
@@ -1000,17 +1004,27 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
 }
 
 async function loadPublicGlobalRanking({ throwOnError = false } = {}) {
-    if (!supabase) return false;
+    if (!supabase) {
+        publicRankingState = "error";
+        return false;
+    }
 
     try {
         const data = await supabaseRestRequest(
             "/rpc/get_public_global_campaign_top3",
             { method: "POST" }
         );
-        if (!Array.isArray(data)) return false;
+        if (!Array.isArray(data) || data.length > 3 || data.some(row =>
+            !row || typeof row.display_name !== "string"
+            || typeof row.score !== "number" || !Number.isFinite(row.score)
+            || (row.created_at !== null && !Number.isFinite(Date.parse(row.created_at)))
+        )) throw new Error("Réponse du Top 3 public invalide.");
         setPublicGlobalRanking(data);
+        publicRankingState = "ready";
         return true;
     } catch (error) {
+        publicRankingState = "error";
+        console.warn("Chargement du Top 3 public indisponible.", error);
         if (!throwOnError) return false;
         const rankingError = new Error(`Lecture du Top 3 public impossible : ${error?.message || "Supabase a refusé la lecture."}`);
         rankingError.cause = error;
@@ -1847,7 +1861,17 @@ function renderGlobalRanking(results) {
     section?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     themeSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     historySection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
-    loginSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
+    loginSection?.classList.remove("hidden");
+    const loginStatus = document.getElementById("login-global-ranking-status");
+    if (loginStatus) {
+        loginStatus.innerText = publicRankingState === "error"
+            ? (loginRanking.length
+                ? "Actualisation indisponible : dernier classement enregistré affiché."
+                : "Classement momentanément indisponible. Réessayez en revenant à l’onglet Connexion.")
+            : publicRankingState === "loading"
+                ? "Chargement du classement…"
+                : loginRanking.length ? "" : "Aucun résultat de campagne globale pour le moment.";
+    }
     adminSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
@@ -1883,7 +1907,7 @@ function renderGlobalRanking(results) {
     appendRanking(list, effectiveGlobalRanking);
     appendRanking(themeList, effectiveGlobalRanking);
     appendRanking(historyList, effectiveGlobalRanking);
-    appendRanking(loginList, effectiveGlobalRanking);
+    appendRanking(loginList, loginRanking);
     appendRanking(adminList, effectiveGlobalRanking);
 }
 

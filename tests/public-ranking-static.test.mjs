@@ -39,9 +39,9 @@ test("application loads and caches the public ranking separately from quiz_resul
 test("login Top 3 uses the public ranking cache without opening private results", () => {
     assert.match(js, /const loginRanking = getPublicGlobalRanking\(\);/);
     assert.match(js, /const effectiveGlobalRanking = loginRanking\.length > 0 \? loginRanking : ranking;/);
-    assert.match(js, /loginSection\?\.classList\.toggle\("hidden", effectiveGlobalRanking\.length === 0\);/);
+    assert.match(js, /loginSection\?\.classList\.remove\("hidden"\);/);
     assert.match(js, /adminSection\?\.classList\.toggle\("hidden", effectiveGlobalRanking\.length === 0\);/);
-    assert.match(js, /appendRanking\(loginList, effectiveGlobalRanking\);/);
+    assert.match(js, /appendRanking\(loginList, loginRanking\);/);
     assert.match(js, /appendRanking\(adminList, effectiveGlobalRanking\);/);
     assert.match(js, /appendRanking\(themeList, effectiveGlobalRanking\);/);
     assert.match(js, /appendRanking\(historyList, effectiveGlobalRanking\);/);

@@ -1,5 +1,16 @@
 # Question pour un Major - Édition Tactique 🎖️
 
+Le Top 3 est visible sur la connexion candidat avant identification, au-dessus du
+formulaire. Le bloc reste visible pendant le chargement, sans résultats ou en cas
+d'erreur, avec un message explicite. Il utilise uniquement la RPC publique et son
+cache dédié, jamais les résultats privés d'un compte précédemment connecté.
+Appliquer `supabase/migrations/20260926082000_create_public_global_campaign_top3_view.sql`
+puis `supabase/migrations/20261003000000_public_top3_display_names.sql` avant
+publication. Seuls le pseudo, la note et la date sont renvoyés ; les pseudos
+contenant une adresse email sont masqués. Les politiques RLS de `quiz_results`
+restent inchangées. Le classement conserve les trois meilleurs résultats, même
+si un candidat apparaît plusieurs fois, et privilégie l'ancienneté à note égale.
+
 
 **Question pour un Major - Édition Tactique** est une application web de quiz (QCM) interactive conçue pour accompagner les militaires dans leur préparation au **Brevet Militaire de 4e niveau (BM4)**. 
 
