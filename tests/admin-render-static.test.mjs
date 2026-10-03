@@ -72,6 +72,9 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
             return [{ id: "r1", name: "A", theme: "all", score: 18 }, { id: "r2", name: "B", theme: "all", score: 17 }, { id: "r3", name: "C", theme: "all", score: 16 }];
         },
         setAuthAudioPlaying() {},
+        refreshCandidateHistory(account) {
+            context.calls.push(["history", account]);
+        },
         formatSpecialtyLabel(value) {
             return value || "GEN";
         },
@@ -86,6 +89,8 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
     assert.deepEqual(context.calls[0], ["switch", "theme-screen"]);
     assert.deepEqual(context.calls[1][0], "render");
     assert.equal(context.calls[1][1].length, 3);
+    assert.equal(context.calls[2][0], "history");
+    assert.equal(context.calls[2][1].email, "alice@test.com");
 });
 
 test("showAdminApp refreshes the ranking before and after admin sync", async () => {

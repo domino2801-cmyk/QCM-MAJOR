@@ -992,6 +992,9 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
                     mergedById.set(result.id, { ...result, synced: false });
                 }
             });
+        if (getStoredSupabaseSession()?.access_token !== accessToken) {
+            throw new Error("La session a changé pendant le chargement des résultats.");
+        }
         setResults([...mergedById.values()]);
         await flushPendingResultSync();
         return true;
@@ -1359,7 +1362,7 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
             const repairedAccount = await upsertProfileForUser(user, fallback);
             currentCandidateEmail = repairedAccount.email;
             currentAuthenticatedAccount = repairedAccount;
-            showAuthenticatedApp(repairedAccount.email, repairedAccount);
+            await showAuthenticatedApp(repairedAccount.email, repairedAccount);
             return;
         } catch {
             const error = new Error("Profil candidat non finalisé.");
@@ -1376,7 +1379,7 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
     currentCandidateEmail = mergedAccount.email;
     currentAuthenticatedAccount = mergedAccount;
     cacheAccount(mergedAccount);
-    showAuthenticatedApp(mergedAccount.email, mergedAccount);
+    await showAuthenticatedApp(mergedAccount.email, mergedAccount);
 }
 
 async function handleProfileNotReady(messageId, user = getStoredSupabaseSession()?.user, session = getStoredSupabaseSession()) {
@@ -1543,6 +1546,39 @@ function playAnswerSound(isCorrect) {
     answerAudio.play().catch(() => {});
 }
 
+function setCandidateHistoryStatus(message) {
+    ["candidate-history-status", "candidate-history-sync-status"].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.innerText = message;
+    });
+}
+
+async function refreshCandidateHistory(account) {
+    const isCurrentCandidate = () => currentAuthenticatedAccount?.id === account.id
+        && currentCandidateEmail === account.email;
+    if (!isCurrentCandidate()) return;
+    setCandidateHistoryStatus("Actualisation de votre historique…");
+    try {
+        if (!getStoredSupabaseSession()?.access_token) {
+            throw new Error("Session candidat indisponible.");
+        }
+        const loaded = await loadResultsFromSupabase({ throwOnError: true });
+        if (!loaded) throw new Error("Réponse de l’historique indisponible.");
+        if (!isCurrentCandidate()) return;
+        renderCandidateHistory(
+            getResults(),
+            String(account.id || account.email),
+            account.email,
+            Number(document.getElementById("candidate-history-period")?.value || 0)
+        );
+        setCandidateHistoryStatus("Historique actualisé depuis Supabase.");
+    } catch (error) {
+        console.warn("Actualisation de l’historique candidat indisponible.", error);
+        if (!isCurrentCandidate()) return;
+        setCandidateHistoryStatus("Actualisation de l’historique impossible. Les résultats déjà chargés restent disponibles ; reconnectez-vous pour réessayer.");
+    }
+}
+
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     setAuthAudioPlaying(false);
     const accountSummary = document.getElementById("account-summary");
@@ -1552,6 +1588,7 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     }
     uiController.switchScreen("theme-screen");
     renderGlobalRanking(getResults());
+    return refreshCandidateHistory({ ...account, email });
 }
 
 async function loadAdminData() {

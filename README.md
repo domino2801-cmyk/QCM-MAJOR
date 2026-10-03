@@ -13,6 +13,13 @@ si un candidat apparaît plusieurs fois, et privilégie l'ancienneté à note é
 Sur la connexion, le premier résultat est mis en avant dans une carte dorée avec
 un trophée, un pseudo et une note agrandis, également adaptée aux écrans mobiles.
 
+L'historique personnel est actualisé depuis Supabase à chaque connexion candidat,
+ainsi qu'à la restauration d'une session. Les graphiques, dont celui de Campagne
+Globale, sont recalculés pour le candidat connecté et la période sélectionnée.
+Un message indique le chargement, la réussite ou l'échec de cette actualisation ;
+un échec ne bloque pas l'accès aux campagnes et ne présente pas le cache comme
+un historique à jour.
+
 
 **Question pour un Major - Édition Tactique** est une application web de quiz (QCM) interactive conçue pour accompagner les militaires dans leur préparation au **Brevet Militaire de 4e niveau (BM4)**. 
 
