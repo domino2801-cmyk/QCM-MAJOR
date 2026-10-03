@@ -21,10 +21,10 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="login-global-ranking-section"/);
     assert.match(html, /id="admin-global-ranking-section"/);
     assert.match(html, /id="admin-global-ranking-list"/);
-    assert.match(html, /id="theme-global-ranking-section"/);
-    assert.match(html, /id="theme-global-ranking-list"/);
+    assert.match(html, /id="history-global-ranking-section"/);
+    assert.match(html, /id="history-global-ranking-list"/);
     assert.match(js, /getElementById\("admin-global-ranking-list"\)/);
-    assert.match(js, /getElementById\("theme-global-ranking-list"\)/);
+    assert.match(js, /getElementById\("history-global-ranking-list"\)/);
     assert.match(html, /id="reset-question-history-btn"/);
     assert.doesNotMatch(html, /id="candidate-history-theme-filter"/);
     assert.doesNotMatch(html, /id="candidate-history-ranking-list"/);

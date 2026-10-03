@@ -43,7 +43,6 @@ test("login Top 3 uses the public ranking cache without opening private results"
     assert.match(js, /adminSection\?\.classList\.toggle\("hidden", effectiveGlobalRanking\.length === 0\);/);
     assert.match(js, /appendRanking\(loginList, loginRanking\);/);
     assert.match(js, /appendRanking\(adminList, effectiveGlobalRanking\);/);
-    assert.match(js, /appendRanking\(themeList, effectiveGlobalRanking\);/);
     assert.match(js, /appendRanking\(historyList, effectiveGlobalRanking\);/);
     assert.match(readme, /fonction RPC publique `get_public_global_campaign_top3\(\)`/);
     assert.match(readme, /sans ouvrir `quiz_results` en lecture anonyme/);
@@ -56,6 +55,14 @@ test("candidate login screen keeps the Top 3 above the login form", () => {
     assert.notEqual(rankingIndex, -1);
     assert.notEqual(formIndex, -1);
     assert.ok(rankingIndex < formIndex);
+});
+
+test("campaign selection has no Top 3 while candidate history keeps it", () => {
+    const campaignScreen = html.slice(html.indexOf('id="theme-screen"'), html.indexOf('id="history-screen"'));
+    assert.doesNotMatch(campaignScreen, /global-ranking|Top 3/);
+    assert.doesNotMatch(js, /theme-global-ranking/);
+    assert.match(html, /id="history-global-ranking-section"/);
+    assert.match(html, /id="history-global-ranking-list"/);
 });
 
 test("login view retries the public Top 3 refresh when the auth screen is shown again", () => {

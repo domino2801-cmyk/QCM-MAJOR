@@ -1866,14 +1866,11 @@ function renderGlobalRanking(results) {
     const loginList = document.getElementById("login-global-ranking-list");
     const adminSection = document.getElementById("admin-global-ranking-section");
     const adminList = document.getElementById("admin-global-ranking-list");
-    const themeSection = document.getElementById("theme-global-ranking-section");
-    const themeList = document.getElementById("theme-global-ranking-list");
     const historySection = document.getElementById("history-global-ranking-section");
     const historyList = document.getElementById("history-global-ranking-list");
     if ((!section || !list)
         && (!loginSection || !loginList)
         && (!adminSection || !adminList)
-        && (!themeSection || !themeList)
         && (!historySection || !historyList)) return;
     const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
         day: "2-digit",
@@ -1892,11 +1889,10 @@ function renderGlobalRanking(results) {
     const loginRanking = getPublicGlobalRanking();
     const effectiveGlobalRanking = loginRanking.length > 0 ? loginRanking : ranking;
 
-    [list, loginList, adminList, themeList, historyList].filter(Boolean).forEach(target => {
+    [list, loginList, adminList, historyList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
     section?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
-    themeSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     historySection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
     loginSection?.classList.remove("hidden");
     const loginStatus = document.getElementById("login-global-ranking-status");
@@ -1942,7 +1938,6 @@ function renderGlobalRanking(results) {
     };
 
     appendRanking(list, effectiveGlobalRanking);
-    appendRanking(themeList, effectiveGlobalRanking);
     appendRanking(historyList, effectiveGlobalRanking);
     appendRanking(loginList, loginRanking);
     appendRanking(adminList, effectiveGlobalRanking);

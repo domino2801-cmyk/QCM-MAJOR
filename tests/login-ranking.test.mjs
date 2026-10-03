@@ -25,7 +25,7 @@ function element() {
 function harness(ranking = [], state = "ready") {
     const nodes = new Map([
         "login-global-ranking-section", "login-global-ranking-status", "login-global-ranking-list",
-        "global-ranking-section", "global-ranking-list", "theme-global-ranking-section", "theme-global-ranking-list"
+        "global-ranking-section", "global-ranking-list", "history-global-ranking-section", "history-global-ranking-list"
     ].map(id => [id, element()]));
     const context = vm.createContext({
         document: { getElementById: id => nodes.get(id), createElement: element },
@@ -44,6 +44,8 @@ test("le Top 3 public est visible avant connexion et ne reprend pas les résulta
     assert.equal(items[0].children[1].innerText, "Alpha");
     assert.equal(items[0].children[2].innerText, "19.00 / 20");
     assert.equal(h.nodes.get("login-global-ranking-section").classList.contains("hidden"), false);
+    assert.equal(h.nodes.get("history-global-ranking-list").children[0].children[1].innerText, "Alpha");
+    assert.equal(h.nodes.get("history-global-ranking-section").classList.contains("hidden"), false);
 });
 
 test("le bloc reste visible pendant le chargement, sans résultats et après erreur réseau", () => {

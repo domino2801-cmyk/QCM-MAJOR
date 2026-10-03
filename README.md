@@ -12,6 +12,8 @@ restent inchangées. Le classement conserve les trois meilleurs résultats, mêm
 si un candidat apparaît plusieurs fois, et privilégie l'ancienneté à note égale.
 Sur la connexion, le premier résultat est mis en avant dans une carte dorée avec
 un trophée, un pseudo et une note agrandis, également adaptée aux écrans mobiles.
+Le Top 3 reste accessible dans l'historique candidat, mais n'est pas affiché sur
+l'écran de choix de campagne.
 
 L'historique personnel est actualisé depuis Supabase à chaque connexion candidat,
 ainsi qu'à la restauration d'une session. Les graphiques, dont celui de Campagne
