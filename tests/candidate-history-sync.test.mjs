@@ -42,7 +42,7 @@ test("la connexion recharge et recalcule l’historique du candidat et la pério
     assert.equal(h.calls[0][2], "a@example.fr");
     assert.equal(h.calls[0][3], 30);
     for (const id of ["candidate-history-status", "candidate-history-sync-status"]) {
-        assert.equal(h.statuses.get(id).innerText, "Historique actualisé depuis Supabase.");
+        assert.equal(h.statuses.get(id).innerText, "Votre historique a été actualisé");
     }
     assert.match(app, /await showAuthenticatedApp\(mergedAccount\.email, mergedAccount\)/);
     assert.match(app, /await showAuthenticatedApp\(repairedAccount\.email, repairedAccount\)/);

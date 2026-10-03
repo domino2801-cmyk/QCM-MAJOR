@@ -822,6 +822,11 @@ h1 {
     padding-top: 15px;
 }
 
+#candidate-history-status,
+#candidate-history-sync-status {
+    text-align: center;
+}
+
 .global-ranking {
     border: 1px solid var(--accent);
     background: rgba(124, 169, 124, 0.08);

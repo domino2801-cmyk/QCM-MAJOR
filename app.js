@@ -1571,7 +1571,7 @@ async function refreshCandidateHistory(account) {
             account.email,
             Number(document.getElementById("candidate-history-period")?.value || 0)
         );
-        setCandidateHistoryStatus("Historique actualisé depuis Supabase.");
+        setCandidateHistoryStatus("Votre historique a été actualisé");
     } catch (error) {
         console.warn("Actualisation de l’historique candidat indisponible.", error);
         if (!isCurrentCandidate()) return;
