@@ -4,9 +4,16 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const renderer = app.slice(app.indexOf("function renderGlobalRanking("), app.indexOf("function renderGlobalEvolution("));
 const loader = app.slice(app.indexOf("async function loadPublicGlobalRanking("), app.indexOf("async function refreshPublicGlobalRanking("));
 const normalizer = app.slice(app.indexOf("function normalizePublicRankingRecord("), app.indexOf("function setResults("));
+
+test("le titre du podium reste proche du premier résultat sans espace pour un statut vide", () => {
+    assert.match(css, /:is\(#login-global-ranking-section, #history-global-ranking-section, #admin-global-ranking-section\) :is\(h2, h3\) \{\s*margin: 0 0 6px;/);
+    assert.match(css, /#login-global-ranking-status:empty \{\s*display: none;/);
+    assert.match(css, /#login-global-ranking-status \{\s*margin: 0 0 6px;\s*padding: 0;/);
+});
 
 function element() {
     const classes = new Set(["hidden"]);

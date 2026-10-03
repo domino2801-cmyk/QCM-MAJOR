@@ -37,6 +37,10 @@ Globale (sans les notes des autres thèmes) et le thème
 ces indicateurs ; le tableau conserve son filtre candidat et sa recherche.
 Sans candidat sélectionné, une invitation remplace les indicateurs individuels.
 Le podium administrateur reprend les icônes et effets or, argent et bronze.
+Le podium reste compact sur ces trois écrans : icônes, textes du premier résultat
+et espacements réduits, tout en conservant les effets lumineux et les couleurs.
+Le titre est rapproché du premier résultat ; un statut de classement vide
+n'occupe pas d'espace, tandis que les messages de chargement et d'erreur restent visibles.
 L'interface administrateur ne permet plus de supprimer une note ni d'effacer
 l'ensemble des résultats. La consultation, la recherche et les filtres restent
 disponibles ; les politiques Supabase ne sont pas modifiées par ce changement.
