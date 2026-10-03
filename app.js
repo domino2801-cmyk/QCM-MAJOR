@@ -2683,7 +2683,7 @@ async function initializeAppInteractions() {
     const enableStartButton = (themeId) => {
         selectedTheme = themeId;
         updateQuestionRotationStatus(themeId);
-        maxQuestions = parseInt(qtyInput?.value, 10) || 5;
+        maxQuestions = parseInt(qtyInput?.value, 10) || 15;
 
         if (startButton) {
             startButton.disabled = getQuestionPool(themeId).length === 0;
@@ -2704,7 +2704,7 @@ async function initializeAppInteractions() {
         if (qtyInput) {
             const maxAllowed = getQuestionPool(themeId).length;
             qtyInput.max = maxAllowed;
-            qtyInput.value = String(Math.min(parseInt(qtyInput.value, 10) || 5, maxAllowed));
+            qtyInput.value = String(Math.min(parseInt(qtyInput.value, 10) || 15, maxAllowed));
         }
 
         if (globalButton) globalButton.classList.remove("active");
