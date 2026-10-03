@@ -10,6 +10,8 @@ publication. Seuls le pseudo, la note et la date sont renvoyés ; les pseudos
 contenant une adresse email sont masqués. Les politiques RLS de `quiz_results`
 restent inchangées. Le classement conserve les trois meilleurs résultats, même
 si un candidat apparaît plusieurs fois, et privilégie l'ancienneté à note égale.
+Sur la connexion, le premier résultat est mis en avant dans une carte dorée avec
+un trophée, un pseudo et une note agrandis, également adaptée aux écrans mobiles.
 
 
 **Question pour un Major - Édition Tactique** est une application web de quiz (QCM) interactive conçue pour accompagner les militaires dans leur préparation au **Brevet Militaire de 4e niveau (BM4)**. 

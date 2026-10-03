@@ -935,6 +935,42 @@ h1 {
     grid-column: 2 / -1;
 }
 
+#login-global-ranking-list .global-ranking-item:first-child {
+    background: linear-gradient(135deg, rgba(255, 208, 84, 0.2), rgba(255, 208, 84, 0.05));
+    border: 2px solid #ffd054;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255, 208, 84, 0.15);
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    margin-bottom: 12px;
+    padding: 16px 12px;
+}
+
+#login-global-ranking-list .global-ranking-item:first-child .global-ranking-rank {
+    font-size: 2.4rem;
+}
+
+#login-global-ranking-list .global-ranking-item:first-child .global-ranking-candidate {
+    color: #ffe39a;
+    font-size: 1.35rem;
+    line-height: 1.3;
+}
+
+#login-global-ranking-list .global-ranking-item:first-child strong {
+    color: #ffd054;
+    font-size: 1.4rem;
+}
+
+@media (max-width: 600px) {
+    #login-global-ranking-list .global-ranking-item:first-child {
+        grid-template-columns: 42px minmax(0, 1fr);
+    }
+
+    #login-global-ranking-list .global-ranking-item:first-child strong {
+        grid-column: 2;
+        font-size: 1.4rem;
+    }
+}
+
 .global-evolution {
     border: 1px solid var(--accent);
     background: rgba(124, 169, 124, 0.08);
