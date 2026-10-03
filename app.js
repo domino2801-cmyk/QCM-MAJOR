@@ -402,18 +402,35 @@ function getQuestionOverrides() {
     return getStoredJson(localStorage, questionStorageKey, {});
 }
 
-function createRecordId(prefix = "record") {
+function createRecordId() {
+    // Plusieurs tables (quiz_results, profiles, global_scores...) exigent un
+    // identifiant au format UUID : même en contexte non sécurisé (HTTP), où
+    // crypto.randomUUID() est indisponible, l'identifiant généré doit rester
+    // un UUID valide pour que la synchronisation Supabase n'échoue pas.
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
         return crypto.randomUUID();
     }
-    return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0"));
+        return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10, 16).join("")}`;
+    }
+
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, character => {
+        const random = Math.random() * 16 | 0;
+        const value = character === "x" ? random : (random & 0x3 | 0x8);
+        return value.toString(16);
+    });
 }
 
 function normalizeResultRecord(rawResult = {}) {
     if (!rawResult || typeof rawResult !== "object") return null;
 
     return {
-        id: rawResult.id || createRecordId("result"),
+        id: rawResult.id || createRecordId(),
         candidateId: rawResult.user_id || rawResult.candidate_id || rawResult.candidateId || "candidat-inconnu",
         label: rawResult.label || rawResult.name || rawResult.email || "Candidat inconnu",
         email: rawResult.email || "",
@@ -441,7 +458,7 @@ function normalizePublicRankingRecord(rawResult = {}) {
         : "Pseudo non renseigné";
 
     return {
-        id: rawResult.id || createRecordId("public-ranking"),
+        id: rawResult.id || createRecordId(),
         label: publicName,
         email: "",
         name: publicName,
@@ -2905,7 +2922,7 @@ async function initializeAppInteractions() {
         const themeId = document.getElementById("admin-question-theme").value;
         const question = {
             id: editingQuestionIndex === null
-                ? createRecordId("question")
+                ? createRecordId()
                 : questionsBank[themeId].questions[editingQuestionIndex].id,
             q: document.getElementById("admin-question-text").value.trim(),
             r: [1, 2, 3, 4].map(answerIndex =>
@@ -3152,7 +3169,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
         const label = getCandidateLabel(account, candidateId);
         const resultRecord = {
-            id: createRecordId("result"),
+            id: createRecordId(),
             candidateId,
             label,
             email: email === "Candidat inconnu" ? "" : email,
