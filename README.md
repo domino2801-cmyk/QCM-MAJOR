@@ -57,6 +57,18 @@ y compris dans leurs options déroulantes.
 
 Le site permet aux candidats de tester leurs connaissances à travers différentes thématiques clés de la culture militaire et offre aux administrateurs une interface dédiée pour gérer le contenu pédagogique.
 
+Le thème 6, « Implantation des unités », regroupe les questions d'implantation,
+de garnison et de stationnement auparavant présentes dans les autres thèmes.
+Le reclassement de la banque locale s'applique aussi aux anciennes copies locales
+et au chargement Supabase, sans changer les réponses ou les identifiants. Les
+questions sur l'organigramme, les missions et l'histoire du Musée de l'armée
+restent dans leurs thèmes d'origine. Appliquer la migration
+`supabase/migrations/20261003173000_move_unit_location_questions.sql` avec la
+publication du thème 6 : elle change uniquement `question_bank.theme_id`, sans
+modifier les résultats historiques. L'identifiant de banque du thème 6 est `5`,
+alors que ses résultats utilisent `6`. Ses questions participent toujours à la
+Campagne Globale et ses notes alimentent le thème à travailler.
+
 ---
 
 ## 🚀 Fonctionnalités

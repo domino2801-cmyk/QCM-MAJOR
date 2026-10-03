@@ -6,6 +6,7 @@
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
+import { moveUnitLocationQuestions } from "./modules/questions-bank/unit-locations.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
@@ -640,6 +641,10 @@ function updateQuestionRotationStatus(themeId) {
     const remaining = Math.max(poolKeys.size - usedKeys.size, 0);
 
     status.classList.remove("hidden");
+    if (poolKeys.size === 0) {
+        status.innerText = "Aucune question disponible pour ce thème. Les questions doivent être ajoutées dans l’administration.";
+        return;
+    }
     status.innerText = remaining === 0
         ? `Rotation complète : ${poolKeys.size} question(s) déjà utilisées. Un nouveau cycle commencera à la prochaine campagne.`
         : `${remaining} question(s) inédites disponibles sur ${poolKeys.size}.`;
@@ -662,6 +667,7 @@ function applyQuestionOverrides() {
             }));
         }
     });
+    moveUnitLocationQuestions(questionsBank);
 }
 
 function applyRemoteQuestions(questions) {
@@ -677,6 +683,7 @@ function applyRemoteQuestions(questions) {
                 r: normalizeQuestionAnswers(question.r),
                 correct: question.correct
             });
+            moveUnitLocationQuestions(questionsBank);
         }
     });
 }
@@ -1091,7 +1098,8 @@ function updateThemeQuestionCounts() {
         2: "2. Matériels, Armements et Technologies",
         3: "3. Lois de Programmation Militaire",
         4: "4. Opérations Extérieures",
-        5: "5. Histoire & Traditions"
+        5: "5. Histoire & Traditions",
+        6: "6. Implantation des unités"
     };
 
     Object.entries(themeTitles).forEach(([themeId, label]) => {
@@ -2016,7 +2024,8 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
         ["2", "Thème 2 • Matériels, Armements et Technologies"],
         ["3", "Thème 3 • Lois de Programmation Militaire"],
         ["4", "Thème 4 • Opérations Extérieures"],
-        ["5", "Thème 5 • Histoire & Traditions"]
+        ["5", "Thème 5 • Histoire & Traditions"],
+        ["6", "Thème 6 • Implantation des unités"]
     ];
 
     const globalHistory = history.filter(result => result.theme === "all");
@@ -2660,7 +2669,7 @@ async function initializeAppInteractions() {
         maxQuestions = parseInt(qtyInput?.value, 10) || 5;
 
         if (startButton) {
-            startButton.disabled = false;
+            startButton.disabled = getQuestionPool(themeId).length === 0;
         }
     };
 
@@ -2693,7 +2702,7 @@ async function initializeAppInteractions() {
         const requested = parseInt(qtyInput.value, 10) || 1;
         maxQuestions = Math.min(Math.max(requested, 1), maxAllowed);
         qtyInput.value = String(maxQuestions);
-        if (startButton) startButton.disabled = false;
+        if (startButton) startButton.disabled = maxAllowed === 0;
     });
 
     globalButton?.addEventListener("click", () => {

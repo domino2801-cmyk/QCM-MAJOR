@@ -113,6 +113,12 @@ test("le rendu candidat conserve son filtrage personnel et les mêmes indicateur
     assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 3/);
 });
 
+test("le nouveau thème implantation peut devenir le thème à travailler", () => {
+    const h = harness();
+    vm.runInContext('renderCandidateHistory([{candidateId:"a",theme:"6",score:3}], "a")', h.context);
+    assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 6 • Implantation des unités.*3\.00/);
+});
+
 test("la moyenne porte uniquement sur les campagnes globales de la période et conserve les notes négatives", () => {
     const h = harness();
     h.context.results = [

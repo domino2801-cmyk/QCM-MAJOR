@@ -7,6 +7,8 @@ import theme2 from "./theme-2.js";
 import theme3 from "./theme-3.js";
 import theme4 from "./theme-4.js";
 import theme5 from "./theme-5.js";
+import theme6 from "./theme-6.js";
+import { moveUnitLocationQuestions } from "./unit-locations.js";
 
 function deduplicateTheme(theme) {
     const seen = new Set();
@@ -29,8 +31,11 @@ export const questionsBank = {
     "1": deduplicateTheme(theme2),   // Thème 2 : Matériels & Technologies
     "2": deduplicateTheme(theme3),   // Thème 3 : LPM & Budgets
     "3": deduplicateTheme(theme4),   // Thème 4 : OPEX & Missions intérieures
-    "4": deduplicateTheme(theme5)    // Thème 5 : Histoire & Traditions
+    "4": deduplicateTheme(theme5),   // Thème 5 : Histoire & Traditions
+    "5": deduplicateTheme(theme6)
 };
+
+moveUnitLocationQuestions(questionsBank);
 
 // ---------------------------------------------------------
 // Fonction : récupérer toutes les questions (Campagne Globale)
