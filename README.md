@@ -69,6 +69,41 @@ modifier les résultats historiques. L'identifiant de banque du thème 6 est `5`
 alors que ses résultats utilisent `6`. Ses questions participent toujours à la
 Campagne Globale et ses notes alimentent le thème à travailler.
 
+### Concordance des questions et des six thèmes
+
+Le classement suit le sujet principal de chaque question :
+
+1. **Organisation et Commandement** : organigrammes, ressources humaines,
+   formation, statut, commandement, éthique et doctrine, y compris la RNS.
+2. **Matériels, Armements et Technologies** : caractéristiques, emploi technique,
+   équipements, systèmes numériques et rations.
+3. **Lois de Programmation Militaire** : LPM, budgets, coûts et cibles
+   programmées d'effectifs ou d'équipements.
+4. **Opérations Extérieures** : opérations nommées, missions extérieures ou
+   intérieures, engagements et exercices.
+5. **Histoire & Traditions** : créations et événements historiques, emblèmes,
+   devises, saints patrons, mascottes et commémorations.
+6. **Implantation des unités** : lieux d'implantation, garnisons, stationnements
+   et quartiers généraux. Une mention géographique accessoire ne suffit pas :
+   l'attribution d'un drapeau au CFIM de Caylus reste en Histoire & Traditions,
+   et le nom complet du CENTAC relève de l'Organisation.
+
+Les affectations auditées dans `modules/questions-bank/theme-assignments.js`
+s'appliquent à la banque intégrée, aux anciennes copies locales, au chargement
+Supabase et à l'enregistrement administrateur. Les intitulés génériques
+« Désignez l'intrus » et « Quel est l'intrus » sont distingués par leurs réponses.
+Les autres nouvelles questions conservent le thème choisi par l'administrateur,
+sauf les implantations reconnues par le classement existant.
+
+La migration `supabase/migrations/20261003190000_reconcile_question_themes.sql`
+reclasse 752 questions de l'inventaire audité de 1 293 entrées. Elle est
+transactionnelle et réexécutable ; elle refuse les intitulés ou affectations
+modifiés depuis l'audit, plutôt que d'écraser une modification concurrente.
+Elle ne change que `question_bank.theme_id` : questions, réponses, identifiants,
+activation et résultats historiques sont conservés. L'entrée de démonstration
+« Your question » (id 1) est signalée comme contenu à corriger séparément ;
+elle n'est ni supprimée ni réécrite par ce reclassement.
+
 ---
 
 ## 🚀 Fonctionnalités

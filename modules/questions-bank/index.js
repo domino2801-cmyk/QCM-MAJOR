@@ -8,7 +8,7 @@ import theme3 from "./theme-3.js";
 import theme4 from "./theme-4.js";
 import theme5 from "./theme-5.js";
 import theme6 from "./theme-6.js";
-import { moveUnitLocationQuestions } from "./unit-locations.js";
+import { reconcileQuestionThemes } from "./theme-concordance.js";
 
 function deduplicateTheme(theme) {
     const seen = new Set();
@@ -35,7 +35,7 @@ export const questionsBank = {
     "5": deduplicateTheme(theme6)
 };
 
-moveUnitLocationQuestions(questionsBank);
+reconcileQuestionThemes(questionsBank);
 
 // ---------------------------------------------------------
 // Fonction : récupérer toutes les questions (Campagne Globale)

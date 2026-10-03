@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { getQuestionTheme, reconcileQuestionThemes } from "../modules/questions-bank/theme-concordance.js";
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
@@ -23,7 +24,8 @@ test("les questions du nouveau thème rejoignent la campagne globale après leur
     const source = bank.replace(/^import .*;$/gm, "").replace(/export /g, "");
     const context = vm.createContext({
         theme1: { questions: [] }, theme2: { questions: [] }, theme3: { questions: [] },
-        theme4: { questions: [] }, theme5: { questions: [] }, theme6: { questions: [] }
+        theme4: { questions: [] }, theme5: { questions: [] }, theme6: { questions: [] },
+        reconcileQuestionThemes
     });
     vm.runInContext(locations + source, context);
     assert.equal(vm.runInContext("getAllQuestions().length", context), 0);
@@ -76,8 +78,8 @@ test("les variantes d'implantation sont reconnues sans déplacer les missions ou
     }
 });
 
-test("les banques locales ne conservent aucune question d'implantation dans les anciens thèmes", () => {
-    const context = vm.createContext({});
+test("les banques locales respectent le classement d'implantation et ses exceptions historiques", () => {
+    const context = vm.createContext({ reconcileQuestionThemes, getQuestionTheme });
     vm.runInContext(locations, context);
     for (let i = 0; i < 5; i++) {
         const importedQuestions = vm.runInNewContext(
@@ -90,14 +92,15 @@ test("les banques locales ne conservent aucune question d'implantation dans les 
     context.theme6 = { questions: [] };
     vm.runInContext(bank.replace(/^import .*;$/gm, "").replace(/export /g, ""), context);
     assert.ok(vm.runInContext('questionsBank["5"].questions.length > 0', context));
-    assert.equal(vm.runInContext('Object.entries(questionsBank).filter(([id]) => id !== "5").some(([,theme]) => theme.questions.some(q => isUnitLocationQuestion(q.q)))', context), false);
-    assert.equal(vm.runInContext('getAllQuestions().filter(q => isUnitLocationQuestion(q.q)).length === questionsBank["5"].questions.length', context), true);
+    assert.equal(vm.runInContext('Object.entries(questionsBank).some(([id,theme]) => theme.questions.some(q => getQuestionTheme(q, id) !== id))', context), false);
+    assert.equal(vm.runInContext('questionsBank["5"].questions.every(q => getQuestionTheme(q, "0") === "5")', context), true);
 });
 
 test("les questions distantes et les anciennes copies locales sont reclassées avec les mêmes identifiants", () => {
     const context = vm.createContext({
         questionsBank: { "0": { questions: [] }, "5": { questions: [] } },
         normalizeQuestionAnswers: answers => answers,
+        reconcileQuestionThemes,
         getQuestionOverrides: () => ({
             "0": [{ id: "legacy", q: "Où est implanté le 35e RI ?", r: ["A", "B", "C", "D"], correct: 1 }]
         })

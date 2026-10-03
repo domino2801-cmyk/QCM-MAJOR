@@ -5,8 +5,8 @@
 // Importation des modules (à créer dans /modules/)
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
-import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
-import { moveUnitLocationQuestions } from "./modules/questions-bank/unit-locations.js";
+import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js?v=theme-concordance-20261003";
+import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-bank/theme-concordance.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
 
@@ -667,7 +667,7 @@ function applyQuestionOverrides() {
             }));
         }
     });
-    moveUnitLocationQuestions(questionsBank);
+    reconcileQuestionThemes(questionsBank);
 }
 
 function applyRemoteQuestions(questions) {
@@ -683,9 +683,9 @@ function applyRemoteQuestions(questions) {
                 r: normalizeQuestionAnswers(question.r),
                 correct: question.correct
             });
-            moveUnitLocationQuestions(questionsBank);
         }
     });
+    reconcileQuestionThemes(questionsBank);
 }
 
 async function syncQuestionMutation(payload) {
@@ -2914,13 +2914,15 @@ async function initializeAppInteractions() {
             correct: parseInt(document.getElementById("admin-correct-answer").value, 10)
         };
         const questions = questionsBank[themeId].questions;
+        const destinationThemeId = getQuestionTheme(question, themeId);
+        const destinationQuestions = questionsBank[destinationThemeId].questions;
 
         try {
             if (questionSourceReady) {
                 const syncResult = await syncQuestionMutation({
                     action: editingQuestionIndex === null ? "create" : "update",
                     id: question.id,
-                    question: { ...question, themeId }
+                    question: { ...question, themeId: destinationThemeId }
                 });
 
                 if (!syncResult?.created && !syncResult?.updated) {
@@ -2929,16 +2931,22 @@ async function initializeAppInteractions() {
             }
 
             if (editingQuestionIndex === null) {
-                questions.push(question);
+                destinationQuestions.push(question);
+            } else if (destinationThemeId !== themeId) {
+                questions.splice(editingQuestionIndex, 1);
+                destinationQuestions.push(question);
             } else {
                 questions[editingQuestionIndex] = question;
             }
 
             saveCurrentThemeQuestions(themeId);
-            document.getElementById("admin-question-theme").value = themeId;
-            setAuthMessage("question-message", "Question enregistrée dans Supabase.");
+            if (destinationThemeId !== themeId) saveCurrentThemeQuestions(destinationThemeId);
             resetQuestionForm();
-            document.getElementById("admin-question-theme").value = themeId;
+            const themeField = document.getElementById("admin-question-theme");
+            themeField.value = destinationThemeId;
+            setAuthMessage("question-message", destinationThemeId === themeId
+                ? "Question enregistrée dans Supabase."
+                : `Question enregistrée dans Supabase et reclassée : ${themeField.selectedOptions[0].textContent}.`);
             renderAdminQuestions();
         } catch (error) {
             setAuthMessage(
