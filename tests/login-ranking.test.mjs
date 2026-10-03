@@ -60,6 +60,24 @@ test("le bloc reste visible pendant le chargement, sans résultats et après err
     }
 });
 
+test("le podium utilise la coupe et les médailles vectorielles même à notes égales", () => {
+    const h = harness([
+        { name: "Alpha", score: 19 },
+        { name: "Bravo", score: 15 },
+        { name: "Charlie", score: 15 }
+    ]);
+    vm.runInContext("renderGlobalRanking([])", h.context);
+    for (const id of ["login-global-ranking-list", "history-global-ranking-list"]) {
+        const icons = h.nodes.get(id).children.map(item => item.children[0].children[0]);
+        assert.deepEqual(icons.map(icon => icon.src), [
+            "public/icons/podium-gold.svg",
+            "public/icons/podium-silver.svg",
+            "public/icons/podium-bronze.svg"
+        ]);
+        assert.ok(icons.every(icon => icon.alt && icon.className === "podium-icon"));
+    }
+});
+
 test("le cache public affiché après erreur est identifié comme non actualisé", () => {
     const h = harness([{ name: "Alpha", score: -5, createdAt: null }], "error");
     vm.runInContext("renderGlobalRanking([])", h.context);

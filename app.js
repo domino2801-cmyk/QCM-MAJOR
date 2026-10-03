@@ -1908,6 +1908,11 @@ function renderGlobalRanking(results) {
     adminSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
+    const podiumIcons = [
+        { src: "public/icons/podium-gold.svg", alt: "Première place" },
+        { src: "public/icons/podium-silver.svg", alt: "Médaille argent : deuxième résultat" },
+        { src: "public/icons/podium-bronze.svg", alt: "Médaille bronze : troisième résultat" }
+    ];
     const appendRanking = (target, rankingItems) => {
         if (!target) return;
 
@@ -1927,7 +1932,15 @@ function renderGlobalRanking(results) {
 
             item.className = "global-ranking-item";
             rankElement.className = "global-ranking-rank";
-            rankElement.innerText = rankingSymbols[rank - 1] || `${rank}.`;
+            if (target === loginList || target === historyList) {
+                const icon = document.createElement("img");
+                icon.src = podiumIcons[index].src;
+                icon.alt = podiumIcons[index].alt;
+                icon.className = "podium-icon";
+                rankElement.appendChild(icon);
+            } else {
+                rankElement.innerText = rankingSymbols[rank - 1] || `${rank}.`;
+            }
             candidateElement.className = "global-ranking-candidate";
             candidateElement.innerText = result.name || result.label || result.email || "Pseudo non renseigné";
             scoreElement.innerText = `${result.score.toFixed(2)} / 20`;
