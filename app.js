@@ -1807,7 +1807,7 @@ function renderAdminResults() {
     if (!list) return;
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
-    const selectedCandidate = candidateFilter?.value || "";
+    let selectedCandidate = candidateFilter?.value || "";
 
     if (candidateFilter) {
         const candidates = new Map();
@@ -1823,7 +1823,26 @@ function renderAdminResults() {
             .sort((first, second) => first[1].localeCompare(second[1], "fr"))
             .forEach(([value, label]) => candidateFilter.appendChild(new Option(label, value)));
         candidateFilter.value = candidates.has(selectedCandidate) ? selectedCandidate : "";
+        selectedCandidate = candidateFilter.value;
     }
+
+    const historyPanel = document.getElementById("admin-history-panel");
+    const historyStatus = document.getElementById("admin-history-status");
+    historyPanel?.classList.toggle("hidden", !selectedCandidate);
+    if (historyStatus) {
+        historyStatus.innerText = selectedCandidate
+            ? ""
+            : "Sélectionnez un candidat pour afficher son historique et son thème à travailler.";
+    }
+    renderCandidateHistory(
+        selectedCandidate ? results.filter(result =>
+            String(result.email || result.candidateId || result.name || result.label || "").trim() === selectedCandidate
+        ) : [],
+        "",
+        "",
+        Number(document.getElementById("admin-history-period")?.value || 0),
+        { prefix: "admin-history", filterCandidate: false }
+    );
 
     list.innerHTML = "";
 
@@ -1932,7 +1951,7 @@ function renderGlobalRanking(results) {
 
             item.className = "global-ranking-item";
             rankElement.className = "global-ranking-rank";
-            if (target === loginList || target === historyList) {
+            if (target === loginList || target === historyList || target === adminList) {
                 const icon = document.createElement("img");
                 icon.src = podiumIcons[index].src;
                 icon.alt = podiumIcons[index].alt;
@@ -2019,16 +2038,17 @@ function renderGlobalEvolution(results, candidateId, candidateEmail = "", period
     });
 }
 
-function renderCandidateHistory(results, candidateId, candidateEmail = "", periodDays = 0) {
-    const charts = document.getElementById("candidate-history-charts");
-    const recommendation = document.getElementById("candidate-history-recommendation");
-    const summary = document.getElementById("candidate-history-summary");
+function renderCandidateHistory(results, candidateId, candidateEmail = "", periodDays = 0, options = {}) {
+    const prefix = options.prefix || "candidate-history";
+    const charts = document.getElementById(`${prefix}-charts`);
+    const recommendation = document.getElementById(`${prefix}-recommendation`);
+    const summary = document.getElementById(`${prefix}-summary`);
     if (!charts || !recommendation) return;
 
     const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
     const normalizedEmail = String(candidateEmail || "").trim().toLowerCase();
     const history = results
-        .filter(result => result.candidateId === candidateId
+        .filter(result => options.filterCandidate === false || result.candidateId === candidateId
             || (normalizedEmail && String(result.email || "").trim().toLowerCase() === normalizedEmail))
         .filter(result => !cutoff || (result.createdAt && Date.parse(result.createdAt) >= cutoff))
         .sort((first, second) => String(first.createdAt).localeCompare(String(second.createdAt)));
@@ -2046,10 +2066,15 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
         ["5", "Thème 5 • Histoire & Traditions"]
     ];
 
-    const totalScores = history.map(result => Number(result.score) || 0);
-    if (summary && totalScores.length > 0) {
-        const average = totalScores.reduce((total, score) => total + score, 0) / totalScores.length;
-        summary.innerText = `${history.length} résultat(s) • Moyenne : ${average.toFixed(2)} / 20`;
+    const globalHistory = history.filter(result => result.theme === "all");
+    const globalScores = globalHistory.map(result => Number(result.score) || 0);
+    if (summary) {
+        if (globalScores.length > 0) {
+            const average = globalScores.reduce((total, score) => total + score, 0) / globalScores.length;
+            summary.innerText = `${globalHistory.length} résultat(s) de Campagne Globale • Moyenne Campagne Globale : ${average.toFixed(2)} / 20`;
+        } else {
+            summary.innerText = "Aucun résultat de Campagne Globale sur cette période.";
+        }
     }
 
     const appendBars = (chart, themeResults) => {
@@ -2081,7 +2106,7 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
     globalChart.className = "global-evolution-chart";
     globalChart.setAttribute("role", "img");
     globalChart.setAttribute("aria-label", "Histogramme Campagne Globale");
-    appendBars(globalChart, history.filter(result => result.theme === "all"));
+    appendBars(globalChart, globalHistory);
     globalSection.append(globalTitle, globalChart);
     charts.appendChild(globalSection);
 
@@ -2763,6 +2788,7 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("admin-results-candidate-filter")?.addEventListener("change", renderAdminResults);
+    document.getElementById("admin-history-period")?.addEventListener("change", renderAdminResults);
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";

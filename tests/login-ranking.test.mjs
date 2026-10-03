@@ -25,7 +25,8 @@ function element() {
 function harness(ranking = [], state = "ready") {
     const nodes = new Map([
         "login-global-ranking-section", "login-global-ranking-status", "login-global-ranking-list",
-        "global-ranking-section", "global-ranking-list", "history-global-ranking-section", "history-global-ranking-list"
+        "global-ranking-section", "global-ranking-list", "history-global-ranking-section", "history-global-ranking-list",
+        "admin-global-ranking-section", "admin-global-ranking-list"
     ].map(id => [id, element()]));
     const context = vm.createContext({
         document: { getElementById: id => nodes.get(id), createElement: element },
@@ -67,7 +68,7 @@ test("le podium utilise la coupe et les médailles vectorielles même à notes �
         { name: "Charlie", score: 15 }
     ]);
     vm.runInContext("renderGlobalRanking([])", h.context);
-    for (const id of ["login-global-ranking-list", "history-global-ranking-list"]) {
+    for (const id of ["login-global-ranking-list", "history-global-ranking-list", "admin-global-ranking-list"]) {
         const icons = h.nodes.get(id).children.map(item => item.children[0].children[0]);
         assert.deepEqual(icons.map(icon => icon.src), [
             "public/icons/podium-gold.svg",

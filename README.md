@@ -30,6 +30,17 @@ Un message indique le chargement, la réussite ou l'échec de cette actualisatio
 un échec ne bloque pas l'accès aux campagnes et ne présente pas le cache comme
 un historique à jour.
 
+Dans « Gestion des résultats », l'administrateur peut sélectionner un candidat
+pour retrouver le même histogramme de Campagne Globale, la moyenne de Campagne
+Globale (sans les notes des autres thèmes) et le thème
+à travailler que dans l'historique personnel. Le filtre de période s'applique à
+ces indicateurs ; le tableau conserve son filtre candidat et sa recherche.
+Sans candidat sélectionné, une invitation remplace les indicateurs individuels.
+Le podium administrateur reprend les icônes et effets or, argent et bronze.
+Les historiques candidat et administrateur affichent la moyenne des seules
+Campagnes Globales de la période, ou leur absence explicite. Le filtre de période
+est sans fond gris.
+
 
 **Question pour un Major - Édition Tactique** est une application web de quiz (QCM) interactive conçue pour accompagner les militaires dans leur préparation au **Brevet Militaire de 4e niveau (BM4)**. 
 
