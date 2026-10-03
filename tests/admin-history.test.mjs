@@ -4,8 +4,24 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
+const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const admin = app.slice(app.indexOf("function renderAdminResults("), app.indexOf("function renderGlobalRanking("));
 const history = app.slice(app.indexOf("function renderCandidateHistory("), app.indexOf("function setTerminalState("));
+
+test("les listes de l'historique et leurs options utilisent un fond blanc et un texte noir", () => {
+    assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) \{\s*background: #fff;\s*color: #000;\s*color-scheme: light;/);
+    assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) option \{\s*background: #fff;\s*color: #000;/);
+});
+
+test("l'administrateur ne dispose plus de suppression individuelle ou globale des notes", () => {
+    assert.doesNotMatch(html, /clear-results-btn|Effacer les résultats/);
+    assert.doesNotMatch(app, /async function (deleteResult|clearResults)\(/);
+    assert.doesNotMatch(admin, /deleteButton|Supprimer|deleteResult/);
+    const h = harness();
+    vm.runInContext("renderAdminResults()", h.context);
+    assert.ok(h.nodes.get("admin-results-table").children.every(row => row.children.length === 4));
+});
 
 function element() {
     const classes = new Set();

@@ -37,9 +37,13 @@ Globale (sans les notes des autres thèmes) et le thème
 ces indicateurs ; le tableau conserve son filtre candidat et sa recherche.
 Sans candidat sélectionné, une invitation remplace les indicateurs individuels.
 Le podium administrateur reprend les icônes et effets or, argent et bronze.
+L'interface administrateur ne permet plus de supprimer une note ni d'effacer
+l'ensemble des résultats. La consultation, la recherche et les filtres restent
+disponibles ; les politiques Supabase ne sont pas modifiées par ce changement.
 Les historiques candidat et administrateur affichent la moyenne des seules
-Campagnes Globales de la période, ou leur absence explicite. Le filtre de période
-est sans fond gris.
+Campagnes Globales de la période, ou leur absence explicite. Les listes de période
+et le filtre candidat des résultats utilisent un fond blanc et un texte noir,
+y compris dans leurs options déroulantes.
 
 
 **Question pour un Major - Édition Tactique** est une application web de quiz (QCM) interactive conçue pour accompagner les militaires dans leur préparation au **Brevet Militaire de 4e niveau (BM4)**. 

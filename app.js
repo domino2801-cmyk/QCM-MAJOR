@@ -1082,40 +1082,6 @@ async function saveResult(result) {
     }
 }
 
-async function deleteResult(resultId) {
-    if (!resultId) return;
-    setResults(getResults().filter(result => result.id !== resultId));
-    queueResultDelete(resultId);
-    if (!supabase) return;
-
-    try {
-        await flushPendingResultSync();
-    } catch {
-        // Conserver la copie locale si la suppression distante échoue.
-    }
-
-    if (typeof refreshPublicGlobalRanking === "function") {
-        await refreshPublicGlobalRanking({ clearOnError: true });
-    }
-}
-
-async function clearResults() {
-    const allIds = getResults().map(result => result.id).filter(Boolean);
-    setResults([]);
-    allIds.forEach(queueResultDelete);
-    if (!supabase) return;
-
-    try {
-        await flushPendingResultSync();
-    } catch {
-        // Conserver la copie locale si le nettoyage distant échoue.
-    }
-
-    if (typeof refreshPublicGlobalRanking === "function") {
-        await refreshPublicGlobalRanking({ clearOnError: true });
-    }
-}
-
 function updateThemeQuestionCounts() {
     const themeSelect = document.getElementById("theme-select");
     if (!themeSelect) return;
@@ -1856,24 +1822,11 @@ function renderAdminResults() {
         const scoreCell = document.createElement("td");
         const answersCell = document.createElement("td");
         const dateCell = document.createElement("td");
-        const actionCell = document.createElement("td");
-        const deleteButton = document.createElement("button");
-
         candidateCell.innerText = result.label || result.name || result.email || "Candidat inconnu";
         scoreCell.innerText = `${result.score.toFixed(2)} / 20`;
         answersCell.innerText = `${result.correct} correcte(s), ${result.wrong} fausse(s), ${result.skipped} passée(s)`;
         dateCell.innerText = result.date;
-        deleteButton.type = "button";
-        deleteButton.className = "admin-delete-btn";
-        deleteButton.innerText = "Supprimer";
-        deleteButton.addEventListener("click", async () => {
-            await deleteResult(result.id);
-            renderAdminResults();
-            renderGlobalRanking(getResults());
-        });
-
-        actionCell.appendChild(deleteButton);
-        row.append(candidateCell, scoreCell, answersCell, dateCell, actionCell);
+        row.append(candidateCell, scoreCell, answersCell, dateCell);
         list.appendChild(row);
     });
 }
@@ -2920,12 +2873,6 @@ async function initializeAppInteractions() {
 
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
         button.addEventListener("click", () => switchAdminSection(button.dataset.adminSection));
-    });
-
-    document.getElementById("clear-results-btn").addEventListener("click", async () => {
-        await clearResults();
-        renderAdminResults();
-        renderGlobalRanking(getResults());
     });
 
     document.getElementById("refresh-admin-accounts-btn")?.addEventListener("click", async event => {
