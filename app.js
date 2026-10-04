@@ -1818,6 +1818,11 @@ function switchAdminSection(section) {
     });
 }
 
+function getSpecialtyTrigram(specialty) {
+    const clean = String(specialty || "").trim();
+    return clean ? clean.toUpperCase() : "N/A";
+}
+
 function getNameTrigram(name) {
     const clean = String(name || "").trim();
     if (!clean) return "???";
@@ -1850,7 +1855,8 @@ function renderAdminAccounts() {
         nameCell.innerText = getNameTrigram(account.name);
         nameCell.title = account.name || "Non renseigné";
         emailCell.innerText = email;
-        specialtyCell.innerText = formatSpecialtyLabel(account.specialty);
+        specialtyCell.innerText = getSpecialtyTrigram(account.specialty);
+        specialtyCell.title = formatSpecialtyLabel(account.specialty);
         deleteButton.type = "button";
         deleteButton.className = "admin-delete-btn";
         deleteButton.innerText = "Retirer du cache";

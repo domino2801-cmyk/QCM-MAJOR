@@ -1562,12 +1562,31 @@ h1 {
 .admin-results-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: stretch;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .admin-results-header h2 {
     margin-bottom: 0;
+}
+
+.admin-results-header .admin-summary {
+    flex: 1;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.admin-results-header .admin-edit-btn {
+    flex: 1;
+    margin-right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 .admin-delete-btn {
