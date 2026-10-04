@@ -47,18 +47,24 @@ test("login Top 3 uses the public ranking cache without opening private results"
     assert.match(readme, /sans ouvrir `quiz_results` en lecture anonyme/);
 });
 
-test("candidate login screen keeps the Top 3 just above the submit button", () => {
-    const formIndex = html.indexOf('id="login-form"');
+test("candidate login screen keeps the Top 3 above the identification form", () => {
+    const loginViewIndex = html.indexOf('id="login-view"');
     const rankingIndex = html.indexOf('id="login-global-ranking-section"');
+    const tabsIndex = html.indexOf('data-auth-mode="login"');
+    const formIndex = html.indexOf('id="login-form"');
     const buttonIndex = html.indexOf("Préparation au combat");
     const forgotPasswordIndex = html.indexOf('id="login-forgot-password-btn"');
 
-    assert.notEqual(formIndex, -1);
+    assert.notEqual(loginViewIndex, -1);
     assert.notEqual(rankingIndex, -1);
+    assert.notEqual(tabsIndex, -1);
+    assert.notEqual(formIndex, -1);
     assert.notEqual(buttonIndex, -1);
     assert.notEqual(forgotPasswordIndex, -1);
-    assert.ok(formIndex < rankingIndex);
-    assert.ok(rankingIndex < buttonIndex);
+    assert.ok(loginViewIndex < rankingIndex);
+    assert.ok(rankingIndex < tabsIndex);
+    assert.ok(rankingIndex < formIndex);
+    assert.ok(formIndex < buttonIndex);
     assert.ok(buttonIndex < forgotPasswordIndex);
 });
 

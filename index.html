@@ -38,6 +38,11 @@
                 </div>
                 <div id="auth-config-message" class="terminal-note hidden">Configuration Supabase manquante. Renseignez les balises meta `supabase-url` et `supabase-anon-key`.</div>
                 <section id="login-view" class="auth-view">
+                    <section id="login-global-ranking-section" class="global-ranking" aria-labelledby="login-global-ranking-title">
+                        <h2 id="login-global-ranking-title">ASSAULT FINAL TOP 3</h2>
+                        <p id="login-global-ranking-status" class="terminal-note" role="status" aria-live="polite">Chargement du classement…</p>
+                        <ol id="login-global-ranking-list" class="global-ranking-list"></ol>
+                    </section>
                     <div class="auth-tabs" role="tablist" aria-label="Authentification">
                         <button class="auth-tab active" type="button" data-auth-mode="login">Connexion</button>
                         <button class="auth-tab" type="button" data-auth-mode="register">S'engager</button>
@@ -48,11 +53,6 @@
                         <label for="login-password">Code de reconnaissance</label>
                         <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" required>
                         <p id="login-message" class="auth-message" role="alert"></p>
-                        <section id="login-global-ranking-section" class="global-ranking" aria-labelledby="login-global-ranking-title">
-                            <h2 id="login-global-ranking-title">ASSAULT FINAL TOP 3</h2>
-                            <p id="login-global-ranking-status" class="terminal-note" role="status" aria-live="polite">Chargement du classement…</p>
-                            <ol id="login-global-ranking-list" class="global-ranking-list"></ol>
-                        </section>
                         <button class="btn-main" type="submit">Préparation au combat</button>
                     </form>
                     <div class="auth-actions">
