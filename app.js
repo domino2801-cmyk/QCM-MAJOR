@@ -5,7 +5,7 @@
 // Importation des modules (à créer dans /modules/)
 import { quizEngine } from "./modules/quiz-engine/index.js";
 import { scoring } from "./modules/quiz-engine/scoring.js";
-import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js?v=theme-concordance-20261003";
+import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js?v=20261004";
 import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-bank/theme-concordance.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
