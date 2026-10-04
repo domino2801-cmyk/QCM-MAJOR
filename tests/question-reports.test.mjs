@@ -39,6 +39,15 @@ test("l’administration affiche l’e-mail des candidats et gère les signaleme
     assert.match(app, /showConfirmOverlay\(\{\s*title: "Effacer le signalement \?"/);
 });
 
+test("l’onglet Signalements affiche le nombre de signalements à traiter", () => {
+    assert.match(html, /class="admin-nav-icon" aria-hidden="true"/);
+    assert.match(html, /id="admin-question-reports-badge" class="admin-nav-badge hidden"/);
+    assert.match(app, /const pendingCount = questionReports\.filter\(report => report\.status !== "resolved"\)\.length/);
+    assert.match(app, /badge\.classList\.toggle\("hidden", pendingCount === 0\)/);
+    assert.match(app, /Signalements, \$\{pendingCount\} à traiter/);
+    assert.match(app, /badge\.innerText = pendingCount > 99 \? "99\+" : String\(pendingCount\)/);
+});
+
 test("les politiques RLS limitent l’insertion au candidat et les actions de gestion aux administrateurs", () => {
     assert.match(migration, /alter table public\.question_reports enable row level security/i);
     assert.match(migration, /reporter_id = auth\.uid\(\)\s+and status = 'pending'/i);

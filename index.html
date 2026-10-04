@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=supabase-pagination-20261004">
+    <link rel="stylesheet" href="ui/Style.css?v=reports-badge-20261004">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -174,7 +174,11 @@
             <nav class="admin-nav" aria-label="Gestion administrateur">
                 <button class="admin-nav-btn active" type="button" data-admin-section="accounts">Gestion des comptes</button>
                 <button class="admin-nav-btn" type="button" data-admin-section="questions">Gestion des questions</button>
-                <button class="admin-nav-btn" type="button" data-admin-section="question-reports">Signalements</button>
+                <button class="admin-nav-btn" type="button" data-admin-section="question-reports" aria-label="Signalements">
+                    <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+                    <span>Signalements</span>
+                    <span id="admin-question-reports-badge" class="admin-nav-badge hidden" aria-hidden="true"></span>
+                </button>
                 <button class="admin-nav-btn" type="button" data-admin-section="results">Gestion des résultats</button>
             </nav>
             <section id="admin-accounts-section" class="admin-panel">
@@ -299,6 +303,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=assault-final-auth-labels-20261004"></script>
+    <script type="module" src="app.js?v=reports-badge-20261004"></script>
 </body>
 </html>

@@ -1960,6 +1960,19 @@ function renderAdminResults() {
 }
 
 function renderAdminQuestionReports() {
+    const badge = document.getElementById("admin-question-reports-badge");
+    const pendingCount = questionReports.filter(report => report.status !== "resolved").length;
+    if (badge) {
+        badge.innerText = pendingCount > 99 ? "99+" : String(pendingCount);
+        badge.classList.toggle("hidden", pendingCount === 0);
+        badge.setAttribute("aria-hidden", String(pendingCount === 0));
+    }
+    const reportsButton = document.querySelector('[data-admin-section="question-reports"]');
+    reportsButton?.setAttribute(
+        "aria-label",
+        pendingCount > 0 ? `Signalements, ${pendingCount} à traiter` : "Signalements"
+    );
+
     const list = document.getElementById("admin-question-reports-table");
     if (!list) return;
     list.innerHTML = "";

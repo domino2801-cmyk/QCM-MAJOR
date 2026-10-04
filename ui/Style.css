@@ -1431,10 +1431,39 @@ h1 {
     cursor: pointer;
 }
 
+.admin-nav-icon {
+    width: 17px;
+    height: 17px;
+    margin-right: 4px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+    vertical-align: -3px;
+}
+
 .admin-nav-btn:hover,
 .admin-nav-btn.active {
     background: var(--primary);
     color: #000;
+}
+
+.admin-nav-badge {
+    display: inline-flex;
+    min-width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--incorrect);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
 }
 
 .admin-panel {
