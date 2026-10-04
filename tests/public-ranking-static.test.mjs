@@ -47,16 +47,19 @@ test("login Top 3 uses the public ranking cache without opening private results"
     assert.match(readme, /sans ouvrir `quiz_results` en lecture anonyme/);
 });
 
-test("candidate login screen keeps the login button and forgot-password link above the Top 3", () => {
-    const rankingIndex = html.indexOf('id="login-global-ranking-section"');
+test("candidate login screen keeps the Top 3 just above the submit button", () => {
     const formIndex = html.indexOf('id="login-form"');
+    const rankingIndex = html.indexOf('id="login-global-ranking-section"');
+    const buttonIndex = html.indexOf("Préparation au combat");
     const forgotPasswordIndex = html.indexOf('id="login-forgot-password-btn"');
 
-    assert.notEqual(rankingIndex, -1);
     assert.notEqual(formIndex, -1);
+    assert.notEqual(rankingIndex, -1);
+    assert.notEqual(buttonIndex, -1);
     assert.notEqual(forgotPasswordIndex, -1);
     assert.ok(formIndex < rankingIndex);
-    assert.ok(forgotPasswordIndex < rankingIndex);
+    assert.ok(rankingIndex < buttonIndex);
+    assert.ok(buttonIndex < forgotPasswordIndex);
 });
 
 test("campaign selection has no Top 3 while candidate history keeps it", () => {
