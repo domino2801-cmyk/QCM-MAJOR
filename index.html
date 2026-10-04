@@ -165,7 +165,7 @@
         <div id="admin-screen" class="screen">
             <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Déconnexion</button></div>
             <h1>Interface administrateur</h1>
-            <p class="subtitle">Gestion des comptes, des questions et des résultats</p>
+            <p class="subtitle">Comptes, questions et résultats</p>
             <section id="admin-global-ranking-section" class="global-ranking" aria-labelledby="admin-global-ranking-title">
                 <h2 id="admin-global-ranking-title">ASSAULT FINAL TOP 3</h2>
                 <ol id="admin-global-ranking-list" class="global-ranking-list"></ol>
@@ -174,26 +174,34 @@
             <div class="admin-actions">
                 <button id="admin-push-enable-btn" class="admin-edit-btn" type="button">Activer les notifications sur ce téléphone</button>
                 <button id="admin-push-disable-btn" class="admin-edit-btn hidden" type="button">Désactiver les notifications</button>
-                <button id="admin-push-test-btn" class="admin-edit-btn hidden" type="button">Envoyer une notification de test</button>
             </div>
             <p id="admin-push-status" class="terminal-note" role="status" aria-live="polite"></p>
             <nav class="admin-nav" aria-label="Gestion administrateur">
-                <button class="admin-nav-btn active" type="button" data-admin-section="accounts">Gestion des comptes</button>
-                <button class="admin-nav-btn" type="button" data-admin-section="questions">Gestion des questions</button>
+                <button class="admin-nav-btn active" type="button" data-admin-section="accounts">
+                    <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+                    <span>Comptes</span>
+                </button>
+                <button class="admin-nav-btn" type="button" data-admin-section="questions">
+                    <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M9 9a3 3 0 1 1 4 2.8c-.8.4-1 1-1 2.2M12 18h.01M4 4h16v16H4z"/></svg>
+                    <span>Questions</span>
+                </button>
                 <button class="admin-nav-btn" type="button" data-admin-section="question-reports" aria-label="Signalements">
                     <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
                     <span>Signalements</span>
                     <span id="admin-question-reports-badge" class="admin-nav-badge hidden" aria-hidden="true"></span>
                 </button>
-                <button class="admin-nav-btn" type="button" data-admin-section="results">Gestion des résultats</button>
+                <button class="admin-nav-btn" type="button" data-admin-section="results">
+                    <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+                    <span>Résultats</span>
+                </button>
             </nav>
             <section id="admin-accounts-section" class="admin-panel">
                 <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="admin-edit-btn" type="button">Actualiser depuis Supabase</button></div>
                 <input id="admin-accounts-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou un email" aria-label="Rechercher un compte">
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Nom du candidat</th><th>Canal d'extraction direct du combattant</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Trigramme</th><th>Canal d'extraction direct du combattant</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
             </section>
             <section id="admin-questions-section" class="admin-section admin-panel hidden">
-                <h2>Gestion des questions</h2>
+                <h2>Questions</h2>
                 <form id="question-form" class="auth-form">
                     <label for="admin-question-theme">Thème</label>
                     <select id="admin-question-theme" required><option value="0">1. Organisation et Commandement</option><option value="1">2. Matériels, Armements et Technologies</option><option value="2">3. Lois de Programmation Militaire</option><option value="3">4. Opérations Extérieures</option><option value="4">5. Histoire & Traditions</option><option value="5">6. Implantation des unités</option></select>
@@ -216,7 +224,7 @@
                 <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Question signalée</th><th>Détail</th><th>Candidat</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead><tbody id="admin-question-reports-table"></tbody></table></div>
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
-                <div class="admin-results-header"><h2>Gestion des résultats</h2></div>
+                <div class="admin-results-header"><h2>Résultats</h2></div>
                 <label for="admin-results-candidate-filter">Filtrer par candidat</label>
                 <select id="admin-results-candidate-filter" class="admin-search" aria-label="Filtrer les résultats par candidat"><option value="">Tous les candidats</option></select>
                 <p id="admin-history-status" class="terminal-note" role="status" aria-live="polite">Sélectionnez un candidat pour afficher son historique et son thème à travailler.</p>

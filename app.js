@@ -12,8 +12,7 @@ import { uiController } from "./modules/ui-controller/index.js";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
-    disableReportNotifications,
-    testReportNotification
+    disableReportNotifications
 } from "./modules/report-notifications/index.js";
 
 // =========================================================
@@ -1802,7 +1801,6 @@ async function refreshAdminPushStatus() {
         }
         document.getElementById("admin-push-enable-btn")?.classList.toggle("hidden", enabled);
         document.getElementById("admin-push-disable-btn")?.classList.toggle("hidden", !enabled);
-        document.getElementById("admin-push-test-btn")?.classList.toggle("hidden", !enabled);
         setAuthMessage("admin-push-status", enabled
             ? "Notifications activées sur cet appareil."
             : "Activez les notifications sur votre Android pour recevoir les nouveaux signalements.");
@@ -1818,6 +1816,17 @@ function switchAdminSection(section) {
     document.querySelectorAll(".admin-nav-btn").forEach(button => {
         button.classList.toggle("active", button.dataset.adminSection === section);
     });
+}
+
+function getNameTrigram(name) {
+    const clean = String(name || "").trim();
+    if (!clean) return "???";
+    const words = clean.split(/\s+/).filter(Boolean);
+    let letters = words.map(word => word[0]).join("");
+    if (letters.length < 3) {
+        letters += (words[words.length - 1] || "").slice(1);
+    }
+    return (letters.slice(0, 3) || "???").toUpperCase();
 }
 
 function renderAdminAccounts() {
@@ -1838,7 +1847,8 @@ function renderAdminAccounts() {
         const actionCell = document.createElement("td");
         const deleteButton = document.createElement("button");
 
-        nameCell.innerText = account.name || "Non renseigné";
+        nameCell.innerText = getNameTrigram(account.name);
+        nameCell.title = account.name || "Non renseigné";
         emailCell.innerText = email;
         specialtyCell.innerText = formatSpecialtyLabel(account.specialty);
         deleteButton.type = "button";
@@ -3192,8 +3202,7 @@ async function initializeAppInteractions() {
 
     [
         ["admin-push-enable-btn", enableReportNotifications],
-        ["admin-push-disable-btn", disableReportNotifications],
-        ["admin-push-test-btn", testReportNotification]
+        ["admin-push-disable-btn", disableReportNotifications]
     ].forEach(([id, action]) => {
         document.getElementById(id)?.addEventListener("click", async event => {
             const button = event.currentTarget;
@@ -3202,9 +3211,6 @@ async function initializeAppInteractions() {
             try {
                 await action(getAdminPushOptions());
                 await refreshAdminPushStatus();
-                if (id === "admin-push-test-btn") {
-                    setAuthMessage("admin-push-status", "Notification de test envoyée. Vérifiez les notifications de votre téléphone.");
-                }
             } catch (error) {
                 setAuthMessage("admin-push-status", `Notifications impossibles : ${error.message}`);
             } finally {
