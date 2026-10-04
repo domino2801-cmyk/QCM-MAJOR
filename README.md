@@ -237,6 +237,37 @@ Prérequis côté Supabase :
 * Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
 * Les comptes administrateurs doivent aussi être couverts par des règles RLS côté Supabase, cohérentes avec les claims `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
+### Notifications Android des signalements
+
+Les administrateurs peuvent activer les notifications depuis Chrome sur Android avec
+« Activer les notifications sur ce téléphone », puis utiliser le bouton de test.
+L'application peut être installée sur l'écran d'accueil. Android affiche un badge
+selon le lanceur et les réglages des notifications ; ce badge n'est pas un compteur
+garanti des signalements non traités. La déconnexion administrateur désactive
+l'abonnement sur cet appareil.
+
+Configuration serveur :
+
+1. Générer une paire de clés VAPID et un secret aléatoire pour le webhook, sans
+   les enregistrer dans Git. Conserver les clés VAPID lors des redéploiements.
+2. Ajouter les secrets `QCM_VAPID_PUBLIC_KEY`, `QCM_VAPID_PRIVATE_KEY` et
+   `QCM_REPORT_PUSH_WEBHOOK_SECRET` dans les secrets des Edge Functions Supabase.
+3. Enregistrer le même secret de webhook dans Supabase Vault, sous le nom
+   `qcm_report_push_webhook_secret`.
+4. Déployer `supabase/functions/report-push/index.ts` sous le nom `report-push`,
+   avec `verify_jwt = false` (voir `supabase/config.toml`). La fonction vérifie
+   elle-même le secret des événements et l'identité des administrateurs pour les tests.
+5. Appliquer `supabase/migrations/20261004130000_admin_report_push.sql`.
+   Cette migration crée les abonnements protégés par RLS et un trigger asynchrone
+   `pg_net` sur les nouveaux signalements. Adapter l'URL du projet dans le trigger
+   si l'application est déployée sur un autre projet Supabase.
+
+Seuls les endpoints Chrome/FCM sont acceptés. Le contenu envoyé ne contient ni
+e-mail ni texte de la question. Le service worker ne met pas les pages en cache.
+Les abonnements expirés sont retirés après une réponse 404/410 du service push.
+Surveiller les logs `report-push` et `net._http_response` en cas d'échec de livraison :
+un webhook `pg_net` n'offre pas de garantie de relivraison automatique.
+
 Le flux candidat attendu est :
 
 1. Inscription avec email + mot de passe + profil candidat

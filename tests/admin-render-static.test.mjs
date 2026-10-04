@@ -126,6 +126,9 @@ test("showAdminApp refreshes the ranking before and after admin sync", async () 
         async loadAdminData() {
             context.calls.push("load");
         },
+        async refreshAdminPushStatus() {
+            context.calls.push("push-status");
+        },
         setAuthMessage(id, message) {
             context.calls.push(["message", id, message]);
         },

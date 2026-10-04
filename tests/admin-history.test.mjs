@@ -6,7 +6,7 @@ import vm from "node:vm";
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const admin = app.slice(app.indexOf("function renderAdminResults("), app.indexOf("function renderGlobalRanking("));
+const admin = app.slice(app.indexOf("function renderAdminResults("), app.indexOf("function renderAdminQuestionReports("));
 const history = app.slice(app.indexOf("function renderCandidateHistory("), app.indexOf("function setTerminalState("));
 
 test("les listes de l'historique et leurs options utilisent un fond blanc et un texte noir", () => {

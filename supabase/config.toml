@@ -1,0 +1,2 @@
+[functions.report-push]
+verify_jwt = false

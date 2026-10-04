@@ -9,6 +9,12 @@ import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.j
 import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-bank/theme-concordance.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
+import {
+    reportNotificationsEnabled,
+    enableReportNotifications,
+    disableReportNotifications,
+    testReportNotification
+} from "./modules/report-notifications/index.js";
 
 // =========================================================
 // VARIABLES D’ÉTAT
@@ -1748,8 +1754,11 @@ async function showAdminApp() {
     renderAdminResults();
     renderAdminQuestionReports();
     renderGlobalRanking(getResults());
-    switchAdminSection("accounts");
+    const openReports = typeof window !== "undefined"
+        && new URL(window.location.href).searchParams.get("admin-section") === "question-reports";
+    switchAdminSection(openReports ? "question-reports" : "accounts");
     uiController.switchScreen("admin-screen");
+    void refreshAdminPushStatus();
 
     try {
         await loadAdminData();
@@ -1762,6 +1771,33 @@ async function showAdminApp() {
     } catch (error) {
         console.warn("Chargement des données administrateur impossible.", error);
         setAuthMessage("admin-data-status", error?.message || "Impossible de charger les comptes depuis Supabase.");
+    }
+}
+
+function getAdminPushOptions() {
+    const session = getStoredSupabaseSession();
+    if (!isAdminSession(session) || !session?.user?.id) {
+        throw new Error("Reconnectez-vous avec votre compte administrateur pour gérer les notifications.");
+    }
+    return {
+        url: supabaseUrl,
+        key: supabaseAnonKey,
+        accessToken: session.access_token,
+        userId: session.user.id
+    };
+}
+
+async function refreshAdminPushStatus() {
+    try {
+        const enabled = await reportNotificationsEnabled(getAdminPushOptions());
+        document.getElementById("admin-push-enable-btn")?.classList.toggle("hidden", enabled);
+        document.getElementById("admin-push-disable-btn")?.classList.toggle("hidden", !enabled);
+        document.getElementById("admin-push-test-btn")?.classList.toggle("hidden", !enabled);
+        setAuthMessage("admin-push-status", enabled
+            ? "Notifications activées sur cet appareil."
+            : "Activez les notifications sur votre Android pour recevoir les nouveaux signalements.");
+    } catch (error) {
+        setAuthMessage("admin-push-status", error.message);
     }
 }
 
@@ -2887,6 +2923,18 @@ async function initializeApp() {
 }
 
 async function initializeAppInteractions() {
+    navigator.serviceWorker?.addEventListener("message", async event => {
+        if (event.data?.type !== "open-question-reports" || !isAdminSession(getStoredSupabaseSession())) return;
+        switchAdminSection("question-reports");
+        try {
+            await loadAdminData();
+            renderAdminQuestionReports();
+            setAuthMessage("admin-question-reports-status", "Signalements actualisés depuis Supabase.");
+        } catch (error) {
+            setAuthMessage("admin-question-reports-status", `Actualisation impossible : ${error.message}`);
+        }
+    });
+
     // =========================================================
     // SÉLECTION DU THÉÂTRE D’OPÉRATION
     // =========================================================
@@ -3116,9 +3164,12 @@ async function initializeAppInteractions() {
     document.getElementById("admin-logout-btn").addEventListener("click", async () => {
         if (supabase) {
             try {
+                if ("serviceWorker" in navigator && "PushManager" in window) {
+                    await disableReportNotifications(getAdminPushOptions());
+                }
                 await supabase.auth.signOut();
-            } catch {
-                window.alert("La révocation de session administrateur a échoué. Réessayez.");
+            } catch (error) {
+                window.alert(`Déconnexion administrateur impossible : ${error.message}`);
                 return;
             }
         }
@@ -3127,6 +3178,29 @@ async function initializeAppInteractions() {
         uiController.switchScreen("auth-screen");
         document.getElementById("admin-form").reset();
         showAuthView("login");
+    });
+
+    [
+        ["admin-push-enable-btn", enableReportNotifications],
+        ["admin-push-disable-btn", disableReportNotifications],
+        ["admin-push-test-btn", testReportNotification]
+    ].forEach(([id, action]) => {
+        document.getElementById(id)?.addEventListener("click", async event => {
+            const button = event.currentTarget;
+            button.disabled = true;
+            setAuthMessage("admin-push-status", "Configuration des notifications...");
+            try {
+                await action(getAdminPushOptions());
+                await refreshAdminPushStatus();
+                if (id === "admin-push-test-btn") {
+                    setAuthMessage("admin-push-status", "Notification de test envoyée. Vérifiez les notifications de votre téléphone.");
+                }
+            } catch (error) {
+                setAuthMessage("admin-push-status", `Notifications impossibles : ${error.message}`);
+            } finally {
+                button.disabled = false;
+            }
+        });
     });
 
     document.getElementById("admin-question-theme").addEventListener("change", () => {
