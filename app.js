@@ -1789,7 +1789,17 @@ function getAdminPushOptions() {
 
 async function refreshAdminPushStatus() {
     try {
-        const enabled = await reportNotificationsEnabled(getAdminPushOptions());
+        const options = getAdminPushOptions();
+        let enabled = await reportNotificationsEnabled(options);
+        if (!enabled && typeof Notification !== "undefined" && Notification.permission !== "denied") {
+            try {
+                setAuthMessage("admin-push-status", "Activation automatique des notifications...");
+                await enableReportNotifications(options);
+                enabled = true;
+            } catch (autoEnableError) {
+                console.warn("Activation automatique des notifications impossible.", autoEnableError);
+            }
+        }
         document.getElementById("admin-push-enable-btn")?.classList.toggle("hidden", enabled);
         document.getElementById("admin-push-disable-btn")?.classList.toggle("hidden", !enabled);
         document.getElementById("admin-push-test-btn")?.classList.toggle("hidden", !enabled);
