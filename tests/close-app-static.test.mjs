@@ -69,7 +69,7 @@ test("quiz abandonment uses the custom overlay instead of the native confirm", (
     assert.match(html, /id="confirm-ok-btn"/);
     assert.match(html, /id="confirm-cancel-btn"/);
     assert.match(js, /showConfirmOverlay\(\{/);
-    assert.match(js, /okLabel: "Confirmer le repli"/);
+    assert.match(js, /okLabel: "Repli"/);
     assert.doesNotMatch(js, /window\.confirm\("Abandonner le combat/);
 });
 

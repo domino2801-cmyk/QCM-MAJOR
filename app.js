@@ -3358,7 +3358,7 @@ async function initializeAppInteractions() {
             const confirmed = await showConfirmOverlay({
                 title: "Abandonner le combat ?",
                 message: "Abandonner le combat en cours et effectuer un repli stratégique ?",
-                okLabel: "Confirmer le repli",
+                okLabel: "Repli",
                 cancelLabel: "Poursuivre le combat"
             });
             if (!confirmed) return;
