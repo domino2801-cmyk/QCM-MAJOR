@@ -10,12 +10,21 @@ const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
 const js = readFileSync(`${root}/app.js`, "utf8");
 
-test("login screen keeps a close-app button with fallback content", () => {
+test("login screen keeps a close-app button with fallback content", async () => {
     assert.match(html, /id="close-app"/);
 
-    const statement = extractStatement(
-        /document\.getElementById\("close-app"\)\.addEventListener\("click",\s*\(\)\s*=>\s*\{[\s\S]*?\}\s*\);/
-    );
+    const marker = 'document.getElementById("close-app").addEventListener("click", async () => {';
+    const start = js.indexOf(marker);
+    assert.notEqual(start, -1, "Unable to find close-app listener");
+    const bodyStart = start + marker.length;
+    let depth = 1;
+    let end = bodyStart;
+    while (end < js.length && depth > 0) {
+        if (js[end] === "{") depth += 1;
+        if (js[end] === "}") depth -= 1;
+        end += 1;
+    }
+    const statement = `${js.slice(start, end)});`;
     const body = { innerHTML: "" };
     const listeners = new Map();
     let closeCalls = 0;
@@ -44,7 +53,7 @@ test("login screen keeps a close-app button with fallback content", () => {
 
     const clickHandler = listeners.get("click");
     assert.equal(typeof clickHandler, "function");
-    clickHandler();
+    await clickHandler();
     assert.equal(closeCalls, 1);
     assert.equal(body.innerHTML, "<main class=\"app-closed\"><h1>Application fermée</h1></main>");
 });
@@ -53,6 +62,15 @@ test("close-app returns to candidate screen instead of closing during a quiz", (
     assert.match(js, /quiz-screen"\)\?\.classList\.contains\("active"\)/);
     assert.match(js, /Abandonner le combat en cours et effectuer un repli stratégique/);
     assert.match(js, /uiController\.switchScreen\("theme-screen"\)/);
+});
+
+test("quiz abandonment uses the custom overlay instead of the native confirm", () => {
+    assert.match(html, /id="confirm-overlay"/);
+    assert.match(html, /id="confirm-ok-btn"/);
+    assert.match(html, /id="confirm-cancel-btn"/);
+    assert.match(js, /showConfirmOverlay\(\{/);
+    assert.match(js, /okLabel: "Confirmer le repli"/);
+    assert.doesNotMatch(js, /window\.confirm\("Abandonner le combat/);
 });
 
 test("close-app button is hidden on the candidate theme screen", () => {

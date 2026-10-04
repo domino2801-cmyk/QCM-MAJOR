@@ -84,6 +84,57 @@ let successAction = () => {
     uiController.switchScreen("auth-screen");
     showAuthView("login");
 };
+let confirmOverlayResolver = null;
+
+function showConfirmOverlay({ title, message, okLabel = "Confirmer", cancelLabel = "Annuler" }) {
+    const overlay = document.getElementById("confirm-overlay");
+    if (!overlay) {
+        return Promise.resolve(window.confirm(message));
+    }
+
+    if (confirmOverlayResolver) {
+        confirmOverlayResolver(false);
+        confirmOverlayResolver = null;
+    }
+
+    document.getElementById("confirm-title").innerText = title;
+    document.getElementById("confirm-message").innerText = message;
+    document.getElementById("confirm-ok-btn").innerText = okLabel;
+    document.getElementById("confirm-cancel-btn").innerText = cancelLabel;
+    overlay.classList.remove("hidden");
+
+    return new Promise(resolve => {
+        confirmOverlayResolver = resolve;
+        document.getElementById("confirm-cancel-btn").focus();
+    });
+}
+
+function resolveConfirmOverlay(result) {
+    const overlay = document.getElementById("confirm-overlay");
+    if (overlay) {
+        overlay.classList.add("hidden");
+    }
+    if (confirmOverlayResolver) {
+        const resolve = confirmOverlayResolver;
+        confirmOverlayResolver = null;
+        resolve(result);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("confirm-ok-btn")?.addEventListener("click", () => resolveConfirmOverlay(true));
+    document.getElementById("confirm-cancel-btn")?.addEventListener("click", () => resolveConfirmOverlay(false));
+    document.getElementById("confirm-overlay")?.addEventListener("click", event => {
+        if (event.target === event.currentTarget) {
+            resolveConfirmOverlay(false);
+        }
+    });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && confirmOverlayResolver) {
+            resolveConfirmOverlay(false);
+        }
+    });
+});
 const waitingConnectionAudio = new Audio("public/audio/ATTENTE%20CONNECTION.mp3");
 waitingConnectionAudio.loop = true;
 waitingConnectionAudio.preload = "auto";
@@ -3019,9 +3070,14 @@ async function initializeAppInteractions() {
         }
     });
 
-    document.getElementById("close-app").addEventListener("click", () => {
+    document.getElementById("close-app").addEventListener("click", async () => {
         if (document.getElementById("quiz-screen")?.classList.contains("active")) {
-            const confirmed = window.confirm("Abandonner le combat en cours et effectuer un repli stratégique ?");
+            const confirmed = await showConfirmOverlay({
+                title: "Abandonner le combat ?",
+                message: "Abandonner le combat en cours et effectuer un repli stratégique ?",
+                okLabel: "Confirmer le repli",
+                cancelLabel: "Poursuivre le combat"
+            });
             if (!confirmed) return;
             currentQuizRunId += 1;
             questionTransitionLocked = false;
