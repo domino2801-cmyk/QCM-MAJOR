@@ -230,8 +230,8 @@
                 </div>
                 <div class="theme-select-row">
                     <div class="theme-field">
-                        <label for="theme-select" class="theme-select-label">Thème</label>
-                        <select id="theme-select" aria-label="Choisir un thème">
+                        <label for="theme-select" class="theme-select-label">Théâtre opération</label>
+                        <select id="theme-select" aria-label="Choisir un théâtre opération">
                             <option value="">Choisir thème</option>
                             <option value="1">1. Organisation et Commandement</option>
                             <option value="2">2. Matériels, Armements et Technologies</option>
@@ -242,8 +242,13 @@
                         </select>
                     </div>
                     <div class="theme-field theme-quantity-field">
-                        <label for="qty-theme" class="theme-select-label">Questions</label>
-                        <input type="number" id="qty-theme" value="15" min="1" max="50" aria-label="Nombre de questions">
+                        <span class="theme-select-label" id="qty-theme-label">Questions</span>
+                        <div class="qty-choice-row" role="group" aria-labelledby="qty-theme-label">
+                            <button type="button" class="qty-choice-btn" data-qty="10">10</button>
+                            <button type="button" class="qty-choice-btn active" data-qty="20" aria-pressed="true">20</button>
+                            <button type="button" class="qty-choice-btn" data-qty="30">30</button>
+                        </div>
+                        <input type="hidden" id="qty-theme" value="20">
                     </div>
                 </div>
             </div>

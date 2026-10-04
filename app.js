@@ -1126,13 +1126,6 @@ function updateThemeQuestionCounts() {
 
         option.textContent = label;
     });
-
-    const qtyInput = document.getElementById("qty-theme");
-    if (qtyInput) {
-        const currentThemeId = themeSelect.value || "1";
-        const maxQuestionsCount = getQuestionPool(currentThemeId).length;
-        qtyInput.max = maxQuestionsCount;
-    }
 }
 
 function hasSupabaseAuth() {
@@ -2704,13 +2697,31 @@ async function initializeAppInteractions() {
     const startButton = document.getElementById("start-btn");
     const themeSelect = document.getElementById("theme-select");
     const qtyInput = document.getElementById("qty-theme");
+    const qtyButtons = [...document.querySelectorAll(".qty-choice-btn")];
     const globalButton = document.getElementById("theme-global-btn");
     const trainingButton = document.getElementById("theme-training-btn");
+
+    const syncQtyChoiceButtons = value => {
+        qtyButtons.forEach(btn => {
+            const isActive = btn.dataset.qty === String(value);
+            btn.classList.toggle("active", isActive);
+            btn.setAttribute("aria-pressed", String(isActive));
+        });
+    };
+
+    const setQuestionCount = value => {
+        if (!qtyInput) return;
+        qtyInput.value = String(value);
+        syncQtyChoiceButtons(value);
+    };
+
+    const clampQuestionCount = (requested, maxAllowed) =>
+        Math.min(Math.max(requested, 1), Math.max(maxAllowed, 1));
 
     const enableStartButton = (themeId) => {
         selectedTheme = themeId;
         updateQuestionRotationStatus(themeId);
-        maxQuestions = parseInt(qtyInput?.value, 10) || 15;
+        maxQuestions = parseInt(qtyInput?.value, 10) || 20;
 
         if (startButton) {
             startButton.disabled = getQuestionPool(themeId).length === 0;
@@ -2732,8 +2743,8 @@ async function initializeAppInteractions() {
 
         if (qtyInput) {
             const maxAllowed = getQuestionPool(themeId).length;
-            qtyInput.max = maxAllowed;
-            qtyInput.value = String(Math.min(parseInt(qtyInput.value, 10) || 15, maxAllowed));
+            const requested = parseInt(qtyInput.value, 10) || 20;
+            setQuestionCount(clampQuestionCount(requested, maxAllowed));
         }
 
         quizFeedbackMode = "training";
@@ -2743,15 +2754,21 @@ async function initializeAppInteractions() {
     };
 
     themeSelect?.addEventListener("change", applySelectedTheme);
-    qtyInput?.addEventListener("input", () => {
-        if (!themeSelect?.value) return;
-
-        const maxAllowed = getQuestionPool(themeSelect.value).length;
-        const requested = parseInt(qtyInput.value, 10) || 1;
-        maxQuestions = Math.min(Math.max(requested, 1), maxAllowed);
-        qtyInput.value = String(maxQuestions);
-        if (startButton) startButton.disabled = maxAllowed === 0;
+    qtyButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const requested = parseInt(btn.dataset.qty, 10) || 20;
+            const poolSize = themeSelect?.value
+                ? getQuestionPool(themeSelect.value).length
+                : requested;
+            const clamped = clampQuestionCount(requested, poolSize);
+            setQuestionCount(clamped);
+            maxQuestions = clamped;
+            if (themeSelect?.value) {
+                enableStartButton(themeSelect.value);
+            }
+        });
     });
+    syncQtyChoiceButtons(qtyInput?.value || "20");
 
     const activateGlobalCampaign = (feedbackMode, clickedButton) => {
         quizFeedbackMode = feedbackMode;
@@ -2759,8 +2776,7 @@ async function initializeAppInteractions() {
         selectedTheme = "all";
         maxQuestions = 50;
         if (qtyInput) {
-            qtyInput.max = getAllQuestions().length;
-            qtyInput.value = "50";
+            setQuestionCount(clampQuestionCount(50, getAllQuestions().length));
         }
         if (globalButton) globalButton.classList.toggle("active", clickedButton === globalButton);
         if (trainingButton) trainingButton.classList.toggle("active", clickedButton === trainingButton);

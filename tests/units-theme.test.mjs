@@ -17,7 +17,7 @@ test("le thème 6 vide est disponible côté candidat et administrateur avec les
     assert.match(theme, /questions: \[\]/);
     assert.match(app, /6: "6\. Implantation des unités"/);
     assert.match(app, /startButton\.disabled = getQuestionPool\(themeId\)\.length === 0/);
-    assert.match(app, /startButton\.disabled = maxAllowed === 0/);
+    assert.match(app, /clampQuestionCount\(requested, poolSize\)/);
 });
 
 test("les questions du nouveau thème rejoignent la campagne globale après leur ajout", () => {

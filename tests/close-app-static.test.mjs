@@ -57,7 +57,11 @@ test("BM4 exam-style campaign keeps a dedicated button", () => {
     assert.match(html, /QCM EXAMEN/);
     assert.match(html, /id="theme-training-btn"/);
     assert.match(html, /QCM ENTRAINEMENT/);
-    assert.match(html, /id="qty-theme" value="15"/);
+    assert.match(html, /id="qty-theme" value="20"/);
+    assert.match(html, /class="qty-choice-btn" data-qty="10"/);
+    assert.match(html, /class="qty-choice-btn active" data-qty="20"/);
+    assert.match(html, /class="qty-choice-btn" data-qty="30"/);
+    assert.match(html, />Théâtre opération</);
 });
 
 test("btn-new-mission returns to theme selection and resets the current selection", () => {

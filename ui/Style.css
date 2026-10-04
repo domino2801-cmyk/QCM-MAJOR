@@ -575,8 +575,7 @@ h1 {
     box-shadow: 0 0 0 1px rgba(255, 207, 85, 0.4), 0 0 18px rgba(255, 193, 7, 0.14);
 }
 
-#theme-select,
-#qty-theme {
+#theme-select {
     background: rgba(6, 12, 19, 0.96);
     border: 1px solid rgba(156, 205, 255, 0.42);
     color: var(--text);
@@ -602,28 +601,55 @@ h1 {
 }
 
 #theme-select:hover,
-#qty-theme:hover,
-#theme-select:focus,
-#qty-theme:focus {
+#theme-select:focus {
     border-color: rgba(185, 228, 255, 0.96);
     box-shadow: 0 0 0 3px rgba(110, 170, 255, 0.17), 0 0 26px rgba(90, 150, 255, 0.16), inset 0 0 18px rgba(120, 170, 255, 0.08);
     outline: none;
 }
 
-#theme-select:focus,
-#qty-theme:focus {
+#theme-select:focus {
     transform: translateY(-1px);
     background: rgba(10, 18, 24, 0.98);
 }
 
-#qty-theme {
-    text-align: center;
+.qty-choice-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+.qty-choice-btn {
+    background: rgba(6, 12, 19, 0.96);
+    border: 1px solid rgba(156, 205, 255, 0.42);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
+    border-radius: 12px;
+    padding: 14px 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+
+.qty-choice-btn:hover,
+.qty-choice-btn:focus-visible {
+    border-color: rgba(185, 228, 255, 0.96);
+    box-shadow: 0 0 0 3px rgba(110, 170, 255, 0.17), 0 0 26px rgba(90, 150, 255, 0.16);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.qty-choice-btn.active {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.28), rgba(255, 224, 138, 0.12));
+    border-color: rgba(255, 207, 85, 0.65);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(255, 207, 85, 0.4), 0 0 18px rgba(255, 193, 7, 0.14);
 }
 
 #theme-select,
-#qty-theme,
 .btn-main {
     font-family: inherit;
 }
@@ -1841,15 +1867,20 @@ body {
     text-align: center;
 }
 
-#theme-select,
-#qty-theme {
+#theme-select {
     min-height: 54px;
     border-radius: 10px;
     background: rgba(4, 12, 21, 0.92);
 }
 
-#qty-theme {
+.qty-choice-btn {
+    min-height: 54px;
+    border-radius: 10px;
     color: #ffdf73;
+}
+
+.qty-choice-btn.active {
+    color: var(--accent);
 }
 
 .theme-global-btn {
@@ -2044,10 +2075,15 @@ body {
         font-size: 0.78rem;
     }
 
-    #theme-select,
-    #qty-theme {
+    #theme-select {
         min-height: 50px;
         padding: 12px 10px;
+        font-size: 0.9rem;
+    }
+
+    .qty-choice-btn {
+        min-height: 50px;
+        padding: 12px 4px;
         font-size: 0.9rem;
     }
 }
