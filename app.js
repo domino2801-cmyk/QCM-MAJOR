@@ -2413,12 +2413,6 @@ function initializeAuth() {
         }
     });
 
-    document.getElementById("admin-access-btn").addEventListener("click", () => {
-        clearAuthMessages();
-        uiController.switchScreen("auth-screen");
-        showAuthView("admin");
-    });
-
     document.getElementById("login-forgot-password-btn").addEventListener("click", () => {
         clearAuthMessages();
         document.getElementById("reset-email").value = document.getElementById("login-email").value.trim();
