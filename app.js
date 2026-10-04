@@ -1951,6 +1951,32 @@ function editQuestion(themeId, index) {
     setAuthMessage("question-message", "");
 }
 
+const deletableResultEmail = "domino2801@gmail.com";
+
+function isResultDeletable(result) {
+    return String(result?.email || "").trim().toLowerCase() === deletableResultEmail;
+}
+
+async function deleteAdminResult(resultId) {
+    if (!resultId) return;
+    const result = getResults().find(candidate => candidate.id === resultId);
+    if (!isResultDeletable(result)) return;
+    if (!window.confirm("Supprimer définitivement ce résultat ?")) return;
+
+    setResults(getResults().filter(candidate => candidate.id !== resultId));
+    queueResultDelete(resultId);
+    renderAdminResults();
+    renderGlobalRanking(getResults());
+
+    if (!supabase) return;
+    try {
+        await flushPendingResultSync();
+        setAuthMessage("admin-data-status", "Résultat supprimé de Supabase.");
+    } catch (error) {
+        setAuthMessage("admin-data-status", `Suppression impossible : ${error.message}`);
+    }
+}
+
 function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const results = getResults();
@@ -2006,11 +2032,20 @@ function renderAdminResults() {
         const scoreCell = document.createElement("td");
         const answersCell = document.createElement("td");
         const dateCell = document.createElement("td");
+        const actionCell = document.createElement("td");
         candidateCell.innerText = result.label || result.name || result.email || "Candidat inconnu";
         scoreCell.innerText = `${result.score.toFixed(2)} / 20`;
         answersCell.innerText = `${result.correct} correcte(s), ${result.wrong} fausse(s), ${result.skipped} passée(s)`;
         dateCell.innerText = result.date;
-        row.append(candidateCell, scoreCell, answersCell, dateCell);
+        if (isResultDeletable(result)) {
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "admin-delete-btn";
+            deleteButton.innerText = "Supprimer";
+            deleteButton.addEventListener("click", () => deleteAdminResult(result.id));
+            actionCell.appendChild(deleteButton);
+        }
+        row.append(candidateCell, scoreCell, answersCell, dateCell, actionCell);
         list.appendChild(row);
     });
 }

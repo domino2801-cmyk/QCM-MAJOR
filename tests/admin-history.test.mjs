@@ -6,7 +6,7 @@ import vm from "node:vm";
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const admin = app.slice(app.indexOf("function renderAdminResults("), app.indexOf("function renderAdminQuestionReports("));
+const admin = app.slice(app.indexOf("const deletableResultEmail ="), app.indexOf("function renderAdminQuestionReports("));
 const history = app.slice(app.indexOf("function renderCandidateHistory("), app.indexOf("function setTerminalState("));
 
 test("les listes de l'historique et leurs options utilisent un fond blanc et un texte noir", () => {
@@ -14,13 +14,23 @@ test("les listes de l'historique et leurs options utilisent un fond blanc et un 
     assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) option \{\s*background: #fff;\s*color: #000;/);
 });
 
-test("l'administrateur ne dispose plus de suppression individuelle ou globale des notes", () => {
+test("la suppression d'un résultat reste réservée au compte domino2801@gmail.com", () => {
     assert.doesNotMatch(html, /clear-results-btn|Effacer les résultats/);
     assert.doesNotMatch(app, /async function (deleteResult|clearResults)\(/);
-    assert.doesNotMatch(admin, /deleteButton|Supprimer|deleteResult/);
-    const h = harness();
+    assert.match(admin, /deletableResultEmail = "domino2801@gmail\.com"/);
+
+    const now = new Date().toISOString();
+    const h = harness([
+        { id: "r1", candidateId: "a", email: "a@test.fr", name: "Alpha", theme: "all", score: 18, createdAt: now },
+        { id: "r2", candidateId: "dom", email: "domino2801@gmail.com", name: "Domino", theme: "all", score: 20, createdAt: now }
+    ]);
     vm.runInContext("renderAdminResults()", h.context);
-    assert.ok(h.nodes.get("admin-results-table").children.every(row => row.children.length === 4));
+    const rows = h.nodes.get("admin-results-table").children;
+    assert.equal(rows.length, 2);
+    assert.ok(rows.every(row => row.children.length === 5));
+    assert.equal(rows[0].children[4].children.length, 0);
+    assert.equal(rows[1].children[4].children.length, 1);
+    assert.equal(rows[1].children[4].children[0].innerText, "Supprimer");
 });
 
 function element() {
@@ -40,7 +50,7 @@ function element() {
     };
 }
 
-function harness() {
+function harness(customResults) {
     const nodes = new Map([
         "admin-results-table", "admin-results-candidate-filter", "admin-results-search",
         "admin-history-panel", "admin-history-status", "admin-history-period",
@@ -48,7 +58,7 @@ function harness() {
         "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation"
     ].map(id => [id, element()]));
     const now = new Date().toISOString();
-    const results = [
+    const results = customResults || [
         { candidateId: "a", email: "a@test.fr", name: "Alpha", theme: "all", score: 18, createdAt: now },
         { candidateId: "a", email: "a@test.fr", name: "Alpha", theme: "1", score: 4, createdAt: now },
         { candidateId: "a", email: "a@test.fr", name: "Alpha", theme: "2", score: 12, createdAt: now },
