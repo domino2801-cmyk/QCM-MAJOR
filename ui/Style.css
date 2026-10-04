@@ -529,6 +529,31 @@ h1 {
     z-index: 1;
 }
 
+.theme-mode-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.theme-mode-row .theme-global-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.theme-mode-detail {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    opacity: 0.85;
+    text-transform: none;
+}
+
 .theme-global-btn {
     position: relative;
     z-index: 1;
@@ -710,6 +735,13 @@ h1 {
     background: var(--incorrect) !important;
     color: #fff !important;
     border-color: #ff4d4d;
+}
+
+.options-grid .btn.selected {
+    background: rgba(255, 193, 7, 0.18) !important;
+    color: var(--accent) !important;
+    border-color: rgba(255, 207, 85, 0.65);
+    box-shadow: 0 0 0 1px rgba(255, 207, 85, 0.35);
 }
 
 .btn-skip {

@@ -54,7 +54,9 @@ test("theme selection uses a single dropdown selector instead of five buttons", 
 
 test("BM4 exam-style campaign keeps a dedicated button", () => {
     assert.match(html, /id="theme-global-btn"/);
-    assert.match(html, /QCM type examen BM4/);
+    assert.match(html, /QCM EXAMEN/);
+    assert.match(html, /id="theme-training-btn"/);
+    assert.match(html, /QCM ENTRAINEMENT/);
     assert.match(html, /id="qty-theme" value="15"/);
 });
 

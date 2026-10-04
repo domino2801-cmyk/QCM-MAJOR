@@ -16,6 +16,7 @@ import { uiController } from "./modules/ui-controller/index.js";
 
 let selectedTheme = null;
 let maxQuestions = 0;
+let quizFeedbackMode = "training";
 let reviewItems = [];
 let questionTransitionLocked = false;
 let currentQuizRunId = 0;
@@ -2704,6 +2705,7 @@ async function initializeAppInteractions() {
     const themeSelect = document.getElementById("theme-select");
     const qtyInput = document.getElementById("qty-theme");
     const globalButton = document.getElementById("theme-global-btn");
+    const trainingButton = document.getElementById("theme-training-btn");
 
     const enableStartButton = (themeId) => {
         selectedTheme = themeId;
@@ -2721,7 +2723,9 @@ async function initializeAppInteractions() {
         if (!themeId) {
             selectedTheme = null;
             maxQuestions = 0;
+            quizFeedbackMode = "training";
             if (globalButton) globalButton.classList.remove("active");
+            if (trainingButton) trainingButton.classList.remove("active");
             if (startButton) startButton.disabled = true;
             return;
         }
@@ -2732,7 +2736,9 @@ async function initializeAppInteractions() {
             qtyInput.value = String(Math.min(parseInt(qtyInput.value, 10) || 15, maxAllowed));
         }
 
+        quizFeedbackMode = "training";
         if (globalButton) globalButton.classList.remove("active");
+        if (trainingButton) trainingButton.classList.remove("active");
         enableStartButton(themeId);
     };
 
@@ -2747,7 +2753,8 @@ async function initializeAppInteractions() {
         if (startButton) startButton.disabled = maxAllowed === 0;
     });
 
-    globalButton?.addEventListener("click", () => {
+    const activateGlobalCampaign = (feedbackMode, clickedButton) => {
+        quizFeedbackMode = feedbackMode;
         if (themeSelect) themeSelect.value = "";
         selectedTheme = "all";
         maxQuestions = 50;
@@ -2755,10 +2762,14 @@ async function initializeAppInteractions() {
             qtyInput.max = getAllQuestions().length;
             qtyInput.value = "50";
         }
-        if (globalButton) globalButton.classList.add("active");
+        if (globalButton) globalButton.classList.toggle("active", clickedButton === globalButton);
+        if (trainingButton) trainingButton.classList.toggle("active", clickedButton === trainingButton);
         if (startButton) startButton.disabled = false;
         updateQuestionRotationStatus("all");
-    });
+    };
+
+    globalButton?.addEventListener("click", () => activateGlobalCampaign("exam", globalButton));
+    trainingButton?.addEventListener("click", () => activateGlobalCampaign("training", trainingButton));
 
     // =========================================================
     // DÉBUT DE LA CAMPAGNE
@@ -3086,7 +3097,9 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             if (questionTransitionLocked) return;
             questionTransitionLocked = true;
             verrouillerOptions();
-            playAnswerSound(index === q.correct);
+            if (typeof quizFeedbackMode === "undefined" || quizFeedbackMode !== "exam") {
+                playAnswerSound(index === q.correct);
+            }
             if (index !== q.correct) {
                 reviewItems.push({
                     type: "wrong",
@@ -3154,6 +3167,13 @@ function verrouillerOptions() {
 
 function marquerBoutons(selected, correct) {
     const btns = document.querySelectorAll("#options-grid .btn");
+
+    if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
+        if (btns[selected]) {
+            btns[selected].classList.add("selected");
+        }
+        return;
+    }
 
     if (btns[selected]) {
         btns[selected].classList.add(
