@@ -337,6 +337,8 @@ body:has(#history-screen.active) .close-app {
 
 .auth-form .btn-main {
     margin-top: 6px;
+    padding: 12px 24px;
+    font-size: 1rem;
 }
 
 .auth-message {
@@ -348,7 +350,7 @@ body:has(#history-screen.active) .close-app {
 .auth-actions {
     width: 100%;
     max-width: 560px;
-    margin: 14px auto 0;
+    margin: 8px auto 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1852,7 +1854,7 @@ body {
     background:
         linear-gradient(180deg, rgba(11, 19, 31, 0.42), rgba(8, 15, 26, 0.54));
     backdrop-filter: blur(7px);
-    padding: 16px 24px;
+    padding: 10px 20px;
 }
 
 #auth-screen .terminal-shell {
@@ -1861,7 +1863,7 @@ body {
 }
 
 #auth-screen .terminal-header {
-    padding: 8px 16px;
+    padding: 6px 14px;
 }
 
 #auth-screen #login-global-ranking-status {
@@ -1871,7 +1873,7 @@ body {
 #auth-screen.screen.active {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 #auth-screen .brand-lockup,
@@ -1889,19 +1891,19 @@ body {
 }
 
 #auth-screen .brand-lockup img {
-    width: 64px;
-    margin-bottom: 4px;
+    width: 44px;
+    margin-bottom: 2px;
     filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
 }
 
 #auth-screen h1 {
     margin-bottom: 0;
-    padding-bottom: 6px;
-    font-size: 1.4rem;
+    padding-bottom: 4px;
+    font-size: 1.15rem;
 }
 
 #auth-screen .auth-view {
-    padding: 16px 24px 20px;
+    padding: 10px 24px 16px;
 }
 
 

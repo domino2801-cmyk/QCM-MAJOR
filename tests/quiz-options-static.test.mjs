@@ -19,7 +19,7 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions for report notifications", () => {
     assert.match(indexHtml, /app\.js\?v=admin-tabs-gating-20261004/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=auth-compact-scroll-20261004c/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=auth-compact-scroll-20261004d/);
 });
 
 function extractFunction(source, functionName) {
