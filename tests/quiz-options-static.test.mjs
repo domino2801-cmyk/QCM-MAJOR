@@ -17,9 +17,9 @@ test("theme selection keeps the exam question count only for the global campaign
     assert.match(appJs, /setQuestionCount\(clampQuestionCount\(50, getAllQuestions\(\)\.length\)\)/);
 });
 
-test("the app and styles use a fresh cache version for manual question advance", () => {
-    assert.match(indexHtml, /app\.js\?v=manual-next-20261004/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=manual-next-20261004/);
+test("the app and styles use a fresh cache version for Supabase pagination", () => {
+    assert.match(indexHtml, /app\.js\?v=supabase-pagination-20261004/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=supabase-pagination-20261004/);
 });
 
 function extractFunction(source, functionName) {

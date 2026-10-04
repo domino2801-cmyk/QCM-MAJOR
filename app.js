@@ -899,36 +899,52 @@ async function syncQuestionMutation(payload) {
 async function fetchSupabaseQuestions() {
     if (!supabase) return { questions: [] };
     const accessToken = getStoredSupabaseSession()?.access_token;
-    const query = "/question_bank?select=id,theme_id,question,answer_1,answer_2,answer_3,answer_4,correct_answer&active=eq.true";
+    const pageSize = 1000;
+    const questions = [];
+    let offset = 0;
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            const data = await supabaseRestRequest(query, { accessToken });
-            return {
-                questions: (Array.isArray(data) ? data : []).map(question => {
-                    const answers = [question.answer_1, question.answer_2, question.answer_3, question.answer_4]
-                        .map(answer => String(answer || ""));
-                    const correctAnswer = String(question.correct_answer || "");
-                    const correctIndex = answers.findIndex(answer => answer === correctAnswer);
-                    const numericCorrectIndex = Number(correctAnswer);
-                    return {
-                        id: String(question.id),
-                        themeId: String(question.theme_id),
-                        q: String(question.question || ""),
-                        r: answers,
-                        correct: correctIndex >= 0
-                            ? correctIndex
-                            : Number.isInteger(numericCorrectIndex) && numericCorrectIndex > 0
-                                ? numericCorrectIndex - 1
-                                : 0
-                    };
-                })
-            };
-        } catch (error) {
-            if (attempt === 2) throw error;
-            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+    while (true) {
+        let data;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                data = await supabaseRestRequest(
+                    `/question_bank?select=id,theme_id,question,answer_1,answer_2,answer_3,answer_4,correct_answer&active=eq.true&order=id.asc&limit=${pageSize}&offset=${offset}`,
+                    { accessToken }
+                );
+                break;
+            } catch (error) {
+                if (attempt === 2) throw error;
+                await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+            }
         }
+        if (!Array.isArray(data)) {
+            throw new Error("Supabase n’a pas renvoyé une page de questions valide.");
+        }
+
+        questions.push(...data.map(question => {
+            const answers = [question.answer_1, question.answer_2, question.answer_3, question.answer_4]
+                .map(answer => String(answer || ""));
+            const correctAnswer = String(question.correct_answer || "");
+            const correctIndex = answers.findIndex(answer => answer === correctAnswer);
+            const numericCorrectIndex = Number(correctAnswer);
+            return {
+                id: String(question.id),
+                themeId: String(question.theme_id),
+                q: String(question.question || ""),
+                r: answers,
+                correct: correctIndex >= 0
+                    ? correctIndex
+                    : Number.isInteger(numericCorrectIndex) && numericCorrectIndex > 0
+                        ? numericCorrectIndex - 1
+                        : 0
+            };
+        }));
+
+        if (data.length < pageSize) break;
+        offset += pageSize;
     }
+
+    return { questions };
 }
 
 async function loadQuestionsFromSupabase() {
@@ -936,33 +952,11 @@ async function loadQuestionsFromSupabase() {
 
     try {
         const data = await fetchSupabaseQuestions();
-
-        if (!Array.isArray(data.questions)) return false;
-
-        const localQuestions = Object.entries(questionsBank).flatMap(([themeId, theme]) =>
-            theme.questions.map((question, index) => ({
-                id: question.id || `${themeId}-${index + 1}`,
-                themeId,
-                q: question.q,
-                r: normalizeQuestionAnswers(question.r),
-                correct: question.correct
-            }))
-        );
-
-        if (data.questions.length >= localQuestions.length || !getStoredSupabaseSession()?.access_token) {
-            applyRemoteQuestions(data.questions);
-            questionSourceReady = true;
-            return true;
-        }
-
-        await syncQuestionMutation({ action: "seed", force: true, questions: localQuestions });
-        const verifyData = await fetchSupabaseQuestions();
-        if (!Array.isArray(verifyData.questions) || verifyData.questions.length === 0) return false;
-
-        applyRemoteQuestions(verifyData.questions);
+        applyRemoteQuestions(data.questions);
         questionSourceReady = true;
         return true;
-    } catch {
+    } catch (error) {
+        console.error("Chargement des questions depuis Supabase impossible", error);
         return false;
     }
 }
