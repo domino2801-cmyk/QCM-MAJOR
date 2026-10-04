@@ -3021,7 +3021,7 @@ async function initializeAppInteractions() {
 
     document.getElementById("close-app").addEventListener("click", () => {
         if (document.getElementById("quiz-screen")?.classList.contains("active")) {
-            const confirmed = window.confirm("Abandonner le combat en cours et revenir à l'écran candidat ?");
+            const confirmed = window.confirm("Abandonner le combat en cours et effectuer un repli stratégique ?");
             if (!confirmed) return;
             currentQuizRunId += 1;
             questionTransitionLocked = false;

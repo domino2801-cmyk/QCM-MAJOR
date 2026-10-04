@@ -51,7 +51,7 @@ test("login screen keeps a close-app button with fallback content", () => {
 
 test("close-app returns to candidate screen instead of closing during a quiz", () => {
     assert.match(js, /quiz-screen"\)\?\.classList\.contains\("active"\)/);
-    assert.match(js, /Abandonner le combat en cours/);
+    assert.match(js, /Abandonner le combat en cours et effectuer un repli stratégique/);
     assert.match(js, /uiController\.switchScreen\("theme-screen"\)/);
 });
 
