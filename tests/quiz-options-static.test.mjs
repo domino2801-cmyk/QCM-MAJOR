@@ -85,6 +85,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     const question = { innerText: "" };
     const optionsGrid = createContainer([{ stale: true }]);
     const skipButton = createButton();
+    const nextQuestionButton = createButton();
     skipButton.innerText = "Passer";
     skipButton.disabled = true;
     const scheduled = [];
@@ -101,7 +102,8 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
                     "live-points": livePoints,
                     question,
                     "options-grid": optionsGrid,
-                    "skip-btn": skipButton
+                    "skip-btn": skipButton,
+                    "next-question-btn": nextQuestionButton
                 }[id] ?? null;
             },
             createElement(tagName) {
@@ -122,7 +124,8 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
             },
             answer(value) {
                 skipAnswer = value;
-                return false;
+                this.index += 1;
+                return this.index < this.questions.length;
             }
         },
         reviewItems: [],
@@ -158,10 +161,11 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     skipButton.onclick();
 
     assert.equal(skipAnswer, null);
-    assert.equal(scheduled.length, 1);
-    assert.equal(scheduled[0].delay, 900);
+    assert.equal(scheduled.length, 0);
+    assert.equal(nextQuestionButton.disabled, false);
+    assert.equal(nextQuestionButton.innerText, "Voir le bilan");
     assert.deepEqual(markedAnswers, [{ selected: null, correct: 1 }]);
-    scheduled[0].callback();
+    nextQuestionButton.onclick();
     assert.equal(finalCalls, 1);
     assert.equal(optionsGrid.children.length, 4);
     assert.equal(context.reviewItems.length, 1);
@@ -236,6 +240,7 @@ test("afficherSituation uses the most complete answer set for mixed payloads", (
     const question = { innerText: "" };
     const optionsGrid = createContainer();
     const skipButton = createButton();
+    const nextQuestionButton = createButton();
 
     const context = {
         document: {
@@ -245,7 +250,8 @@ test("afficherSituation uses the most complete answer set for mixed payloads", (
                     "live-points": livePoints,
                     question,
                     "options-grid": optionsGrid,
-                    "skip-btn": skipButton
+                    "skip-btn": skipButton,
+                    "next-question-btn": nextQuestionButton
                 }[id] ?? null;
             },
             createElement() {

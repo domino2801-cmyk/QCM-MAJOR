@@ -19,6 +19,7 @@ let maxQuestions = 0;
 let quizFeedbackMode = "training";
 let reviewItems = [];
 let questionTransitionLocked = false;
+let displayedQuestion = null;
 let currentQuizRunId = 0;
 let finalizedQuizRunId = -1;
 let questionSourceReady = false;
@@ -3129,7 +3130,7 @@ async function initializeAppInteractions() {
     document.getElementById("question-report-cancel")?.addEventListener("click", resetQuestionReportForm);
     reportForm?.addEventListener("submit", async event => {
         event.preventDefault();
-        const question = quizEngine.getCurrent();
+        const question = displayedQuestion;
         if (!question) {
             setAuthMessage("question-report-status", "Cette question n’est plus disponible.");
             return;
@@ -3276,6 +3277,7 @@ function startQuiz() {
     quizEngine.selectTheme(selectedTheme, maxQuestions, excludedQuestions);
     reviewItems = [];
     questionTransitionLocked = false;
+    displayedQuestion = null;
     currentQuizRunId += 1;
     finalizedQuizRunId = -1;
 
@@ -3315,10 +3317,15 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     const questionNode = document.getElementById("question");
     const optionsGrid = document.getElementById("options-grid");
     const skip = document.getElementById("skip-btn");
-    if (!progressNode || !livePointsNode || !questionNode || !optionsGrid || !skip) {
+    const nextQuestion = document.getElementById("next-question-btn");
+    if (!progressNode || !livePointsNode || !questionNode || !optionsGrid || !skip || !nextQuestion) {
         console.warn("Éléments du quiz introuvables : écran non initialisé.");
         return;
     }
+    displayedQuestion = q;
+    nextQuestion.disabled = true;
+    nextQuestion.innerText = "Question suivante";
+    nextQuestion.onclick = null;
 
     progressNode.innerText =
         `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
@@ -3363,18 +3370,14 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
                 });
             }
             const encore = quizEngine.answer(index);
+            livePointsNode.innerText = `Points : ${quizEngine.stats.points}`;
             try {
                 marquerBoutons(index, q.correct);
             } catch (error) {
                 console.warn("Marquage des réponses indisponible.", error);
             }
-
-            setTimeout(() => {
-                if (encore) afficherSituation(activeQuizRunId);
-                else void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
-                    console.error("Finalisation du quiz impossible.", error);
-                });
-            }, 900);
+            nextQuestion.innerText = encore ? "Question suivante" : "Voir le bilan";
+            nextQuestion.disabled = false;
         };
 
         optionsGrid.appendChild(btn);
@@ -3392,17 +3395,26 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             correct: answers[q.correct]
         });
         const encore = quizEngine.answer(null);
+        livePointsNode.innerText = `Points : ${quizEngine.stats.points}`;
         try {
             marquerBoutons(null, q.correct);
         } catch (error) {
             console.warn("Marquage des réponses indisponible.", error);
         }
-        setTimeout(() => {
-            if (encore) afficherSituation(activeQuizRunId);
-            else void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
-                console.error("Finalisation du quiz impossible.", error);
-            });
-        }, 900);
+        nextQuestion.innerText = encore ? "Question suivante" : "Voir le bilan";
+        nextQuestion.disabled = false;
+    };
+    nextQuestion.onclick = () => {
+        if (!questionTransitionLocked || nextQuestion.disabled) return;
+        nextQuestion.disabled = true;
+        const encore = quizEngine.index < quizEngine.questions.length;
+        if (encore) {
+            afficherSituation(activeQuizRunId);
+            return;
+        }
+        void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
+            console.error("Finalisation du quiz impossible.", error);
+        });
     };
 }
 

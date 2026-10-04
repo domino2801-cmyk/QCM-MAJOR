@@ -124,6 +124,7 @@ function createQuizFlowHarness({
     const reviewList = createContainer();
     const optionsGrid = createContainer();
     const skipButton = createButton();
+    const nextQuestionButton = createButton();
     const scheduled = [];
     const savedResults = [];
     const warnings = [];
@@ -188,6 +189,7 @@ function createQuizFlowHarness({
                     question,
                     "options-grid": optionsGrid,
                     "skip-btn": skipButton,
+                    "next-question-btn": nextQuestionButton,
                     "stat-correct": omitResultStatsNodes ? null : statCorrect,
                     "stat-wrong": omitResultStatsNodes ? null : statWrong,
                     "stat-skipped": omitResultStatsNodes ? null : statSkipped,
@@ -294,6 +296,7 @@ function createQuizFlowHarness({
         scheduled,
         optionsGrid,
         skipButton,
+        nextQuestionButton,
         progress,
         livePoints,
         question,
@@ -320,16 +323,24 @@ async function flushScheduled(scheduled) {
     }
 }
 
+async function advanceQuiz(harness) {
+    harness.nextQuestionButton.onclick();
+    await flushScheduled(harness.scheduled);
+    await new Promise(resolve => setImmediate(resolve));
+}
+
 test("last correct answer is counted and saved in the final note", async () => {
     const harness = createQuizFlowHarness();
 
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    assert.equal(harness.scheduled.length, 1);
-    assert.equal(harness.scheduled[0].delay, 900);
+    assert.equal(harness.scheduled.length, 0);
+    assert.equal(harness.progress.innerText, "Question 1 / 1");
+    assert.equal(harness.nextQuestionButton.disabled, false);
+    assert.equal(harness.nextQuestionButton.innerText, "Voir le bilan");
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.deepEqual(harness.getAnswerSounds(), [true]);
     assert.equal(harness.getActiveScreen(), "result-screen");
@@ -354,7 +365,8 @@ test("last wrong answer is counted and saved in the final note", async () => {
     harness.context.afficherSituation();
     harness.optionsGrid.children[0].onclick();
 
-    await flushScheduled(harness.scheduled);
+    assert.equal(harness.progress.innerText, "Question 1 / 1");
+    await advanceQuiz(harness);
 
     assert.deepEqual(harness.getAnswerSounds(), [false]);
     assert.equal(harness.savedResults.length, 1);
@@ -379,12 +391,12 @@ test("last skipped question is counted once and saved in the final note", async 
     harness.skipButton.onclick();
     harness.skipButton.onclick();
 
-    assert.equal(harness.scheduled.length, 1);
-    assert.equal(harness.scheduled[0].delay, 900);
+    assert.equal(harness.scheduled.length, 0);
+    assert.equal(harness.progress.innerText, "Question 1 / 1");
+    assert.equal(harness.nextQuestionButton.disabled, false);
     assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
 
-    await flushScheduled(harness.scheduled);
-    await new Promise(resolve => setImmediate(resolve));
+    await advanceQuiz(harness);
 
     assert.equal(harness.skipButton.disabled, true);
     assert.equal(harness.savedResults.length, 1);
@@ -419,29 +431,34 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.question.innerText, "Situation 1");
 
     harness.optionsGrid.children[0].onclick();
-    await flushScheduled(harness.scheduled);
+    assert.equal(harness.getActiveScreen(), "");
+    assert.equal(harness.progress.innerText, "Question 1 / 5");
+    assert.equal(harness.question.innerText, "Situation 1");
+    assert.equal(harness.nextQuestionButton.disabled, false);
+    assert.equal(harness.nextQuestionButton.innerText, "Question suivante");
+    await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 2 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 4");
 
     harness.optionsGrid.children[0].onclick();
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
     harness.skipButton.onclick();
     assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 4 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
     harness.optionsGrid.children[3].onclick();
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 5 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 7");
 
     harness.optionsGrid.children[2].onclick();
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.deepEqual(harness.getAnswerSounds(), [true, false, true, false]);
     assert.equal(harness.getActiveScreen(), "result-screen");
@@ -471,7 +488,7 @@ test("final screen renders immediately even if remote result sync stays pending"
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);
@@ -490,7 +507,7 @@ test("final screen still renders when remote result sync fails", async () => {
     harness.context.afficherSituation();
     harness.skipButton.onclick();
     assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);
@@ -508,7 +525,7 @@ test("final screen still renders with legacy final-score id", async () => {
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);
@@ -524,7 +541,7 @@ test("final screen still renders when result stat nodes are absent", async () =>
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);
@@ -540,7 +557,7 @@ test("final ranking includes the last result even before async save settles", as
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.getRankingPayload().length, 1);
@@ -563,7 +580,7 @@ test("final screen still renders when review rendering fails on the last answer"
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
@@ -585,7 +602,7 @@ test("final screen still renders when initial ranking rendering fails on the las
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
@@ -609,7 +626,7 @@ test("final screen still renders when ranking refresh fails after save", async (
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
 
-    await flushScheduled(harness.scheduled);
+    await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
@@ -639,6 +656,7 @@ test("final screen still renders when answer marking fails on the last answer", 
     const reviewList = createContainer();
     const optionsGrid = createContainer();
     const skipButton = createButton();
+    const nextQuestionButton = createButton();
     const scheduled = [];
     const savedResults = [];
     const warnings = [];
@@ -690,6 +708,7 @@ test("final screen still renders when answer marking fails on the last answer", 
                     question,
                     "options-grid": optionsGrid,
                     "skip-btn": skipButton,
+                    "next-question-btn": nextQuestionButton,
                     "score-display": scoreDisplay,
                     "stat-correct": statCorrect,
                     "stat-wrong": statWrong,
@@ -778,7 +797,10 @@ test("final screen still renders when answer marking fails on the last answer", 
     context.afficherSituation();
     optionsGrid.children[1].onclick();
 
+    assert.equal(activeScreen, "");
+    nextQuestionButton.onclick();
     await flushScheduled(scheduled);
+    await new Promise(resolve => setImmediate(resolve));
 
     assert.equal(activeScreen, "result-screen");
     assert.equal(scoreDisplay.innerText, "20.00 / 20");
