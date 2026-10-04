@@ -1755,7 +1755,7 @@ async function showAdminApp() {
     renderGlobalRanking(getResults());
     const openReports = typeof window !== "undefined"
         && new URL(window.location.href).searchParams.get("admin-section") === "question-reports";
-    switchAdminSection(openReports ? "question-reports" : "accounts");
+    switchAdminSection(openReports ? "question-reports" : null);
     uiController.switchScreen("admin-screen");
     void refreshAdminPushStatus();
 
