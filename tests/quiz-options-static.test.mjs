@@ -8,12 +8,18 @@ import vm from "node:vm";
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
 const appJs = readFileSync(`${root}/app.js`, "utf8");
+const indexHtml = readFileSync(`${root}/index.html`, "utf8");
 const { uiController } = await import(pathToFileURL(`${root}/modules/ui-controller/index.js`).href);
 
 test("theme selection keeps the exam question count only for the global campaign", () => {
     assert.match(appJs, /globalButton\?\.addEventListener\("click"/);
     assert.match(appJs, /maxQuestions = 50/);
     assert.match(appJs, /setQuestionCount\(clampQuestionCount\(50, getAllQuestions\(\)\.length\)\)/);
+});
+
+test("the app and styles use a fresh cache version for manual question advance", () => {
+    assert.match(indexHtml, /app\.js\?v=manual-next-20261004/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=manual-next-20261004/);
 });
 
 function extractFunction(source, functionName) {
