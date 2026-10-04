@@ -140,7 +140,7 @@ test("la migration correspond exactement aux affectations auditées et ne modifi
     assert.doesNotMatch(migration, /UPDATE public\.quiz_results|DELETE FROM|SET (?:question|answer|active|id)\b/i);
 });
 
-function adminFormFixture({ editing = false, fail = false } = {}) {
+function adminFormFixture({ editing = false, fail = false, sourceReady = true } = {}) {
     const bank = emptyBank();
     const question = auditedQuestion(68);
     if (editing) bank["0"].questions.push({ ...question, id: "preserved-id" });
@@ -156,7 +156,7 @@ function adminFormFixture({ editing = false, fail = false } = {}) {
     let handler;
     const context = vm.createContext({
         questionsBank: bank, editingQuestionIndex: editing ? 0 : null,
-        questionSourceReady: true, getQuestionTheme,
+        supabase: {}, questionSourceReady: sourceReady, getQuestionTheme,
         document: { getElementById(id) {
             if (id === "question-form") return { addEventListener: (_, callback) => { handler = callback; } };
             return fields[id];
@@ -205,4 +205,13 @@ test("un refus Supabase ne déplace ni ne sauvegarde la question administrateur"
     assert.equal(fixture.bank["1"].questions.length, 0);
     assert.deepEqual(fixture.saved, []);
     assert.match(fixture.messages.at(-1), /Enregistrement impossible.*Refus Supabase/);
+});
+
+test("une banque Supabase non synchronisée ne confirme ni ne sauvegarde une modification localement", async () => {
+    const fixture = adminFormFixture({ editing: true, sourceReady: false });
+    await fixture.run();
+    assert.equal(fixture.bank["0"].questions[0].id, "preserved-id");
+    assert.equal(fixture.bank["1"].questions.length, 0);
+    assert.deepEqual(fixture.saved, []);
+    assert.match(fixture.messages.at(-1), /banque Supabase n’est pas synchronisée/);
 });

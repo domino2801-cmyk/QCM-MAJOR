@@ -809,12 +809,11 @@ async function syncQuestionMutation(payload) {
 
     if (payload.action === "create") {
             const question = payload.question;
-            await supabaseRestRequest("/question_bank", {
+            const createdRows = await supabaseRestRequest("/question_bank", {
                 method: "POST",
                 accessToken,
-                prefer: "return=minimal",
+                prefer: "return=representation",
                 body: [{
-                    id: question.id,
                     theme_id: question.themeId,
                     question: question.q,
                     answer_1: question.r[0] || "",
@@ -824,15 +823,19 @@ async function syncQuestionMutation(payload) {
                     correct_answer: question.r[question.correct] || ""
                 }]
             });
-        return { created: true };
+        if (!Array.isArray(createdRows) || createdRows.length !== 1 || createdRows[0].id == null) {
+            throw new Error("Supabase n’a pas confirmé la création de la question.");
+        }
+        return { created: true, id: String(createdRows[0].id) };
     }
 
     if (payload.action === "update") {
             const question = payload.question;
             if (!payload.id) throw new Error("Identifiant Supabase de la question introuvable.");
-            await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
+            const updatedRows = await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
                 method: "PATCH",
                 accessToken,
+                prefer: "return=representation",
                 body: {
                     theme_id: question.themeId,
                     question: question.q,
@@ -843,6 +846,9 @@ async function syncQuestionMutation(payload) {
                     correct_answer: question.r[question.correct] || ""
                 }
             });
+        if (!Array.isArray(updatedRows) || updatedRows.length !== 1) {
+            throw new Error("Supabase n’a modifié aucune question. Vérifiez son identifiant et vos droits administrateur.");
+        }
         return { updated: true };
     }
 
@@ -3184,7 +3190,10 @@ async function initializeAppInteractions() {
         const destinationQuestions = questionsBank[destinationThemeId].questions;
 
         try {
-            if (questionSourceReady) {
+            if (supabase) {
+                if (!questionSourceReady) {
+                    throw new Error("La banque Supabase n’est pas synchronisée. Réessayez après le chargement des questions.");
+                }
                 const syncResult = await syncQuestionMutation({
                     action: editingQuestionIndex === null ? "create" : "update",
                     id: question.id,
@@ -3194,6 +3203,7 @@ async function initializeAppInteractions() {
                 if (!syncResult?.created && !syncResult?.updated) {
                     throw new Error("Supabase n’a pas confirmé l’enregistrement de la question.");
                 }
+                if (syncResult.id) question.id = syncResult.id;
             }
 
             if (editingQuestionIndex === null) {
@@ -3210,9 +3220,12 @@ async function initializeAppInteractions() {
             resetQuestionForm();
             const themeField = document.getElementById("admin-question-theme");
             themeField.value = destinationThemeId;
-            setAuthMessage("question-message", destinationThemeId === themeId
+            const storageMessage = supabase
                 ? "Question enregistrée dans Supabase."
-                : `Question enregistrée dans Supabase et reclassée : ${themeField.selectedOptions[0].textContent}.`);
+                : "Question enregistrée localement.";
+            setAuthMessage("question-message", destinationThemeId === themeId
+                ? storageMessage
+                : `${storageMessage} Question reclassée : ${themeField.selectedOptions[0].textContent}.`);
             renderAdminQuestions();
         } catch (error) {
             setAuthMessage(
