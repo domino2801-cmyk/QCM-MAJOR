@@ -1706,7 +1706,15 @@ async function loadAdminData() {
     if (!Array.isArray(reports)) {
         throw new Error("Les signalements de questions n’ont pas pu être chargés.");
     }
-    questionReports = reports;
+    const profileEmailsById = new Map(
+        (Array.isArray(profiles) ? profiles : [])
+            .filter(profile => profile.id && profile.email)
+            .map(profile => [String(profile.id), profile.email])
+    );
+    questionReports = reports.map(report => ({
+        ...report,
+        reporter_email: profileEmailsById.get(String(report.reporter_id)) || ""
+    }));
 
     if (Array.isArray(profiles)) {
         const synchronizedAccounts = {};
@@ -1975,6 +1983,7 @@ function renderAdminQuestionReports() {
         const statusCell = document.createElement("td");
         const actionCell = document.createElement("td");
         const resolveButton = document.createElement("button");
+        const deleteButton = document.createElement("button");
         const answers = Array.isArray(report.answers) ? report.answers : [];
 
         questionCell.className = "question-report-content";
@@ -1985,9 +1994,7 @@ function renderAdminQuestionReports() {
             `Campagne : ${report.quiz_theme === "all" ? "Globale" : report.quiz_theme}`
         ].join("\n");
         detailsCell.innerText = report.details || "Aucun détail fourni.";
-        reporterCell.innerText = report.reporter_id
-            ? `Candidat (${String(report.reporter_id).slice(0, 8)})`
-            : "Candidat";
+        reporterCell.innerText = report.reporter_email || "E-mail indisponible";
         dateCell.innerText = report.created_at
             ? new Date(report.created_at).toLocaleString("fr-FR")
             : "Date inconnue";
@@ -2014,6 +2021,35 @@ function renderAdminQuestionReports() {
             });
             actionCell.appendChild(resolveButton);
         }
+
+        deleteButton.type = "button";
+        deleteButton.className = "admin-delete-btn";
+        deleteButton.innerText = "Effacer signalement";
+        deleteButton.addEventListener("click", async () => {
+            const confirmed = await showConfirmOverlay({
+                title: "Effacer le signalement ?",
+                message: "Cette action supprimera définitivement ce signalement.",
+                okLabel: "Effacer",
+                cancelLabel: "Annuler"
+            });
+            if (!confirmed) return;
+
+            deleteButton.disabled = true;
+            try {
+                await supabaseRestRequest(`/question_reports?id=eq.${encodeURIComponent(report.id)}`, {
+                    method: "DELETE",
+                    accessToken: getStoredSupabaseSession()?.access_token,
+                    prefer: "return=minimal"
+                });
+                questionReports = questionReports.filter(item => item.id !== report.id);
+                renderAdminQuestionReports();
+                setAuthMessage("admin-question-reports-status", "Signalement effacé.");
+            } catch (error) {
+                setAuthMessage("admin-question-reports-status", `Suppression impossible : ${error.message}`);
+                deleteButton.disabled = false;
+            }
+        });
+        actionCell.appendChild(deleteButton);
 
         row.append(questionCell, detailsCell, reporterCell, dateCell, statusCell, actionCell);
         list.appendChild(row);

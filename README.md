@@ -120,7 +120,7 @@ elle n'est ni supprimée ni réécrite par ce reclassement.
 Une zone d'administration sécurisée est intégrée pour centraliser la gestion de l'application :
 * **Gestion des comptes :** Visualisation et suivi des candidats inscrits.
 * **Gestion des questions :** Ajout, modification, suppression et dédoublonnage automatique des QCM.
-* **Signalements :** Consultation des questions signalées par les candidats et marquage des signalements traités.
+* **Signalements :** Consultation des questions signalées et de l’adresse e-mail du candidat, marquage comme traité et suppression par un administrateur.
 * **Gestion des résultats :** Suivi des notes, des réponses fournies et des dates de passage des candidats, avec option de réinitialisation.
 * **Accès admin sécurisé :** Connexion avec un compte Supabase autorisé via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
@@ -232,7 +232,7 @@ Prérequis côté Supabase :
 * Prévoir une table `profiles` avec au minimum `id`, `email`, `name` et une colonne de spécialité nommée `specialty` ou `speciality`, ainsi que des politiques RLS permettant à l’utilisateur authentifié de lire/écrire son propre profil.
 * Prévoir une table `questions` (colonnes : `id` unique, `theme_id`, `q`, `r`, `correct`) avec `r` stocké comme tableau JSON/JSONB et règles de lecture/écriture adaptées à l’administration.
 * Prévoir une table `quiz_results` (colonnes : `id` unique, `candidate_id`, `label`, `email`, `name`, `theme`, `score`, `correct`, `wrong`, `skipped`, `total`, `date`, `created_at`) avec `created_at` alimenté automatiquement (timestamp par défaut) pour l’ordre d’affichage.
-* Appliquer `supabase/migrations/20261004105000_create_question_reports.sql` pour créer la table de signalements et ses règles RLS. Les candidats authentifiés peuvent seulement soumettre leurs propres signalements ; la consultation et le traitement sont réservés aux administrateurs.
+* Appliquer `supabase/migrations/20261004105000_create_question_reports.sql` pour créer la table de signalements et ses règles RLS, puis `supabase/migrations/20261004121500_allow_admin_delete_question_reports.sql` pour autoriser leur suppression par un administrateur. Les candidats authentifiés peuvent seulement soumettre leurs propres signalements ; la consultation, le traitement et la suppression sont réservés aux administrateurs.
 * Exécuter aussi la migration qui crée la fonction RPC publique `get_public_global_campaign_top3()` (champs `display_name`, `score`, `created_at`) et accorde `EXECUTE` à `anon`/`authenticated` pour afficher le Top 3 de connexion sans ouvrir `quiz_results` en lecture anonyme.
 * Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
 * Les comptes administrateurs doivent aussi être couverts par des règles RLS côté Supabase, cohérentes avec les claims `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
