@@ -27,6 +27,10 @@ test("register markup keeps required ids and HTML5 constraints", () => {
 
     assert.match(html, /id="register-password"[^>]*minlength="6"/);
     assert.match(html, /id="register-specialty"[^>]*required/);
+    assert.equal((html.match(/Canal d'extraction direct du combattant/g) || []).length, 4);
+    assert.match(html, /<label for="login-password">Code de reconnaissance<\/label>/);
+    assert.match(html, /<label for="register-password">Code de reconnaissance<\/label>/);
+    assert.doesNotMatch(html, /Mail personnel du candidat|Top 3 campagne globale|>Mot de passe</);
 });
 
 test("signup flow still stores pending signup and switches to OTP", () => {

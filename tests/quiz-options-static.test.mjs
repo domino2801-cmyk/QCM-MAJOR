@@ -18,7 +18,7 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions for the deployed features", () => {
-    assert.match(indexHtml, /app\.js\?v=admin-reports-20261004/);
+    assert.match(indexHtml, /app\.js\?v=assault-final-auth-labels-20261004/);
     assert.match(indexHtml, /ui\/Style\.css\?v=supabase-pagination-20261004/);
 });
 

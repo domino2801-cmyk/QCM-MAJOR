@@ -46,7 +46,7 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(js, /score-critical/);
     assert.match(js, /Thème à travailler/);
     assert.match(js, /\.filter\(result => result\.theme === "all"\)\s*\.sort/);
-    assert.match(html, /Top 3 campagne globale/);
+    assert.equal((html.match(/ASSAULT FINAL TOP 3/g) || []).length, 3);
 });
 
 test("showAuthenticatedApp refreshes the ranking on the connected screen", () => {

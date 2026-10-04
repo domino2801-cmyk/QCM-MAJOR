@@ -43,20 +43,20 @@
                         <button class="auth-tab" type="button" data-auth-mode="register">Créer un compte</button>
                     </div>
                     <section id="login-global-ranking-section" class="global-ranking" aria-labelledby="login-global-ranking-title">
-                        <h2 id="login-global-ranking-title">Top 3 campagne globale</h2>
+                        <h2 id="login-global-ranking-title">ASSAULT FINAL TOP 3</h2>
                         <p id="login-global-ranking-status" class="terminal-note" role="status" aria-live="polite">Chargement du classement…</p>
                         <ol id="login-global-ranking-list" class="global-ranking-list"></ol>
                     </section>
                     <form id="login-form" class="auth-form">
-                        <label for="login-email">Mail personnel du candidat</label>
+                        <label for="login-email">Canal d'extraction direct du combattant</label>
                         <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
-                        <label for="login-password">Mot de passe</label>
+                        <label for="login-password">Code de reconnaissance</label>
                         <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" required>
                         <p id="login-message" class="auth-message" role="alert"></p>
                         <button class="btn-main" type="submit">Entrer dans le combat BM4</button>
                     </form>
                     <div class="auth-actions">
-                        <button id="login-forgot-password-btn" class="auth-link" type="button">Mot de passe oublié</button>
+                        <button id="login-forgot-password-btn" class="auth-link" type="button">Code de reconnaissance oublié</button>
                     </div>
                 </section>
                 <section id="register-view" class="auth-view hidden">
@@ -67,9 +67,9 @@
                     <form id="register-form" class="auth-form">
                         <label for="register-pseudo">Pseudo</label>
                         <input id="register-pseudo" name="pseudo" type="text" autocomplete="nickname" placeholder="Pseudo de guerre" required>
-                        <label for="register-email">Mail personnel du candidat</label>
+                        <label for="register-email">Canal d'extraction direct du combattant</label>
                         <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
-                        <label for="register-password">Mot de passe</label>
+                        <label for="register-password">Code de reconnaissance</label>
                         <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
                         <label for="register-specialty">Spécialité BM4</label>
                         <select id="register-specialty" name="specialty" required>
@@ -123,21 +123,21 @@
                     </div>
                 </section>
                 <section id="reset-view" class="auth-view hidden">
-                    <div class="terminal-panel-title">Procédure mot de passe oublié</div>
+                    <div class="terminal-panel-title">Récupération du code de reconnaissance</div>
                     <p id="reset-copy" class="terminal-copy">Renseignez votre adresse email pour recevoir un lien de réinitialisation.</p>
                     <form id="reset-request-form" class="auth-form">
-                        <label for="reset-email">Mail personnel du candidat</label>
+                        <label for="reset-email">Canal d'extraction direct du combattant</label>
                         <input id="reset-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <p id="reset-request-message" class="auth-message" role="alert"></p>
                         <button class="btn-main" type="submit">Envoyer le lien de récupération</button>
                     </form>
                     <form id="reset-password-form" class="auth-form hidden">
-                        <label for="reset-password">Nouveau mot de passe</label>
+                        <label for="reset-password">Nouveau code de reconnaissance</label>
                         <input id="reset-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
-                        <label for="reset-password-confirmation">Confirmation du mot de passe</label>
+                        <label for="reset-password-confirmation">Confirmation du code de reconnaissance</label>
                         <input id="reset-password-confirmation" name="password-confirmation" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
                         <p id="reset-password-message" class="auth-message" role="alert"></p>
-                        <button class="btn-main" type="submit">Mettre à jour le mot de passe</button>
+                        <button class="btn-main" type="submit">Mettre à jour le code de reconnaissance</button>
                     </form>
                     <div class="auth-actions">
                         <button id="reset-back-btn" class="auth-link" type="button">Retour à la connexion</button>
@@ -153,7 +153,7 @@
                         <div class="terminal-panel-title">Accès administrateur</div>
                         <label for="admin-email">Email administrateur</label>
                         <input id="admin-email" name="email" type="email" autocomplete="email" placeholder="admin@unite.fr" required>
-                        <label for="admin-password">Mot de passe administrateur</label>
+                        <label for="admin-password">Code de reconnaissance administrateur</label>
                         <input id="admin-password" name="password" type="password" placeholder="............" required>
                         <p id="admin-message" class="auth-message" role="alert"></p>
                         <button class="btn-main" type="submit">Ouvrir l’administration</button>
@@ -167,7 +167,7 @@
             <h1>Interface administrateur</h1>
             <p class="subtitle">Gestion des comptes, des questions et des résultats</p>
             <section id="admin-global-ranking-section" class="global-ranking" aria-labelledby="admin-global-ranking-title">
-                <h2 id="admin-global-ranking-title">Top 3 campagne globale</h2>
+                <h2 id="admin-global-ranking-title">ASSAULT FINAL TOP 3</h2>
                 <ol id="admin-global-ranking-list" class="global-ranking-list"></ol>
             </section>
             <p id="admin-data-status" class="auth-message" role="status"></p>
@@ -180,7 +180,7 @@
             <section id="admin-accounts-section" class="admin-panel">
                 <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="admin-edit-btn" type="button">Actualiser depuis Supabase</button></div>
                 <input id="admin-accounts-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou un email" aria-label="Rechercher un compte">
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Nom du candidat</th><th>Mail personnel</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Nom du candidat</th><th>Canal d'extraction direct du combattant</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
             </section>
             <section id="admin-questions-section" class="admin-section admin-panel hidden">
                 <h2>Gestion des questions</h2>
@@ -272,7 +272,7 @@
                 <button id="reset-question-history-btn" class="btn-secondary history-reset-btn" type="button">Réinitialiser mon historique</button>
                 <p id="candidate-history-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <section id="history-global-ranking-section" class="global-ranking" aria-labelledby="history-global-ranking-title">
-                    <h3 id="history-global-ranking-title">Top 3 campagne globale</h3>
+                    <h3 id="history-global-ranking-title">ASSAULT FINAL TOP 3</h3>
                     <ol id="history-global-ranking-list" class="global-ranking-list"></ol>
                 </section>
                 <label class="global-evolution-filter" for="candidate-history-period">Période</label>
@@ -299,6 +299,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=admin-reports-20261004"></script>
+    <script type="module" src="app.js?v=assault-final-auth-labels-20261004"></script>
 </body>
 </html>

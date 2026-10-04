@@ -1509,7 +1509,7 @@ function getRegisterValidationMessage(field) {
     if (field.validity.valueMissing) {
         if (field.id === "register-pseudo") return "Le pseudo candidat est requis.";
         if (field.id === "register-email") return "L’adresse mail du candidat est requise.";
-        if (field.id === "register-password") return "Le mot de passe candidat est requis.";
+        if (field.id === "register-password") return "Le code de reconnaissance du candidat est requis.";
         if (field.id === "register-specialty") return "Sélectionnez une spécialité BM4 avant de créer le compte.";
         if (field.id === "register-specialty-other") return "Précisez votre spécialité avant de créer le compte.";
     }
@@ -1519,7 +1519,7 @@ function getRegisterValidationMessage(field) {
     }
 
     if (field.validity.tooShort && field.id === "register-password") {
-        return `Le mot de passe doit contenir au moins ${field.minLength || 6} caractères.`;
+        return `Le code de reconnaissance doit contenir au moins ${field.minLength || 6} caractères.`;
     }
 
     if (field.validity.badInput) {
@@ -2332,7 +2332,7 @@ function showAuthView(view, options = {}) {
         const resetCopy = document.getElementById("reset-copy");
         if (resetCopy) {
             resetCopy.innerText = isPasswordUpdate
-                ? "Définissez un nouveau mot de passe pour finaliser la récupération du compte."
+                ? "Définissez un nouveau code de reconnaissance pour finaliser la récupération du compte."
                 : "Renseignez votre adresse email pour recevoir un lien de réinitialisation.";
         }
         setTerminalState(isPasswordUpdate ? "MODE RESET RECOVERY" : "MODE RESET REQUEST");
@@ -2398,7 +2398,7 @@ function getFriendlyAuthError(error, fallbackMessage) {
     const message = error?.message?.toLowerCase?.() || "";
 
     if (message.includes("invalid login credentials")) {
-        return "Adresse mail ou mot de passe incorrect.";
+        return "Canal d'extraction ou code de reconnaissance incorrect.";
     }
     if (message.includes("email not confirmed")) {
         return "Adresse mail non confirmée. Validez d’abord le code OTP reçu par email.";
@@ -2407,7 +2407,7 @@ function getFriendlyAuthError(error, fallbackMessage) {
         return "Un compte existe déjà avec cette adresse mail.";
     }
     if (message.includes("password should be at least")) {
-        return "Le mot de passe doit contenir au moins 6 caractères.";
+        return "Le code de reconnaissance doit contenir au moins 6 caractères.";
     }
     if (message.includes("token has expired") || message.includes("otp expired")) {
         return "Le code ou le lien de vérification a expiré. Demandez une nouvelle procédure.";
@@ -2493,7 +2493,7 @@ async function handleRegisterSubmit(event) {
         "Le champ pseudo est introuvable. Rechargez la page puis réessayez."
     );
     const emailField = getRequiredFormElement(registerForm, "email", "register-message", "Le champ email est introuvable.");
-    const passwordField = getRequiredFormElement(registerForm, "password", "register-message", "Le champ mot de passe est introuvable.");
+    const passwordField = getRequiredFormElement(registerForm, "password", "register-message", "Le champ code de reconnaissance est introuvable.");
     const specialtyField = getRequiredFormElement(registerForm, "specialty", "register-message", "Le champ spécialité est introuvable.");
 
     if (!pseudoField || !emailField || !passwordField || !specialtyField) {
@@ -2637,7 +2637,7 @@ function initializeAuth() {
             signedInSession = data.session || null;
 
             if (!data.user) {
-                setAuthMessage("login-message", "Adresse mail ou mot de passe incorrect.");
+                setAuthMessage("login-message", "Canal d'extraction ou code de reconnaissance incorrect.");
                 return;
             }
 
@@ -2652,7 +2652,7 @@ function initializeAuth() {
                 handleProfileLookupFailure("login-message");
                 return;
             }
-            setAuthMessage("login-message", getFriendlyAuthError(error, "Adresse mail ou mot de passe incorrect."));
+            setAuthMessage("login-message", getFriendlyAuthError(error, "Canal d'extraction ou code de reconnaissance incorrect."));
         }
     });
 
@@ -2711,7 +2711,7 @@ function initializeAuth() {
 
             clearAuthMessages();
             showAuthView("success", {
-                message: "Lien de récupération envoyé. Ouvrez l’email reçu puis revenez dans l’application pour définir un nouveau mot de passe.",
+                message: "Lien de récupération envoyé. Ouvrez l’email reçu puis revenez dans l’application pour définir un nouveau code de reconnaissance.",
                 actionLabel: "Retour à la connexion",
                 onAction: () => {
                     showAuthView("login");
@@ -2730,12 +2730,12 @@ function initializeAuth() {
         const confirmation = document.getElementById("reset-password-confirmation").value;
 
         if (password.length < 6) {
-            setAuthMessage("reset-password-message", "Le mot de passe doit contenir au moins 6 caractères.");
+            setAuthMessage("reset-password-message", "Le code de reconnaissance doit contenir au moins 6 caractères.");
             return;
         }
 
         if (password !== confirmation) {
-            setAuthMessage("reset-password-message", "Les mots de passe saisis ne correspondent pas.");
+            setAuthMessage("reset-password-message", "Les codes de reconnaissance saisis ne correspondent pas.");
             return;
         }
 
@@ -2749,14 +2749,14 @@ function initializeAuth() {
             document.getElementById("reset-password-form").reset();
             clearAuthMessages();
             showAuthView("success", {
-                message: "Mot de passe mis à jour. Reconnectez-vous avec votre nouveau mot de passe.",
+                message: "Code de reconnaissance mis à jour. Reconnectez-vous avec votre nouveau code de reconnaissance.",
                 actionLabel: "Retour à la connexion",
                 onAction: () => {
                     showAuthView("login");
                 }
             });
         } catch (error) {
-            setAuthMessage("reset-password-message", getFriendlyAuthError(error, "Impossible de mettre à jour le mot de passe."));
+            setAuthMessage("reset-password-message", getFriendlyAuthError(error, "Impossible de mettre à jour le code de reconnaissance."));
         }
     });
 
@@ -2773,7 +2773,7 @@ function initializeAuth() {
             adminSession = data.session || null;
 
             if (!data.user) {
-                setAuthMessage("admin-message", "Identifiant ou mot de passe administrateur incorrect.");
+                setAuthMessage("admin-message", "Identifiant ou code de reconnaissance administrateur incorrect.");
                 return;
             }
 
@@ -2788,7 +2788,7 @@ function initializeAuth() {
             currentCandidateEmail = "";
             showAdminApp();
         } catch (error) {
-            setAuthMessage("admin-message", getFriendlyAuthError(error, "Identifiant ou mot de passe administrateur incorrect."));
+            setAuthMessage("admin-message", getFriendlyAuthError(error, "Identifiant ou code de reconnaissance administrateur incorrect."));
             return;
         }
 
