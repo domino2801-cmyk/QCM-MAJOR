@@ -281,7 +281,7 @@ body:has(#history-screen.active) .close-app {
     border: 1px solid var(--primary);
     color: var(--text);
     font: inherit;
-    padding: 10px;
+    padding: 8px;
     cursor: pointer;
 }
 
@@ -1854,7 +1854,7 @@ body {
     background:
         linear-gradient(180deg, rgba(11, 19, 31, 0.42), rgba(8, 15, 26, 0.54));
     backdrop-filter: blur(7px);
-    padding: 10px 20px;
+    padding: 6px 20px;
 }
 
 #auth-screen .terminal-shell {
@@ -1873,7 +1873,7 @@ body {
 #auth-screen.screen.active {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 #auth-screen .brand-lockup,
