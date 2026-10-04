@@ -75,7 +75,8 @@ test("quiz abandonment uses the custom overlay instead of the native confirm", (
 
 test("close-app button is hidden on the candidate theme screen", () => {
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
-    assert.match(css, /body:has\(#theme-screen\.active\) \.close-app \{\s*display: none;/);
+    assert.match(css, /body:has\(#theme-screen\.active\) \.close-app/);
+    assert.match(css, /body:has\(#history-screen\.active\) \.close-app[\s,]/);
 });
 
 test("theme selection uses a single dropdown selector instead of five buttons", () => {

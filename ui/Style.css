@@ -137,7 +137,8 @@ body {
     color: #fff;
 }
 
-body:has(#theme-screen.active) .close-app {
+body:has(#theme-screen.active) .close-app,
+body:has(#history-screen.active) .close-app {
     display: none;
 }
 
