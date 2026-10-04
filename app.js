@@ -1442,6 +1442,7 @@ function getRegisterValidationMessage(field) {
         if (field.id === "register-email") return "L’adresse mail du candidat est requise.";
         if (field.id === "register-password") return "Le mot de passe candidat est requis.";
         if (field.id === "register-specialty") return "Sélectionnez une spécialité BM4 avant de créer le compte.";
+        if (field.id === "register-specialty-other") return "Précisez votre spécialité avant de créer le compte.";
     }
 
     if (field.validity.typeMismatch && field.id === "register-email") {
@@ -1469,6 +1470,21 @@ function initializeRegisterFormValidation() {
     const registerForm = document.getElementById("register-form");
     if (!registerForm) return;
     registerForm.noValidate = true;
+
+    const specialtySelect = document.getElementById("register-specialty");
+    const specialtyOtherInput = document.getElementById("register-specialty-other");
+    if (specialtySelect && specialtyOtherInput) {
+        const syncSpecialtyOtherVisibility = () => {
+            const isOther = specialtySelect.value === "OTHER";
+            specialtyOtherInput.classList.toggle("hidden", !isOther);
+            specialtyOtherInput.required = isOther;
+            if (!isOther) {
+                specialtyOtherInput.value = "";
+            }
+        };
+        specialtySelect.addEventListener("change", syncSpecialtyOtherVisibility);
+        syncSpecialtyOtherVisibility();
+    }
 
     const syncRegisterMessage = () => {
         if (!getFirstInvalidRegisterField(registerForm)) {
@@ -2303,10 +2319,19 @@ async function handleRegisterSubmit(event) {
     const name = pseudoField.value.trim();
     const email = normalizeEmail(emailField.value);
     const password = passwordField.value;
-    const specialty = specialtyField.value.trim();
+    const selectedSpecialty = specialtyField.value.trim();
+    const specialtyOtherField = registerForm.elements.namedItem("specialtyOther");
+    const specialty = selectedSpecialty === "OTHER"
+        ? specialtyOtherField?.value.trim() || ""
+        : selectedSpecialty;
 
     if (!name || !specialty) {
-        setAuthMessage("register-message", "Tous les champs du profil candidat sont requis.");
+        setAuthMessage("register-message", selectedSpecialty === "OTHER"
+            ? "Précisez votre spécialité avant de créer le compte."
+            : "Tous les champs du profil candidat sont requis.");
+        if (selectedSpecialty === "OTHER") {
+            specialtyOtherField?.focus?.();
+        }
         return;
     }
 
