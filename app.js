@@ -71,6 +71,7 @@ let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
+let questionReports = [];
 let publicGlobalRankingCache = [];
 let publicRankingRefreshPromise = null;
 let publicRankingState = "loading";
@@ -239,6 +240,28 @@ async function supabaseRestRequest(path, { method = "GET", body, accessToken, pr
     }
 
     return data;
+}
+
+async function submitQuestionReport(question, answers, themeId, details) {
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!supabase || !accessToken || !currentAuthenticatedAccount?.id) {
+        throw new Error("Connectez-vous pour signaler une question.");
+    }
+
+    await supabaseRestRequest("/question_reports", {
+        method: "POST",
+        accessToken,
+        prefer: "return=minimal",
+        body: {
+            question_id: question.id == null ? null : String(question.id),
+            question_text: question.q,
+            answers,
+            correct_answer_index: question.correct,
+            quiz_theme: String(themeId),
+            details: details.trim() || null,
+            reporter_id: currentAuthenticatedAccount.id
+        }
+    });
 }
 
 async function fetchSupabaseUser(accessToken) {
@@ -1675,6 +1698,14 @@ async function loadAdminData() {
     }
 
     const resultsLoaded = await loadResultsFromSupabase({ throwOnError: true });
+    const reports = await supabaseRestRequest(
+        "/question_reports?select=id,question_id,question_text,answers,correct_answer_index,quiz_theme,details,reporter_id,status,created_at&order=created_at.desc",
+        { accessToken }
+    );
+    if (!Array.isArray(reports)) {
+        throw new Error("Les signalements de questions n’ont pas pu être chargés.");
+    }
+    questionReports = reports;
 
     if (Array.isArray(profiles)) {
         const synchronizedAccounts = {};
@@ -1706,6 +1737,7 @@ async function showAdminApp() {
     renderAdminAccounts();
     renderAdminQuestions();
     renderAdminResults();
+    renderAdminQuestionReports();
     renderGlobalRanking(getResults());
     switchAdminSection("accounts");
     uiController.switchScreen("admin-screen");
@@ -1715,6 +1747,7 @@ async function showAdminApp() {
         renderAdminAccounts();
         renderAdminQuestions();
         renderAdminResults();
+        renderAdminQuestionReports();
         renderGlobalRanking(getResults());
         setAuthMessage("admin-data-status", "Données administrateur synchronisées avec Supabase.");
     } catch (error) {
@@ -1913,6 +1946,75 @@ function renderAdminResults() {
         answersCell.innerText = `${result.correct} correcte(s), ${result.wrong} fausse(s), ${result.skipped} passée(s)`;
         dateCell.innerText = result.date;
         row.append(candidateCell, scoreCell, answersCell, dateCell);
+        list.appendChild(row);
+    });
+}
+
+function renderAdminQuestionReports() {
+    const list = document.getElementById("admin-question-reports-table");
+    if (!list) return;
+    list.innerHTML = "";
+
+    if (questionReports.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.innerText = "Aucun signalement pour le moment.";
+        row.appendChild(cell);
+        list.appendChild(row);
+        return;
+    }
+
+    questionReports.forEach(report => {
+        const row = document.createElement("tr");
+        const questionCell = document.createElement("td");
+        const detailsCell = document.createElement("td");
+        const reporterCell = document.createElement("td");
+        const dateCell = document.createElement("td");
+        const statusCell = document.createElement("td");
+        const actionCell = document.createElement("td");
+        const resolveButton = document.createElement("button");
+        const answers = Array.isArray(report.answers) ? report.answers : [];
+
+        questionCell.className = "question-report-content";
+        questionCell.innerText = [
+            report.question_text || "Question indisponible",
+            `Réponses : ${answers.join(" | ") || "Non renseignées"}`,
+            `Bonne réponse enregistrée : ${answers[report.correct_answer_index] || "Non renseignée"}`,
+            `Campagne : ${report.quiz_theme === "all" ? "Globale" : report.quiz_theme}`
+        ].join("\n");
+        detailsCell.innerText = report.details || "Aucun détail fourni.";
+        reporterCell.innerText = report.reporter_id
+            ? `Candidat (${String(report.reporter_id).slice(0, 8)})`
+            : "Candidat";
+        dateCell.innerText = report.created_at
+            ? new Date(report.created_at).toLocaleString("fr-FR")
+            : "Date inconnue";
+        statusCell.innerText = report.status === "resolved" ? "Traité" : "À traiter";
+        if (report.status !== "resolved") {
+            resolveButton.type = "button";
+            resolveButton.className = "admin-edit-btn";
+            resolveButton.innerText = "Marquer comme traité";
+            resolveButton.addEventListener("click", async () => {
+                resolveButton.disabled = true;
+                try {
+                    await supabaseRestRequest(`/question_reports?id=eq.${encodeURIComponent(report.id)}`, {
+                        method: "PATCH",
+                        accessToken: getStoredSupabaseSession()?.access_token,
+                        prefer: "return=minimal",
+                        body: { status: "resolved" }
+                    });
+                    report.status = "resolved";
+                    renderAdminQuestionReports();
+                } catch (error) {
+                    setAuthMessage("admin-question-reports-status", `Mise à jour impossible : ${error.message}`);
+                    resolveButton.disabled = false;
+                }
+            });
+            actionCell.appendChild(resolveButton);
+        }
+
+        row.append(questionCell, detailsCell, reporterCell, dateCell, statusCell, actionCell);
         list.appendChild(row);
     });
 }
@@ -2998,6 +3100,55 @@ async function initializeAppInteractions() {
         button.addEventListener("click", () => switchAdminSection(button.dataset.adminSection));
     });
 
+    const reportToggle = document.getElementById("question-report-toggle");
+    const reportForm = document.getElementById("question-report-form");
+    const reportDetails = document.getElementById("question-report-details");
+    const reportSubmit = document.getElementById("question-report-submit");
+    const resetQuestionReportForm = () => {
+        reportForm?.classList.add("hidden");
+        reportToggle?.setAttribute("aria-expanded", "false");
+        reportToggle?.removeAttribute("disabled");
+        if (reportToggle) reportToggle.innerText = "Signaler une erreur dans cette question";
+        reportForm?.reset();
+        if (reportSubmit) reportSubmit.disabled = false;
+        setAuthMessage("question-report-status", "");
+    };
+
+    reportToggle?.addEventListener("click", () => {
+        const isOpening = reportForm?.classList.contains("hidden") || false;
+        reportForm?.classList.toggle("hidden", !isOpening);
+        reportToggle.setAttribute("aria-expanded", String(isOpening));
+        if (isOpening) reportDetails?.focus();
+    });
+    document.getElementById("question-report-cancel")?.addEventListener("click", resetQuestionReportForm);
+    reportForm?.addEventListener("submit", async event => {
+        event.preventDefault();
+        const question = quizEngine.getCurrent();
+        if (!question) {
+            setAuthMessage("question-report-status", "Cette question n’est plus disponible.");
+            return;
+        }
+
+        reportSubmit.disabled = true;
+        setAuthMessage("question-report-status", "Envoi du signalement...");
+        try {
+            await submitQuestionReport(
+                question,
+                resolveQuestionAnswers(question),
+                selectedTheme,
+                reportDetails?.value || ""
+            );
+            setAuthMessage("question-report-status", "Merci, votre signalement a été envoyé à l’administrateur.");
+            reportToggle.innerText = "Question signalée";
+            reportToggle.disabled = true;
+            reportForm.classList.add("hidden");
+            reportToggle.setAttribute("aria-expanded", "false");
+        } catch (error) {
+            setAuthMessage("question-report-status", `Envoi impossible : ${error.message}`);
+            reportSubmit.disabled = false;
+        }
+    });
+
     document.getElementById("refresh-admin-accounts-btn")?.addEventListener("click", async event => {
         const button = event.currentTarget;
         button.disabled = true;
@@ -3006,6 +3157,7 @@ async function initializeAppInteractions() {
             await loadAdminData();
             renderAdminAccounts();
             renderAdminResults();
+            renderAdminQuestionReports();
             setAuthMessage("admin-data-status", "Comptes synchronisés depuis Supabase.");
         } catch (error) {
             setAuthMessage("admin-data-status", error?.message || "Impossible de synchroniser les comptes.");
@@ -3160,6 +3312,18 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
 
     livePointsNode.innerText =
         `Points : ${quizEngine.stats.points}`;
+
+    const reportToggle = document.getElementById("question-report-toggle");
+    reportToggle?.removeAttribute("disabled");
+    if (reportToggle) reportToggle.innerText = "Signaler une erreur dans cette question";
+    const reportForm = document.getElementById("question-report-form");
+    reportForm?.classList.add("hidden");
+    reportForm?.reset();
+    const reportSubmit = document.getElementById("question-report-submit");
+    reportSubmit?.removeAttribute("disabled");
+    reportToggle?.setAttribute("aria-expanded", "false");
+    const reportStatus = document.getElementById("question-report-status");
+    if (reportStatus) reportStatus.innerText = "";
 
     questionNode.innerText = q.q;
     optionsGrid.innerHTML = "";

@@ -484,6 +484,40 @@ h1 {
     color: var(--text);
 }
 
+.question-report {
+    margin-top: 18px;
+}
+
+.question-report-form {
+    margin: 14px auto 0;
+    max-width: 620px;
+    text-align: left;
+}
+
+.question-report-form label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.question-report-form textarea {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--primary);
+    box-sizing: border-box;
+    color: var(--text);
+    font: inherit;
+    padding: 12px;
+    resize: vertical;
+    width: 100%;
+}
+
+.question-report-form .admin-actions {
+    margin-top: 10px;
+}
+
+.question-report-content {
+    white-space: pre-line;
+}
+
 .subtitle {
     text-align: center;
     line-height: 1.6;

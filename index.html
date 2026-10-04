@@ -174,6 +174,7 @@
             <nav class="admin-nav" aria-label="Gestion administrateur">
                 <button class="admin-nav-btn active" type="button" data-admin-section="accounts">Gestion des comptes</button>
                 <button class="admin-nav-btn" type="button" data-admin-section="questions">Gestion des questions</button>
+                <button class="admin-nav-btn" type="button" data-admin-section="question-reports">Signalements</button>
                 <button class="admin-nav-btn" type="button" data-admin-section="results">Gestion des résultats</button>
             </nav>
             <section id="admin-accounts-section" class="admin-panel">
@@ -198,6 +199,11 @@
                 <div class="admin-question-toolbar"><button id="cleanup-questions-btn" class="admin-delete-btn" type="button">Supprimer les doublons</button></div>
                 <input id="admin-questions-search" class="admin-search" type="search" placeholder="Rechercher une question" aria-label="Rechercher une question">
                 <div class="admin-table-wrapper"><table class="admin-table question-table"><thead><tr><th>Question</th><th>Réponses</th><th>Bonne réponse</th><th>Actions</th></tr></thead><tbody id="admin-questions-table"></tbody></table></div>
+            </section>
+            <section id="admin-question-reports-section" class="admin-section admin-panel hidden">
+                <h2>Signalements de questions</h2>
+                <p id="admin-question-reports-status" class="terminal-note" role="status" aria-live="polite"></p>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Question signalée</th><th>Détail</th><th>Candidat</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead><tbody id="admin-question-reports-table"></tbody></table></div>
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><h2>Gestion des résultats</h2></div>
@@ -278,7 +284,7 @@
             </section>
         </div>
 
-        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div class="options-grid" id="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button></div>
+        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div class="options-grid" id="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button><div class="question-report"><button id="question-report-toggle" class="btn-secondary" type="button" aria-expanded="false" aria-controls="question-report-form">Signaler une erreur dans cette question</button><form id="question-report-form" class="question-report-form hidden"><label for="question-report-details">Précision (facultatif)</label><textarea id="question-report-details" rows="3" maxlength="1000" placeholder="Expliquez brièvement l’erreur ou indiquez la correction attendue."></textarea><div class="admin-actions"><button id="question-report-submit" class="btn-secondary" type="submit">Envoyer le signalement</button><button id="question-report-cancel" class="btn-secondary" type="button">Annuler</button></div></form><p id="question-report-status" class="terminal-note" role="status" aria-live="polite"></p></div></div>
 
         <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</div><div class="score-large" id="score-display">0 / 20</div></div><div class="details-list" id="result-details"><div>Réponses correctes : <strong id="stat-correct">0</strong></div><div>Réponses fausses : <strong id="stat-wrong">0</strong></div><div>Questions passées : <strong id="stat-skipped">0</strong></div><div>Points bruts : <strong id="stat-brut">0</strong> <span id="brut-max">/ 0</span></div></div><section id="global-evolution-section" class="global-evolution hidden" aria-labelledby="global-evolution-title"><h2 id="global-evolution-title">Évolution des résultats</h2><label class="global-evolution-filter" for="global-evolution-period">Période</label><select id="global-evolution-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option></select><div id="global-evolution-summary" class="global-evolution-summary"></div><div id="global-evolution-chart" class="global-evolution-chart" role="img" aria-label="Évolution des notes de la campagne globale"></div><ol id="global-evolution-list" class="global-evolution-list"></ol></section><div id="review-section" class="review-section"><h2>Questions à revoir</h2><div id="review-list"></div></div><div class="result-actions"><button id="btn-evolution-result" class="btn-main hidden" type="button" aria-expanded="false" aria-controls="global-evolution-section">Évolution résultats</button><button id="btn-new-mission" class="btn-main" type="button">Retour aux thèmes</button></div></div>
     </div>

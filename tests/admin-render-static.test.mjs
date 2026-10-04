@@ -106,6 +106,9 @@ test("showAdminApp refreshes the ranking before and after admin sync", async () 
         renderAdminResults() {
             context.calls.push("results");
         },
+        renderAdminQuestionReports() {
+            context.calls.push("question-reports");
+        },
         renderGlobalRanking(results) {
             context.calls.push(["ranking", results]);
         },
