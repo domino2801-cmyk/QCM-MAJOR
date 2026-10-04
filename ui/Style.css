@@ -1530,6 +1530,10 @@ h1 {
     flex-wrap: wrap;
 }
 
+.admin-push-actions {
+    margin-top: 24px;
+}
+
 .admin-actions .btn-main {
     width: auto;
     flex: 1;

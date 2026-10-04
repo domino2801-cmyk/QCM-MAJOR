@@ -166,10 +166,6 @@
             <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Déconnexion</button></div>
             <h1>Interface administrateur</h1>
             <p class="subtitle">Comptes, questions et résultats</p>
-            <div class="admin-actions">
-                <button id="admin-push-enable-btn" class="admin-edit-btn" type="button">Activer les notifications sur ce téléphone</button>
-                <button id="admin-push-disable-btn" class="admin-edit-btn hidden" type="button">Désactiver les notifications</button>
-            </div>
             <nav class="admin-nav" aria-label="Gestion administrateur">
                 <button class="admin-nav-btn active" type="button" data-admin-section="accounts">
                     <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
@@ -189,6 +185,10 @@
                     <span>Résultats</span>
                 </button>
             </nav>
+            <div class="admin-actions admin-push-actions">
+                <button id="admin-push-enable-btn" class="admin-edit-btn" type="button">Activer les notifications sur ce téléphone</button>
+                <button id="admin-push-disable-btn" class="admin-edit-btn hidden" type="button">Désactiver les notifications</button>
+            </div>
             <section id="admin-accounts-section" class="admin-panel">
                 <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="admin-edit-btn" type="button">Actualiser depuis Supabase</button></div>
                 <input id="admin-accounts-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou un email" aria-label="Rechercher un compte">
