@@ -24,6 +24,9 @@ test("login screen keeps a close-app button with fallback content", () => {
         document: {
             body,
             getElementById(id) {
+                if (id === "quiz-screen") {
+                    return { classList: { contains: () => false } };
+                }
                 assert.equal(id, "close-app");
                 return {
                     addEventListener(eventName, handler) {
@@ -44,6 +47,12 @@ test("login screen keeps a close-app button with fallback content", () => {
     clickHandler();
     assert.equal(closeCalls, 1);
     assert.equal(body.innerHTML, "<main class=\"app-closed\"><h1>Application fermée</h1></main>");
+});
+
+test("close-app returns to candidate screen instead of closing during a quiz", () => {
+    assert.match(js, /quiz-screen"\)\?\.classList\.contains\("active"\)/);
+    assert.match(js, /Abandonner le combat en cours/);
+    assert.match(js, /uiController\.switchScreen\("theme-screen"\)/);
 });
 
 test("theme selection uses a single dropdown selector instead of five buttons", () => {

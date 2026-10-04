@@ -3020,6 +3020,17 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("close-app").addEventListener("click", () => {
+        if (document.getElementById("quiz-screen")?.classList.contains("active")) {
+            const confirmed = window.confirm("Abandonner le combat en cours et revenir à l'écran candidat ?");
+            if (!confirmed) return;
+            currentQuizRunId += 1;
+            questionTransitionLocked = false;
+            selectedTheme = null;
+            maxQuestions = 0;
+            uiController.resetThemeSelection();
+            uiController.switchScreen("theme-screen");
+            return;
+        }
         window.close();
         document.body.innerHTML = "<main class=\"app-closed\"><h1>Application fermée</h1></main>";
     });
