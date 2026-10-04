@@ -12,7 +12,7 @@ restent inchangées. Le classement conserve les trois meilleurs résultats, mêm
 si un candidat apparaît plusieurs fois, et privilégie l'ancienneté à note égale.
 Sur la connexion et l'historique, le premier résultat est mis en avant dans une
 carte au même dégradé doré et aux mêmes animations lumineuses que le bouton
-« Entrer dans le combat BM4 », sans devenir un bouton. Le trophée, le pseudo et
+« Préparation au combat », sans devenir un bouton. Le trophée, le pseudo et
 la note sont agrandis, avec une présentation adaptée aux écrans mobiles.
 Le deuxième résultat est encadré en argent avec un halo pulsant et un reflet
 lumineux argentés sur ces deux écrans.
