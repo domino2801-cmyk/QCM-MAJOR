@@ -1572,7 +1572,7 @@ async function refreshCandidateHistory(account) {
             account.email,
             Number(document.getElementById("candidate-history-period")?.value || 0)
         );
-        setCandidateHistoryStatus("Votre historique a été actualisé");
+        setCandidateHistoryStatus("");
     } catch (error) {
         console.warn("Actualisation de l’historique candidat indisponible.", error);
         if (!isCurrentCandidate()) return;
