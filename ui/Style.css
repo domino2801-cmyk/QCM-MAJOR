@@ -1847,6 +1847,7 @@ body {
     background:
         linear-gradient(180deg, rgba(11, 19, 31, 0.42), rgba(8, 15, 26, 0.54));
     backdrop-filter: blur(7px);
+    padding: 16px 24px;
 }
 
 #auth-screen .terminal-shell {
@@ -1854,10 +1855,18 @@ body {
     border-color: rgba(159, 170, 132, 0.32);
 }
 
+#auth-screen .terminal-header {
+    padding: 8px 16px;
+}
+
+#auth-screen #login-global-ranking-status {
+    padding-top: 4px;
+}
+
 #auth-screen.screen.active {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
 }
 
 #auth-screen .brand-lockup,
@@ -1875,14 +1884,15 @@ body {
 }
 
 #auth-screen .brand-lockup img {
-    width: 94px;
-    margin-bottom: 8px;
+    width: 64px;
+    margin-bottom: 4px;
     filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
 }
 
 #auth-screen h1 {
-    margin-bottom: 6px;
-    padding-bottom: 8px;
+    margin-bottom: 0;
+    padding-bottom: 6px;
+    font-size: 1.4rem;
 }
 
 #auth-screen .auth-view {
