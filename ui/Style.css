@@ -384,6 +384,18 @@ body {
     display: block;
 }
 
+#quiz-screen.screen.active {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 100px);
+    min-height: calc(100dvh - 100px);
+    justify-content: center;
+}
+
+#quiz-screen .stats-grid {
+    flex-shrink: 0;
+}
+
 h1 {
     color: var(--accent);
     text-align: center;
@@ -1527,6 +1539,10 @@ h1 {
 
     #question {
         font-size: 1.05rem;
+    }
+
+    #quiz-screen.screen.active {
+        min-height: calc(100dvh - 80px);
     }
 
     .options-grid .btn {
