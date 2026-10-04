@@ -30,6 +30,12 @@ body {
     min-height: 100vh;
 }
 
+@media (max-height: 820px) {
+    body {
+        align-items: flex-start;
+    }
+}
+
 .startup-loading {
     align-items: center;
     background: #000;
@@ -1073,6 +1079,8 @@ h1 {
 
 :is(#login-global-ranking-section, #history-global-ranking-section, #admin-global-ranking-section) {
     padding: 4px 12px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item {
@@ -1849,7 +1857,7 @@ body {
 #auth-screen.screen.active {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 16px;
 }
 
 #auth-screen .brand-lockup,
@@ -1868,17 +1876,17 @@ body {
 
 #auth-screen .brand-lockup img {
     width: 94px;
-    margin-bottom: 18px;
+    margin-bottom: 8px;
     filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.35));
 }
 
 #auth-screen h1 {
-    margin-bottom: 14px;
-    padding-bottom: 18px;
+    margin-bottom: 6px;
+    padding-bottom: 8px;
 }
 
 #auth-screen .auth-view {
-    padding: 28px 24px 24px;
+    padding: 16px 24px 20px;
 }
 
 
