@@ -2165,13 +2165,10 @@ function renderGlobalRanking(results) {
     const list = document.getElementById("global-ranking-list");
     const loginSection = document.getElementById("login-global-ranking-section");
     const loginList = document.getElementById("login-global-ranking-list");
-    const adminSection = document.getElementById("admin-global-ranking-section");
-    const adminList = document.getElementById("admin-global-ranking-list");
     const historySection = document.getElementById("history-global-ranking-section");
     const historyList = document.getElementById("history-global-ranking-list");
     if ((!section || !list)
         && (!loginSection || !loginList)
-        && (!adminSection || !adminList)
         && (!historySection || !historyList)) return;
     const rankingDateFormatter = new Intl.DateTimeFormat("fr-FR", {
         day: "2-digit",
@@ -2190,7 +2187,7 @@ function renderGlobalRanking(results) {
     const loginRanking = getPublicGlobalRanking();
     const effectiveGlobalRanking = loginRanking.length > 0 ? loginRanking : ranking;
 
-    [list, loginList, adminList, historyList].filter(Boolean).forEach(target => {
+    [list, loginList, historyList].filter(Boolean).forEach(target => {
         target.innerHTML = "";
     });
     section?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
@@ -2206,7 +2203,6 @@ function renderGlobalRanking(results) {
                 ? "Chargement du classement…"
                 : loginRanking.length ? "" : "Aucun résultat de campagne globale pour le moment.";
     }
-    adminSection?.classList.toggle("hidden", effectiveGlobalRanking.length === 0);
 
     const rankingSymbols = ["🏆", "🥈", "🥉"];
     const podiumIcons = [
@@ -2233,7 +2229,7 @@ function renderGlobalRanking(results) {
 
             item.className = "global-ranking-item";
             rankElement.className = "global-ranking-rank";
-            if (target === loginList || target === historyList || target === adminList) {
+            if (target === loginList || target === historyList) {
                 const icon = document.createElement("img");
                 icon.src = podiumIcons[index].src;
                 icon.alt = podiumIcons[index].alt;
@@ -2254,7 +2250,6 @@ function renderGlobalRanking(results) {
     appendRanking(list, effectiveGlobalRanking);
     appendRanking(historyList, effectiveGlobalRanking);
     appendRanking(loginList, loginRanking);
-    appendRanking(adminList, effectiveGlobalRanking);
 }
 
 function renderGlobalEvolution(results, candidateId, candidateEmail = "", periodDays = 0) {

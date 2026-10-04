@@ -19,12 +19,12 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="history-screen"/);
     assert.match(html, /id="btn-back-to-campaign"/);
     assert.match(html, /id="login-global-ranking-section"/);
-    assert.match(html, /id="admin-global-ranking-section"/);
-    assert.match(html, /id="admin-global-ranking-list"/);
     assert.match(html, /id="history-global-ranking-section"/);
     assert.match(html, /id="history-global-ranking-list"/);
-    assert.match(js, /getElementById\("admin-global-ranking-list"\)/);
     assert.match(js, /getElementById\("history-global-ranking-list"\)/);
+    assert.doesNotMatch(html, /id="admin-global-ranking-section"/);
+    assert.doesNotMatch(html, /id="admin-global-ranking-list"/);
+    assert.doesNotMatch(js, /getElementById\("admin-global-ranking-list"\)/);
     assert.match(html, /id="reset-question-history-btn"/);
     assert.doesNotMatch(html, /id="candidate-history-theme-filter"/);
     assert.doesNotMatch(html, /id="candidate-history-ranking-list"/);
@@ -46,7 +46,7 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(js, /score-critical/);
     assert.match(js, /Thème à travailler/);
     assert.match(js, /\.filter\(result => result\.theme === "all"\)\s*\.sort/);
-    assert.equal((html.match(/ASSAULT FINAL TOP 3/g) || []).length, 3);
+    assert.equal((html.match(/ASSAULT FINAL TOP 3/g) || []).length, 2);
 });
 
 test("showAuthenticatedApp refreshes the ranking on the connected screen", () => {
