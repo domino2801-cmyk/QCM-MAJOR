@@ -55,6 +55,11 @@ test("close-app returns to candidate screen instead of closing during a quiz", (
     assert.match(js, /uiController\.switchScreen\("theme-screen"\)/);
 });
 
+test("close-app button is hidden on the candidate theme screen", () => {
+    const css = readFileSync(`${root}/ui/Style.css`, "utf8");
+    assert.match(css, /body:has\(#theme-screen\.active\) \.close-app \{\s*display: none;/);
+});
+
 test("theme selection uses a single dropdown selector instead of five buttons", () => {
     assert.match(html, /id="theme-select"/);
     assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="1"/);

@@ -137,6 +137,10 @@ body {
     color: #fff;
 }
 
+body:has(#theme-screen.active) .close-app {
+    display: none;
+}
+
 .app-closed {
     color: red;
     font-family: 'Courier New', Courier, monospace;
