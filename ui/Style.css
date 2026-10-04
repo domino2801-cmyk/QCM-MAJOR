@@ -330,13 +330,13 @@ body:has(#history-screen.active) .close-app {
 }
 
 .auth-form .btn-main {
-    margin-top: 15px;
+    margin-top: 6px;
 }
 
 .auth-message {
     min-height: 1.4em;
     color: #ff8585;
-    margin: 8px 0 0;
+    margin: 4px 0 0;
 }
 
 .auth-actions {
@@ -1532,6 +1532,7 @@ h1 {
 
 .admin-push-actions {
     margin-top: 24px;
+    justify-content: center;
 }
 
 .admin-actions .btn-main {
