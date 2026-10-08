@@ -30,7 +30,7 @@
         <button id="close-app" class="close-app" type="button" aria-label="Fermer l’application" title="Fermer l’application">X</button>
 
         <div id="auth-screen" class="screen active">
-            <div class="brand-lockup"><img src="public/images/logo2.png" width="70" alt=""><h1>Question pour un Major</h1></div>
+            <div class="brand-lockup"><span class="brand-tagline">L'innovation au service du candidat</span><img src="public/images/logo2.png" width="70" alt=""><h1>Question pour un Major</h1></div>
             <div class="terminal-shell">
                 <div class="terminal-header">
                     <span>AUTH://BM4-TACTICAL-CONSOLE</span>
@@ -190,32 +190,32 @@
                 <button id="admin-push-disable-btn" class="admin-edit-btn hidden" type="button">Désactiver les notifications</button>
             </div>
             <section id="admin-accounts-section" class="admin-section admin-panel hidden">
-                <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="admin-edit-btn" type="button">Actualiser depuis Supabase</button></div>
+                <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="ad...
                 <input id="admin-accounts-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou un email" aria-label="Rechercher un compte">
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Trigramme</th><th>Canal d'extraction direct du combattant</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Trigramme</th><th>Canal d'extraction direct du combattant</th><th>Spécialité</th><th>Action</th></tr><...
             </section>
             <section id="admin-questions-section" class="admin-section admin-panel hidden">
                 <h2>Questions</h2>
                 <form id="question-form" class="auth-form">
                     <label for="admin-question-theme">Thème</label>
-                    <select id="admin-question-theme" required><option value="0">1. Organisation et Commandement</option><option value="1">2. Matériels, Armements et Technologies</option><option value="2">3. Lois de Programmation Militaire</option><option value="3">4. Opérations Extérieures</option><option value="4">5. Histoire & Traditions</option><option value="5">6. Implantation des unités</option></select>
+                    <select id="admin-question-theme" required><option value="0">1. Organisation et Commandement</option><option value="1">2. Matériels, Armements et Technologies</option><option...
                     <label for="admin-question-text">Question</label><textarea id="admin-question-text" rows="3" required></textarea>
                     <label for="admin-answer-1">Réponse 1</label><input id="admin-answer-1" type="text" required>
                     <label for="admin-answer-2">Réponse 2</label><input id="admin-answer-2" type="text" required>
                     <label for="admin-answer-3">Réponse 3</label><input id="admin-answer-3" type="text" required>
                     <label for="admin-answer-4">Réponse 4</label><input id="admin-answer-4" type="text" required>
-                    <label for="admin-correct-answer">Bonne réponse</label><select id="admin-correct-answer" required><option value="0">Réponse 1</option><option value="1">Réponse 2</option><option value="2">Réponse 3</option><option value="3">Réponse 4</option></select>
-                    <div class="admin-actions"><button class="btn-main" type="submit" id="question-submit-btn">Ajouter la question</button><button class="auth-tab hidden" type="button" id="question-cancel-btn">Annuler</button></div>
+                    <label for="admin-correct-answer">Bonne réponse</label><select id="admin-correct-answer" required><option value="0">Réponse 1</option><option value="1">Réponse 2</option><o...
+                    <div class="admin-actions"><button class="btn-main" type="submit" id="question-submit-btn">Ajouter la question</button><button class="auth-tab hidden" type="button" id="questi...
                     <p id="question-message" class="auth-message" role="alert"></p>
                 </form>
                 <div class="admin-question-toolbar"><button id="cleanup-questions-btn" class="admin-delete-btn" type="button">Supprimer les doublons</button></div>
                 <input id="admin-questions-search" class="admin-search" type="search" placeholder="Rechercher une question" aria-label="Rechercher une question">
-                <div class="admin-table-wrapper"><table class="admin-table question-table"><thead><tr><th>Question</th><th>Réponses</th><th>Bonne réponse</th><th>Actions</th></tr></thead><tbody id="admin-questions-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table question-table"><thead><tr><th>Question</th><th>Réponses</th><th>Bonne réponse</th><th>Actions</th></tr></thead><tbody...
             </section>
             <section id="admin-question-reports-section" class="admin-section admin-panel hidden">
                 <h2>Signalements de questions</h2>
                 <p id="admin-question-reports-status" class="terminal-note" role="status" aria-live="polite"></p>
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Question signalée</th><th>Détail</th><th>Candidat</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead><tbody id="admin-question-reports-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Question signalée</th><th>Détail</th><th>Candidat</th><th>Date</th><th>Statut</th><th>Action</th></tr>...
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><h2>Résultats</h2></div>
@@ -225,13 +225,13 @@
                 <section id="admin-history-panel" class="global-evolution candidate-history-panel hidden" aria-labelledby="admin-history-title">
                     <h2 id="admin-history-title">Historique du candidat sélectionné</h2>
                     <label class="global-evolution-filter" for="admin-history-period">Période</label>
-                    <select id="admin-history-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option></select>
+                    <select id="admin-history-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">3...
                     <div id="admin-history-summary" class="global-evolution-summary"></div>
                     <div id="admin-history-charts" class="candidate-history-charts" aria-label="Histogrammes du candidat sélectionné"></div>
                     <p id="admin-history-recommendation" class="candidate-history-recommendation"></p>
                 </section>
                 <input id="admin-results-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou une note" aria-label="Rechercher un résultat">
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-results-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-re...
             </section>
         </div>
 
@@ -242,7 +242,7 @@
                 <p id="connection-status" class="connection-status" aria-live="polite"></p>
             <div class="theme-selector-panel">
                 <div class="theme-mode-row">
-                    <button id="theme-training-btn" class="theme-global-btn" type="button">SIMULATION DE COMBAT<span class="theme-mode-detail">50 questions • correction immédiate</span></button>
+                    <button id="theme-training-btn" class="theme-global-btn" type="button">SIMULATION DE COMBAT<span class="theme-mode-detail">50 questions • correction immédiate</span></butto...
                     <button id="theme-global-btn" class="theme-global-btn" type="button">ASSAUT FINAL<span class="theme-mode-detail">50 questions • sans correction</span></button>
                 </div>
                 <div class="theme-select-row">
@@ -288,7 +288,7 @@
                     <ol id="history-global-ranking-list" class="global-ranking-list"></ol>
                 </section>
                 <label class="global-evolution-filter" for="candidate-history-period">Période</label>
-                <select id="candidate-history-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option></select>
+                <select id="candidate-history-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">3...
                 <div id="candidate-history-summary" class="global-evolution-summary"></div>
                 <div id="candidate-history-charts" class="candidate-history-charts" aria-label="Histogrammes de mes résultats"></div>
                 <p id="candidate-history-recommendation" class="candidate-history-recommendation"></p>
@@ -296,9 +296,9 @@
             </section>
         </div>
 
-        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div class="options-grid" id="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button><div class="question-action-row"><div class="question-report"><button id="question-report-toggle" class="btn-secondary" type="button" aria-expanded="false" aria-controls="question-report-form">Signaler une erreur</button><form id="question-report-form" class="question-report-form hidden"><label for="question-report-details">Précision (facultatif)</label><textarea id="question-report-details" rows="3" maxlength="1000" placeholder="Expliquez brièvement l’erreur ou indiquez la correction attendue."></textarea><div class="admin-actions"><button id="question-report-submit" class="btn-secondary" type="submit">Envoyer le signalement</button><button id="question-report-cancel" class="btn-secondary" type="button">Annuler</button></div></form><p id="question-report-status" class="terminal-note" role="status" aria-live="polite"></p></div><button id="next-question-btn" class="btn-main" type="button" disabled>Question suivante</button></div></div>
+        <div id="quiz-screen" class="screen"><div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0[...
 
-        <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</div><div class="score-large" id="score-display">0 / 20</div></div><div class="details-list" id="result-details"><div>Réponses correctes : <strong id="stat-correct">0</strong></div><div>Réponses fausses : <strong id="stat-wrong">0</strong></div><div>Questions passées : <strong id="stat-skipped">0</strong></div><div>Points bruts : <strong id="stat-brut">0</strong> <span id="brut-max">/ 0</span></div></div><section id="global-evolution-section" class="global-evolution hidden" aria-labelledby="global-evolution-title"><h2 id="global-evolution-title">Évolution des résultats</h2><label class="global-evolution-filter" for="global-evolution-period">Période</label><select id="global-evolution-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option></select><div id="global-evolution-summary" class="global-evolution-summary"></div><div id="global-evolution-chart" class="global-evolution-chart" role="img" aria-label="Évolution des notes de la campagne globale"></div><ol id="global-evolution-list" class="global-evolution-list"></ol></section><div id="review-section" class="review-section"><h2>Questions à revoir</h2><div id="review-list"></div></div><div class="result-actions"><button id="btn-evolution-result" class="btn-main hidden" type="button" aria-expanded="false" aria-controls="global-evolution-section">Évolution résultats</button><button id="btn-new-mission" class="btn-main" type="button">Retour aux thèmes</button></div></div>
+        <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</d...
     </div>
 
     <div id="confirm-overlay" class="confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
