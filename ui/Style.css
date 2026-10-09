@@ -1623,6 +1623,18 @@ h1 {
     color: #fff;
 }
 
+@media (max-width: 560px) {
+    .admin-delete-btn {
+        font-size: min(0.8rem, 1em);
+        letter-spacing: 0;
+        line-height: 1.2;
+        min-height: 36px;
+        padding: 6px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
 @keyframes clignotement {
     0% { box-shadow: 0 0 5px rgba(124, 169, 124, 0.4); }
     50% { box-shadow: 0 0 20px rgba(124, 169, 124, 0.8); }
