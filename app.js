@@ -3670,7 +3670,6 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
 
         uiController.switchScreen("result-screen");
 
-        setResultText(["score-display", "final-score"], `${note.toFixed(2)} / 20`);
         setResultText(["stat-correct"], quizEngine.stats.correct);
         setResultText(["stat-wrong"], quizEngine.stats.wrong);
         setResultText(["stat-skipped"], quizEngine.stats.skipped);

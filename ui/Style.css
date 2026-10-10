@@ -493,10 +493,15 @@ h1 {
 }
 
 .question-action-row {
-    align-items: flex-start;
+    align-items: stretch;
     display: flex;
     gap: 12px;
     margin-top: 18px;
+}
+
+/* Quand le formulaire de signalement est ouvert, on conserve l'alignement en haut */
+.question-action-row:has(.question-report-form:not(.hidden)) {
+    align-items: flex-start;
 }
 
 .question-action-row > .question-report,
@@ -505,8 +510,14 @@ h1 {
     min-width: 0;
 }
 
+.question-report {
+    display: flex;
+    flex-direction: column;
+}
+
 .question-report > #question-report-toggle {
     box-sizing: border-box;
+    flex: 1 0 auto;
     width: 100%;
 }
 
@@ -977,14 +988,6 @@ h1 {
     background: rgba(124, 169, 124, 0.1);
     border-radius: 4px;
     margin-bottom: 25px;
-}
-
-.score-large {
-    font-size: 3.5rem;
-    font-weight: bold;
-    color: #4ef054;
-    margin: 15px 0;
-    text-shadow: 0 0 15px rgba(78, 240, 84, 0.4);
 }
 
 .details-list {
@@ -1764,10 +1767,6 @@ h1 {
     .options-grid .btn {
         padding: 14px 12px;
         font-size: 0.9rem;
-    }
-
-    .score-large {
-        font-size: 2.7rem;
     }
 
     .result-box {
