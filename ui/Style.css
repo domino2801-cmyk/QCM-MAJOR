@@ -199,10 +199,6 @@ body:has(#history-screen.active) .close-app {
     gap: 12px;
 }
 
-.confirm-actions .btn-secondary {
-    border-radius: 14px;
-}
-
 .app-closed {
     color: red;
     font-family: 'Courier New', Courier, monospace;
