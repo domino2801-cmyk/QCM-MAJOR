@@ -84,6 +84,12 @@ function createClassToggleNode() {
 
     return {
         classList: {
+            add(token) {
+                classes.add(token);
+            },
+            remove(token) {
+                classes.delete(token);
+            },
             toggle(token, force) {
                 if (force) classes.add(token);
                 else classes.delete(token);
@@ -126,6 +132,9 @@ function createQuizFlowHarness({
     const optionsGrid = createContainer();
     const skipButton = createButton();
     const nextQuestionButton = createButton();
+    const timerNode = createClassToggleNode();
+    const timerDisplay = createTextNode();
+    const expiryStatus = createTextNode();
     const scheduled = [];
     const savedResults = [];
     const warnings = [];
@@ -161,6 +170,8 @@ function createQuizFlowHarness({
         currentQuizRunId: 1,
         finalizedQuizRunId: -1,
         quizTimerInterval: null,
+        quizTimerDeadline: null,
+        expiredQuizRunId: -1,
         clearInterval(intervalId) {
             clearedIntervals.push(intervalId);
         },
@@ -196,6 +207,9 @@ function createQuizFlowHarness({
                     "options-grid": optionsGrid,
                     "skip-btn": skipButton,
                     "next-question-btn": nextQuestionButton,
+                    "quiz-timer": timerNode,
+                    "quiz-timer-display": timerDisplay,
+                    "quiz-expiry-status": expiryStatus,
                     "stat-correct": omitResultStatsNodes ? null : statCorrect,
                     "stat-wrong": omitResultStatsNodes ? null : statWrong,
                     "stat-skipped": omitResultStatsNodes ? null : statSkipped,
@@ -211,6 +225,9 @@ function createQuizFlowHarness({
                 return createButton();
             },
             querySelectorAll(selector) {
+                if (selector === "#quiz-screen button, #quiz-screen textarea") {
+                    return [...optionsGrid.children, skipButton, nextQuestionButton];
+                }
                 if (selector === "#options-grid .btn, #skip-btn") {
                     return [...optionsGrid.children, skipButton];
                 }
@@ -292,6 +309,11 @@ function createQuizFlowHarness({
             verrouillerOptionsSource,
             marquerBoutonsSource,
             stopQuizTimerSource,
+            extractFunction(appJs, "formatQuizTimer"),
+            extractFunction(appJs, "updateQuizTimerDisplay"),
+            extractFunction(appJs, "expireQuiz"),
+            extractFunction(appJs, "isQuizTimeExpired"),
+            extractFunction(appJs, "startQuizTimer"),
             bilanFinalSource,
             afficherSituationSource
         ].join("\n"),
@@ -317,6 +339,9 @@ function createQuizFlowHarness({
         savedResults,
         warnings,
         clearedIntervals,
+        timerNode,
+        timerDisplay,
+        expiryStatus,
         getActiveScreen: () => activeScreen,
         getRankingPayload: () => rankingPayload,
         getAnswerSounds: () => answerSounds
@@ -355,15 +380,34 @@ test("assault-final timer counts down for one hour and finalizes at zero", () =>
             }
         }
     };
+    const fuse = {
+        style: {},
+        getTotalLength: () => 100,
+        getPointAtLength: length => ({ x: length, y: 10 })
+    };
+    const spark = {
+        style: {},
+        setAttribute(name, value) {
+            this[name] = value;
+        }
+    };
     const ticks = [];
     const clearedIntervals = [];
     const finalizedRuns = [];
+    let now = 0;
     const context = {
+        Date: { now: () => now },
         currentQuizRunId: 7,
         quizTimerInterval: null,
+        quizTimerDeadline: null,
         document: {
             getElementById(id) {
-                return id === "quiz-timer" ? timerNode : null;
+                return {
+                    "quiz-timer": timerNode,
+                    "quiz-timer-display": timerNode,
+                    "quiz-timer-fuse": fuse,
+                    "quiz-timer-spark": spark
+                }[id] ?? null;
             }
         },
         setInterval(callback, delay) {
@@ -377,6 +421,10 @@ test("assault-final timer counts down for one hour and finalizes at zero", () =>
         bilanFinal(quizRunId) {
             finalizedRuns.push(quizRunId);
         },
+        expireQuiz(quizRunId) {
+            context.stopQuizTimer();
+            finalizedRuns.push(quizRunId);
+        },
         console
     };
 
@@ -384,16 +432,24 @@ test("assault-final timer counts down for one hour and finalizes at zero", () =>
     context.startQuizTimer(7);
 
     assert.equal(timerNode.hidden, false);
-    assert.equal(timerNode.innerText, "CHRONO 01:00:00");
+    assert.equal(timerNode.innerText, "60:00");
+    assert.equal(fuse.style.strokeDashoffset, "0");
+    assert.equal(spark.cx, "100");
+    now = 1000;
     ticks[0]();
-    assert.equal(timerNode.innerText, "CHRONO 00:59:59");
+    assert.equal(timerNode.innerText, "59:59");
+    assert.equal(Number(fuse.style.strokeDashoffset), 1 - 3599 / 3600);
 
-    for (let second = 0; second < 3300; second += 1) ticks[0]();
-    assert.equal(timerNode.innerText, "CHRONO 00:04:59");
+    now = 3301000;
+    ticks[0]();
+    assert.equal(timerNode.innerText, "04:59");
     assert.equal(classes.has("urgent"), true);
 
-    for (let second = 0; second < 299; second += 1) ticks[0]();
-    assert.equal(timerNode.innerText, "CHRONO 00:00:00");
+    now = 3600000;
+    ticks[0]();
+    assert.equal(timerNode.innerText, "00:00");
+    assert.equal(fuse.style.strokeDashoffset, "1");
+    assert.equal(spark.style.display, "none");
     assert.deepEqual(finalizedRuns, [7]);
     assert.deepEqual(clearedIntervals, ["assault-final-interval"]);
     assert.equal(context.quizTimerInterval, null);
@@ -436,6 +492,64 @@ test("last correct answer is counted and saved in the final note", async () => {
     assert.equal(harness.statBrut.innerText, 4);
     assert.equal(harness.brutMax.innerText, "/ 4");
     assert.deepEqual(harness.getRankingPayload(), harness.savedResults);
+});
+
+test("expiry strictly blocks late answers and saves unanswered questions once after the explosion", async () => {
+    const questions = Array.from({ length: 50 }, (_, index) => ({
+        q: `Question ${index + 1}`, r: ["A", "B", "C", "D"], correct: 0
+    }));
+    const harness = createQuizFlowHarness({ questions });
+    harness.context.afficherSituation();
+    harness.optionsGrid.children[0].onclick();
+    await advanceQuiz(harness);
+    const lateAnswer = harness.optionsGrid.children[0].onclick;
+    harness.context.quizTimerDeadline = Date.now() - 1;
+    lateAnswer();
+    harness.skipButton.onclick();
+    harness.nextQuestionButton.onclick();
+    harness.context.afficherSituation();
+
+    assert.equal(harness.context.quizEngine.stats.correct, 1);
+    assert.equal(harness.context.quizEngine.stats.skipped, 49);
+    assert.equal(harness.context.reviewItems.length, 49);
+    assert.equal(harness.optionsGrid.children.every(button => button.disabled), true);
+    assert.equal(harness.nextQuestionButton.disabled, true);
+    assert.equal(harness.timerDisplay.innerText, "00:00");
+    assert.equal(harness.timerNode.classList.contains("exploded"), true);
+    assert.equal(harness.expiryStatus.hidden, false);
+    assert.equal(harness.savedResults.length, 0);
+    assert.equal(harness.scheduled.length, 1);
+    assert.equal(harness.scheduled[0].delay, 900);
+    await flushScheduled(harness.scheduled);
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.savedResults[0].total, 50);
+    assert.equal(harness.savedResults[0].score, 0.4);
+    lateAnswer();
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.context.quizEngine.stats.correct, 1);
+});
+
+test("delayed timer expires once and an abandoned run cannot open its result screen", async () => {
+    const harness = createQuizFlowHarness();
+    let now = 0;
+    let tick;
+    harness.context.Date = { now: () => now };
+    harness.context.setInterval = callback => {
+        tick = callback;
+        return "timer";
+    };
+    harness.context.startQuizTimer(1);
+    now = 3601000;
+    tick();
+    tick();
+    assert.equal(harness.context.expiredQuizRunId, 1);
+    assert.equal(harness.context.quizEngine.stats.skipped, 1);
+    assert.equal(harness.scheduled.length, 1);
+    harness.context.currentQuizRunId = 2;
+    await flushScheduled(harness.scheduled);
+    assert.equal(harness.savedResults.length, 0);
+    assert.equal(harness.getActiveScreen(), "");
 });
 
 test("last wrong answer is counted and saved in the final note", async () => {
@@ -761,6 +875,8 @@ test("final screen still renders when answer marking fails on the last answer", 
         currentQuizRunId: 1,
         finalizedQuizRunId: -1,
         quizTimerInterval: null,
+        quizTimerDeadline: null,
+        isQuizTimeExpired: () => false,
         clearInterval() {},
         reviewItems: [],
         quizEngine: {

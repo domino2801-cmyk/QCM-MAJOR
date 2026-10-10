@@ -28,6 +28,8 @@ let displayedQuestion = null;
 let currentQuizRunId = 0;
 let finalizedQuizRunId = -1;
 let quizTimerInterval = null;
+let quizTimerDeadline = null;
+let expiredQuizRunId = -1;
 let questionSourceReady = false;
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
@@ -3435,10 +3437,9 @@ async function initializeAppInteractions() {
 // =========================================================
 
 function formatQuizTimer(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return [hours, minutes, remainingSeconds]
+    return [minutes, remainingSeconds]
         .map(value => String(value).padStart(2, "0"))
         .join(":");
 }
@@ -3446,15 +3447,72 @@ function formatQuizTimer(seconds) {
 function updateQuizTimerDisplay(seconds) {
     const timerNode = document.getElementById("quiz-timer");
     if (!timerNode) return;
-    const displayNode = document.getElementById("quiz-timer-display") || timerNode;
-    displayNode.innerText = `CHRONO ${formatQuizTimer(seconds)}`;
+    const displayNode = document.getElementById("quiz-timer-display");
+    if (displayNode) displayNode.innerText = formatQuizTimer(seconds);
     timerNode.classList.toggle("urgent", seconds <= 300);
+    const fuse = document.getElementById("quiz-timer-fuse");
+    const spark = document.getElementById("quiz-timer-spark");
+    if (fuse && spark) {
+        const remaining = Math.min(1, Math.max(0, seconds / 3600));
+        fuse.style.strokeDashoffset = String(1 - remaining);
+        const tip = fuse.getPointAtLength(fuse.getTotalLength() * remaining);
+        spark.setAttribute("cx", String(tip.x));
+        spark.setAttribute("cy", String(tip.y));
+        spark.style.display = remaining === 0 ? "none" : "";
+    }
 }
 
 function stopQuizTimer() {
+    quizTimerDeadline = null;
     if (quizTimerInterval === null) return;
     clearInterval(quizTimerInterval);
     quizTimerInterval = null;
+}
+
+function isQuizTimeExpired(quizRunId) {
+    if (quizRunId !== currentQuizRunId || expiredQuizRunId === quizRunId) return true;
+    if (quizTimerDeadline !== null && Date.now() >= quizTimerDeadline) {
+        expireQuiz(quizRunId);
+        return true;
+    }
+    return false;
+}
+
+function expireQuiz(quizRunId) {
+    if (quizRunId !== currentQuizRunId || expiredQuizRunId === quizRunId
+        || finalizedQuizRunId === quizRunId) return;
+    expiredQuizRunId = quizRunId;
+    stopQuizTimer();
+    questionTransitionLocked = true;
+    updateQuizTimerDisplay(0);
+    document.querySelectorAll("#quiz-screen button, #quiz-screen textarea")
+        .forEach(control => control.disabled = true);
+    document.getElementById("question-report-form")?.classList.add("hidden");
+    document.getElementById("quiz-timer")?.classList.add("exploded");
+    const status = document.getElementById("quiz-expiry-status");
+    if (status) {
+        status.hidden = false;
+        status.innerText = "Temps écoulé. Questionnaire terminé.";
+    }
+
+    while (quizEngine.index < quizEngine.questions.length) {
+        const question = quizEngine.getCurrent();
+        const answers = resolveQuestionAnswers(question);
+        reviewItems.push({
+            type: "skipped",
+            question: question.q,
+            correct: answers[question.correct]
+        });
+        quizEngine.answer(null);
+    }
+
+    setTimeout(() => {
+        if (quizRunId !== currentQuizRunId) return;
+        void Promise.resolve(bilanFinal(quizRunId)).catch(error => {
+            console.error("Finalisation du quiz après expiration du chrono impossible.", error);
+            if (status) status.innerText = "Temps écoulé. Impossible d’afficher le bilan.";
+        });
+    }, 900);
 }
 
 function startQuizTimer(quizRunId) {
@@ -3462,9 +3520,10 @@ function startQuizTimer(quizRunId) {
     const timerNode = document.getElementById("quiz-timer");
     if (!timerNode) return;
 
-    let remainingSeconds = 60 * 60;
+    quizTimerDeadline = Date.now() + 60 * 60 * 1000;
     timerNode.hidden = false;
-    updateQuizTimerDisplay(remainingSeconds);
+    timerNode.classList.remove("exploded");
+    updateQuizTimerDisplay(3600);
     let intervalId;
     intervalId = setInterval(() => {
         if (quizTimerInterval !== intervalId) return;
@@ -3473,13 +3532,10 @@ function startQuizTimer(quizRunId) {
             return;
         }
 
-        remainingSeconds = Math.max(0, remainingSeconds - 1);
+        const remainingSeconds = Math.max(0, Math.ceil((quizTimerDeadline - Date.now()) / 1000));
         updateQuizTimerDisplay(remainingSeconds);
         if (remainingSeconds === 0) {
-            stopQuizTimer();
-            void Promise.resolve(bilanFinal(quizRunId)).catch(error => {
-                console.error("Finalisation du quiz après expiration du chrono impossible.", error);
-            });
+            expireQuiz(quizRunId);
         }
     }, 1000);
     quizTimerInterval = intervalId;
@@ -3503,6 +3559,9 @@ function startQuiz() {
     displayedQuestion = null;
     currentQuizRunId += 1;
     finalizedQuizRunId = -1;
+    expiredQuizRunId = -1;
+    const expiryStatus = document.getElementById("quiz-expiry-status");
+    if (expiryStatus) expiryStatus.hidden = true;
 
     if (!history[email]) history[email] = {};
     history[email][selectedTheme] = [
@@ -3534,6 +3593,7 @@ function startQuiz() {
 function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : 0) {
     const activeQuizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : quizRunId;
     if (quizRunId !== activeQuizRunId) return;
+    if (isQuizTimeExpired(activeQuizRunId)) return;
     questionTransitionLocked = false;
     const q = quizEngine.getCurrent();
     if (!q) {
@@ -3588,6 +3648,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         btn.innerText = optionText;
 
         btn.onclick = () => {
+            if (isQuizTimeExpired(activeQuizRunId)) return;
             if (questionTransitionLocked) return;
             questionTransitionLocked = true;
             verrouillerOptions();
@@ -3619,6 +3680,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     // Bouton skip
     skip.disabled = false;
     skip.onclick = () => {
+        if (isQuizTimeExpired(activeQuizRunId)) return;
         if (questionTransitionLocked) return;
         questionTransitionLocked = true;
         verrouillerOptions();
@@ -3638,6 +3700,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         nextQuestion.disabled = false;
     };
     nextQuestion.onclick = () => {
+        if (isQuizTimeExpired(activeQuizRunId)) return;
         if (!questionTransitionLocked || nextQuestion.disabled) return;
         nextQuestion.disabled = true;
         const encore = quizEngine.index < quizEngine.questions.length;
