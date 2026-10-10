@@ -60,10 +60,13 @@ Le site permet aux candidats de tester leurs connaissances à travers différent
 Le mode « Assaut final » dispose d'un chrono de 60 minutes et d'une mèche qui
 se consume avec le temps restant. À zéro, les réponses et la navigation sont
 bloquées immédiatement, même si l'onglet a été laissé en arrière-plan.
-Une courte explosion décorative précède le bilan ; les questions non répondues
+Une courte explosion décorative avec un son synthétisé de 0,8 seconde précède
+le bilan ; les questions non répondues
 sont comptées comme passées. L'effet respecte la réduction des animations.
 Le chrono s'arrête au bilan si le questionnaire est terminé avant l'échéance.
 La simulation de combat et les exercices par thème restent sans chrono.
+Le son est préparé au lancement de l'Assaut final pour autoriser sa lecture.
+Si le navigateur bloque l'audio, le questionnaire se termine normalement.
 
 Le thème 6, « Implantation des unités », regroupe les questions d'implantation,
 de garnison et de stationnement auparavant présentes dans les autres thèmes.

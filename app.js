@@ -152,6 +152,53 @@ const correctAnswerAudio = new Audio("public/audio/BONNE%20REPONSE.mp3");
 correctAnswerAudio.preload = "auto";
 const incorrectAnswerAudio = new Audio("public/audio/MAUVAISE%20REPONSE.mp3");
 incorrectAnswerAudio.preload = "auto";
+let explosionAudioContext = null;
+
+async function prepareExplosionAudio() {
+    if (!explosionAudioContext) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+            throw new Error("Audio Web indisponible dans ce navigateur.");
+        }
+        explosionAudioContext = new AudioContextClass();
+    }
+    if (explosionAudioContext.state === "suspended") {
+        await explosionAudioContext.resume();
+    }
+}
+
+async function playExplosionSound() {
+    await prepareExplosionAudio();
+    const context = explosionAudioContext;
+    const duration = 0.8;
+    const buffer = context.createBuffer(1, Math.ceil(context.sampleRate * duration), context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    for (let index = 0; index < samples.length; index += 1) {
+        samples[index] = Math.random() * 2 - 1;
+    }
+
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    const gain = context.createGain();
+    const start = context.currentTime;
+    filter.frequency.setValueAtTime(1800, start);
+    filter.frequency.exponentialRampToValueAtTime(80, start + duration);
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.45, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+    source.onended = () => {
+        source.disconnect();
+        filter.disconnect();
+        gain.disconnect();
+    };
+    source.start(start);
+    source.stop(start + duration);
+}
 
 function getStoredJson(storage, key, fallback) {
     try {
@@ -3513,6 +3560,9 @@ function expireQuiz(quizRunId) {
             if (status) status.innerText = "Temps écoulé. Impossible d’afficher le bilan.";
         });
     }, 900);
+    void playExplosionSound().catch(error => {
+        console.warn("Son d’explosion indisponible.", error);
+    });
 }
 
 function startQuizTimer(quizRunId) {
@@ -3524,6 +3574,9 @@ function startQuizTimer(quizRunId) {
     timerNode.hidden = false;
     timerNode.classList.remove("exploded");
     updateQuizTimerDisplay(3600);
+    void prepareExplosionAudio().catch(error => {
+        console.warn("Préparation du son d’explosion impossible.", error);
+    });
     let intervalId;
     intervalId = setInterval(() => {
         if (quizTimerInterval !== intervalId) return;

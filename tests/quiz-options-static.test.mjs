@@ -18,7 +18,7 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=assault-final-expiry-20261010/);
+    assert.match(indexHtml, /app\.js\?v=assault-final-explosion-audio-20261010/);
     assert.match(indexHtml, /ui\/Style\.css\?v=assault-final-expiry-20261010/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);

@@ -142,6 +142,7 @@ function createQuizFlowHarness({
     let activeScreen = "";
     let rankingPayload = null;
     let answerSounds = [];
+    let explosionSounds = 0;
 
     const currentQuestion = {
         q: "Dernière situation",
@@ -172,6 +173,8 @@ function createQuizFlowHarness({
         quizTimerInterval: null,
         quizTimerDeadline: null,
         expiredQuizRunId: -1,
+        prepareExplosionAudio: async () => {},
+        playExplosionSound: async () => { explosionSounds += 1; },
         clearInterval(intervalId) {
             clearedIntervals.push(intervalId);
         },
@@ -344,7 +347,8 @@ function createQuizFlowHarness({
         expiryStatus,
         getActiveScreen: () => activeScreen,
         getRankingPayload: () => rankingPayload,
-        getAnswerSounds: () => answerSounds
+        getAnswerSounds: () => answerSounds,
+        getExplosionSounds: () => explosionSounds
     };
 }
 
@@ -397,6 +401,7 @@ test("assault-final timer counts down for one hour and finalizes at zero", () =>
     let now = 0;
     const context = {
         Date: { now: () => now },
+        prepareExplosionAudio: async () => {},
         currentQuizRunId: 7,
         quizTimerInterval: null,
         quizTimerDeadline: null,
@@ -520,6 +525,7 @@ test("expiry strictly blocks late answers and saves unanswered questions once af
     assert.equal(harness.savedResults.length, 0);
     assert.equal(harness.scheduled.length, 1);
     assert.equal(harness.scheduled[0].delay, 900);
+    assert.equal(harness.getExplosionSounds(), 1);
     await flushScheduled(harness.scheduled);
     assert.equal(harness.getActiveScreen(), "result-screen");
     assert.equal(harness.savedResults.length, 1);
@@ -528,6 +534,7 @@ test("expiry strictly blocks late answers and saves unanswered questions once af
     lateAnswer();
     assert.equal(harness.savedResults.length, 1);
     assert.equal(harness.context.quizEngine.stats.correct, 1);
+    assert.equal(harness.getExplosionSounds(), 1);
 });
 
 test("delayed timer expires once and an abandoned run cannot open its result screen", async () => {
@@ -550,6 +557,59 @@ test("delayed timer expires once and an abandoned run cannot open its result scr
     await flushScheduled(harness.scheduled);
     assert.equal(harness.savedResults.length, 0);
     assert.equal(harness.getActiveScreen(), "");
+});
+
+test("blocked explosion audio does not prevent the final result", async () => {
+    const harness = createQuizFlowHarness();
+    harness.context.playExplosionSound = async () => { throw new Error("Audio blocked"); };
+    harness.context.expireQuiz(1);
+    await flushScheduled(harness.scheduled);
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.savedResults.length, 1);
+    assert.equal(harness.warnings[0][0], "Son d’explosion indisponible.");
+});
+
+test("explosion sound synthesizes a short noise burst and releases audio nodes", async () => {
+    const events = [];
+    const parameter = name => ({
+        setValueAtTime(value, time) { events.push([name, "set", value, time]); },
+        linearRampToValueAtTime(value, time) { events.push([name, "linear", value, time]); },
+        exponentialRampToValueAtTime(value, time) { events.push([name, "exponential", value, time]); }
+    });
+    const node = name => ({
+        connect() { events.push([name, "connect"]); },
+        disconnect() { events.push([name, "disconnect"]); }
+    });
+    const source = {
+        ...node("source"),
+        start(time) { events.push(["start", time]); },
+        stop(time) { events.push(["stop", time]); }
+    };
+    const context = {
+        sampleRate: 48000,
+        currentTime: 2,
+        destination: {},
+        createBuffer(channels, frames, rate) {
+            assert.equal(channels, 1);
+            assert.equal(frames, 38400);
+            assert.equal(rate, 48000);
+            return { getChannelData: () => new Float32Array(frames) };
+        },
+        createBufferSource: () => source,
+        createBiquadFilter: () => ({ ...node("filter"), frequency: parameter("frequency") }),
+        createGain: () => ({ ...node("gain"), gain: parameter("gain") })
+    };
+    const sandbox = {
+        explosionAudioContext: context,
+        prepareExplosionAudio: async () => {}
+    };
+    vm.runInNewContext(extractFunction(appJs, "playExplosionSound"), sandbox);
+    await sandbox.playExplosionSound();
+    assert.ok(events.some(event => event[0] === "start" && event[1] === 2));
+    assert.ok(events.some(event => event[0] === "stop" && event[1] === 2.8));
+    assert.ok(events.some(event => event[0] === "gain" && event[2] === 0.45));
+    source.onended();
+    assert.equal(events.filter(event => event[1] === "disconnect").length, 3);
 });
 
 test("last wrong answer is counted and saved in the final note", async () => {
