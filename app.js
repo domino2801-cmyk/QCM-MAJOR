@@ -3410,8 +3410,8 @@ async function initializeAppInteractions() {
             const confirmed = await showConfirmOverlay({
                 title: "Abandonner le combat ?",
                 message: "Abandonner le combat en cours et effectuer un repli stratégique ?",
-                okLabel: "Repli",
-                cancelLabel: "Poursuivre le combat"
+                okLabel: "OUI",
+                cancelLabel: "NON"
             });
             if (!confirmed) return;
             currentQuizRunId += 1;
