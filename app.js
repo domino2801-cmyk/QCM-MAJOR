@@ -2139,8 +2139,8 @@ function renderAdminQuestionReports() {
             const confirmed = await showConfirmOverlay({
                 title: "Effacer le signalement ?",
                 message: "Cette action supprimera définitivement ce signalement.",
-                okLabel: "Effacer",
-                cancelLabel: "Annuler"
+                okLabel: "OUI",
+                cancelLabel: "NON"
             });
             if (!confirmed) return;
 
