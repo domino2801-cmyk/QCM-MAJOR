@@ -494,31 +494,28 @@ h1 {
 
 .question-action-row {
     align-items: stretch;
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     margin-top: 18px;
 }
 
-/* Quand le formulaire de signalement est ouvert, on conserve l'alignement en haut */
 .question-action-row:has(.question-report-form:not(.hidden)) {
     align-items: flex-start;
 }
 
-.question-action-row > .question-report,
-.question-action-row > #next-question-btn {
-    flex: 1 1 0;
-    min-width: 0;
-}
-
 .question-report {
-    display: flex;
-    flex-direction: column;
+    display: contents;
 }
 
 .question-report > #question-report-toggle {
     box-sizing: border-box;
-    flex: 1 0 auto;
+    grid-column: 1;
+    grid-row: 1;
+    text-align: center;
     width: 100%;
+    min-height: 44px;
+    height: 44px;
 }
 
 #next-question-btn {
@@ -526,6 +523,10 @@ h1 {
     letter-spacing: 0.04em;
     padding: 12px 14px;
     text-transform: none;
+    min-height: 44px;
+    height: 44px;
+    grid-column: 2;
+    grid-row: 1;
 }
 
 #next-question-btn:disabled {
@@ -535,29 +536,51 @@ h1 {
 }
 
 .question-report-form {
-    margin: 14px auto 0;
-    max-width: 620px;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: 100%;
+    margin: 4px 0 0;
     text-align: left;
 }
 
 .question-report-form label {
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
 }
 
 .question-report-form textarea {
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--primary);
+    border-radius: 10px;
     box-sizing: border-box;
     color: var(--text);
     font: inherit;
-    padding: 12px;
+    height: 54px;
+    min-height: 54px;
+    padding: 12px 14px;
     resize: vertical;
     width: 100%;
+    box-shadow: inset 0 0 0 1px rgba(124, 164, 255, 0.18);
 }
 
 .question-report-form .admin-actions {
+    display: flex;
+    gap: 8px;
     margin-top: 10px;
+}
+
+.question-report-form .admin-actions > button {
+    flex: 1 1 0;
+    min-height: 42px;
+    height: 42px;
+    font-size: 0.9rem;
+    line-height: 1.2;
 }
 
 .question-report-content {
@@ -566,7 +589,13 @@ h1 {
 
 @media (max-width: 560px) {
     .question-action-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
+    }
+
+    #skip-btn {
+        margin-bottom: 8px;
     }
 
     .question-action-row .btn-secondary,

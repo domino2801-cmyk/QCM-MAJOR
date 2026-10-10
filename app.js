@@ -3284,7 +3284,7 @@ async function initializeAppInteractions() {
         reportForm?.classList.add("hidden");
         reportToggle?.setAttribute("aria-expanded", "false");
         reportToggle?.removeAttribute("disabled");
-        if (reportToggle) reportToggle.innerText = "Signaler une erreur dans cette question";
+        if (reportToggle) reportToggle.innerText = "Signaler une erreur";
         reportForm?.reset();
         if (reportSubmit) reportSubmit.disabled = false;
         setAuthMessage("question-report-status", "");
@@ -3504,7 +3504,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
 
     const reportToggle = document.getElementById("question-report-toggle");
     reportToggle?.removeAttribute("disabled");
-    if (reportToggle) reportToggle.innerText = "Signaler une erreur dans cette question";
+    if (reportToggle) reportToggle.innerText = "Signaler une erreur";
     const reportForm = document.getElementById("question-report-form");
     reportForm?.classList.add("hidden");
     reportForm?.reset();
