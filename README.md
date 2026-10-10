@@ -65,6 +65,9 @@ le bilan ; les questions non répondues
 sont comptées comme passées. L'effet respecte la réduction des animations.
 Le chrono s'arrête au bilan si le questionnaire est terminé avant l'échéance.
 La simulation de combat et les exercices par thème restent sans chrono.
+Pendant l'Assaut final, les points ne sont pas affichés pour ne pas révéler
+la correction ; ils restent disponibles au bilan. La simulation et les
+exercices par thème conservent les points en direct.
 Le son est préparé au lancement de l'Assaut final pour autoriser sa lecture.
 Si le navigateur bloque l'audio, le questionnaire se termine normalement.
 

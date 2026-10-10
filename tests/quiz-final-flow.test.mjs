@@ -466,6 +466,51 @@ async function advanceQuiz(harness) {
     await new Promise(resolve => setImmediate(resolve));
 }
 
+test("exam hides live points after correct, wrong and skipped answers but preserves the final breakdown", async () => {
+    const questions = Array.from({ length: 3 }, (_, index) => ({
+        q: `Question ${index + 1}`, r: ["A", "B", "C", "D"], correct: 0
+    }));
+    const harness = createQuizFlowHarness({ questions });
+    harness.context.quizFeedbackMode = "exam";
+    harness.context.afficherSituation();
+
+    const assertHiddenPoints = () => {
+        assert.equal(harness.livePoints.hidden, true);
+        assert.equal(harness.livePoints.innerText, "");
+    };
+    assertHiddenPoints();
+    harness.optionsGrid.children[0].onclick();
+    assertHiddenPoints();
+    await advanceQuiz(harness);
+    assertHiddenPoints();
+    harness.optionsGrid.children[1].onclick();
+    assertHiddenPoints();
+    await advanceQuiz(harness);
+    harness.skipButton.onclick();
+    assertHiddenPoints();
+    await advanceQuiz(harness);
+
+    assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.statBrut.innerText, 3);
+    assert.equal(harness.savedResults[0].correct, 1);
+    assert.equal(harness.savedResults[0].wrong, 1);
+    assert.equal(harness.savedResults[0].skipped, 1);
+});
+
+test("returning to training restores live points", () => {
+    const harness = createQuizFlowHarness();
+    harness.context.quizFeedbackMode = "exam";
+    harness.context.afficherSituation();
+    assert.equal(harness.livePoints.hidden, true);
+
+    harness.context.quizFeedbackMode = "training";
+    harness.context.afficherSituation();
+    assert.equal(harness.livePoints.hidden, false);
+    assert.equal(harness.livePoints.innerText, "Points : 0");
+    harness.optionsGrid.children[1].onclick();
+    assert.equal(harness.livePoints.innerText, "Points : 4");
+});
+
 test("last correct answer is counted and saved in the final note", async () => {
     const harness = createQuizFlowHarness();
 

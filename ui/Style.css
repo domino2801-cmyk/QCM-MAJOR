@@ -460,6 +460,14 @@ body:has(#history-screen.active) .close-app {
     flex-shrink: 0;
 }
 
+#live-points[hidden] {
+    display: none;
+}
+
+#quiz-screen .stats-grid:has(#live-points[hidden]) {
+    grid-template-columns: 1fr;
+}
+
 .quiz-timer.badge {
     position: relative;
     align-self: center;

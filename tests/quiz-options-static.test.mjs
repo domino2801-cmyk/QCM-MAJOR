@@ -18,8 +18,8 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=assault-final-explosion-audio-20261010/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=assault-final-expiry-20261010/);
+    assert.match(indexHtml, /app\.js\?v=assault-final-hidden-points-20261010/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=assault-final-hidden-points-20261010/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);
     assert.match(indexHtml, /id="quiz-timer"[^>]*hidden>[\s\S]*id="quiz-timer-display">60:00/);
@@ -30,6 +30,7 @@ test("the app and styles use fresh cache versions", () => {
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.timer-fuse-spark/);
     assert.match(css, /@keyframes timer-explosion-burst/);
     assert.match(indexHtml, /id="quiz-expiry-status"[^>]*role="alert"/);
+    assert.match(css, /#live-points\[hidden\]\s*\{\s*display:\s*none;/);
 });
 
 function extractFunction(source, functionName) {

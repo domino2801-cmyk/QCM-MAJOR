@@ -3676,8 +3676,12 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     progressNode.innerText =
         `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
 
-    livePointsNode.innerText =
-        `Points : ${quizEngine.stats.points}`;
+    const updateLivePoints = () => {
+        const isExam = typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam";
+        livePointsNode.hidden = isExam;
+        livePointsNode.innerText = isExam ? "" : `Points : ${quizEngine.stats.points}`;
+    };
+    updateLivePoints();
 
     const reportToggle = document.getElementById("question-report-toggle");
     reportToggle?.removeAttribute("disabled");
@@ -3717,7 +3721,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
                 });
             }
             const encore = quizEngine.answer(index);
-            livePointsNode.innerText = `Points : ${quizEngine.stats.points}`;
+            updateLivePoints();
             try {
                 marquerBoutons(index, q.correct);
             } catch (error) {
@@ -3743,7 +3747,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             correct: answers[q.correct]
         });
         const encore = quizEngine.answer(null);
-        livePointsNode.innerText = `Points : ${quizEngine.stats.points}`;
+        updateLivePoints();
         try {
             marquerBoutons(null, q.correct);
         } catch (error) {
