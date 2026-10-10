@@ -109,6 +109,7 @@ function createQuizFlowHarness({
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
     const verrouillerOptionsSource = extractFunction(appJs, "verrouillerOptions");
     const marquerBoutonsSource = extractFunction(appJs, "marquerBoutons");
+    const stopQuizTimerSource = extractFunction(appJs, "stopQuizTimer");
     const bilanFinalSource = extractFunction(appJs, "bilanFinal");
 
     const progress = createTextNode();
@@ -128,6 +129,7 @@ function createQuizFlowHarness({
     const scheduled = [];
     const savedResults = [];
     const warnings = [];
+    const clearedIntervals = [];
     let activeScreen = "";
     let rankingPayload = null;
     let answerSounds = [];
@@ -158,6 +160,10 @@ function createQuizFlowHarness({
         questionTransitionLocked: false,
         currentQuizRunId: 1,
         finalizedQuizRunId: -1,
+        quizTimerInterval: null,
+        clearInterval(intervalId) {
+            clearedIntervals.push(intervalId);
+        },
         reviewItems: [],
         quizEngine: {
             index: 0,
@@ -285,6 +291,7 @@ function createQuizFlowHarness({
             resolveQuestionAnswersSource,
             verrouillerOptionsSource,
             marquerBoutonsSource,
+            stopQuizTimerSource,
             bilanFinalSource,
             afficherSituationSource
         ].join("\n"),
@@ -309,6 +316,7 @@ function createQuizFlowHarness({
         reviewSection,
         savedResults,
         warnings,
+        clearedIntervals,
         getActiveScreen: () => activeScreen,
         getRankingPayload: () => rankingPayload,
         getAnswerSounds: () => answerSounds
@@ -323,6 +331,74 @@ async function flushScheduled(scheduled) {
     }
 }
 
+test("assault-final timer counts down for one hour and finalizes at zero", () => {
+    const timerFunctions = [
+        extractFunction(appJs, "formatQuizTimer"),
+        extractFunction(appJs, "updateQuizTimerDisplay"),
+        extractFunction(appJs, "stopQuizTimer"),
+        extractFunction(appJs, "startQuizTimer")
+    ];
+    const classes = new Set();
+    const timerNode = {
+        hidden: true,
+        innerText: "",
+        classList: {
+            add(token) {
+                classes.add(token);
+            },
+            remove(token) {
+                classes.delete(token);
+            },
+            toggle(token, force) {
+                if (force) classes.add(token);
+                else classes.delete(token);
+            }
+        }
+    };
+    const ticks = [];
+    const clearedIntervals = [];
+    const finalizedRuns = [];
+    const context = {
+        currentQuizRunId: 7,
+        quizTimerInterval: null,
+        document: {
+            getElementById(id) {
+                return id === "quiz-timer" ? timerNode : null;
+            }
+        },
+        setInterval(callback, delay) {
+            assert.equal(delay, 1000);
+            ticks.push(callback);
+            return "assault-final-interval";
+        },
+        clearInterval(intervalId) {
+            clearedIntervals.push(intervalId);
+        },
+        bilanFinal(quizRunId) {
+            finalizedRuns.push(quizRunId);
+        },
+        console
+    };
+
+    vm.runInNewContext(timerFunctions.join("\n"), context);
+    context.startQuizTimer(7);
+
+    assert.equal(timerNode.hidden, false);
+    assert.equal(timerNode.innerText, "CHRONO 01:00:00");
+    ticks[0]();
+    assert.equal(timerNode.innerText, "CHRONO 00:59:59");
+
+    for (let second = 0; second < 3300; second += 1) ticks[0]();
+    assert.equal(timerNode.innerText, "CHRONO 00:04:59");
+    assert.equal(classes.has("urgent"), true);
+
+    for (let second = 0; second < 299; second += 1) ticks[0]();
+    assert.equal(timerNode.innerText, "CHRONO 00:00:00");
+    assert.deepEqual(finalizedRuns, [7]);
+    assert.deepEqual(clearedIntervals, ["assault-final-interval"]);
+    assert.equal(context.quizTimerInterval, null);
+});
+
 async function advanceQuiz(harness) {
     harness.nextQuestionButton.onclick();
     await flushScheduled(harness.scheduled);
@@ -334,6 +410,7 @@ test("last correct answer is counted and saved in the final note", async () => {
 
     harness.context.afficherSituation();
     harness.optionsGrid.children[1].onclick();
+    harness.context.quizTimerInterval = "active-assault-final-timer";
 
     assert.equal(harness.scheduled.length, 0);
     assert.equal(harness.progress.innerText, "Question 1 / 1");
@@ -344,6 +421,8 @@ test("last correct answer is counted and saved in the final note", async () => {
 
     assert.deepEqual(harness.getAnswerSounds(), [true]);
     assert.equal(harness.getActiveScreen(), "result-screen");
+    assert.equal(harness.context.quizTimerInterval, null);
+    assert.deepEqual(harness.clearedIntervals, ["active-assault-final-timer"]);
     assert.equal(harness.savedResults.length, 1);
     assert.equal(harness.savedResults[0].score, 20);
     assert.equal(harness.savedResults[0].correct, 1);
@@ -681,6 +760,8 @@ test("final screen still renders when answer marking fails on the last answer", 
         questionTransitionLocked: false,
         currentQuizRunId: 1,
         finalizedQuizRunId: -1,
+        quizTimerInterval: null,
+        clearInterval() {},
         reviewItems: [],
         quizEngine: {
             index: 0,
@@ -788,6 +869,7 @@ test("final screen still renders when answer marking fails on the last answer", 
             resolveQuestionAnswersSource,
             verrouillerOptionsSource,
             brokenMarquerBoutons,
+            extractFunction(appJs, "stopQuizTimer"),
             bilanFinalSource,
             afficherSituationSource
         ].join("\n"),

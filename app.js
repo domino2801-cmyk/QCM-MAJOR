@@ -27,6 +27,7 @@ let questionTransitionLocked = false;
 let displayedQuestion = null;
 let currentQuizRunId = 0;
 let finalizedQuizRunId = -1;
+let quizTimerInterval = null;
 let questionSourceReady = false;
 const pendingSignupStorageKey = "bm4-pending-signup";
 const questionStorageKey = "bm4-question-overrides-v2";
@@ -3142,6 +3143,7 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("btn-new-mission")?.addEventListener("click", () => {
+        stopQuizTimer();
         selectedTheme = null;
         maxQuestions = 0;
         uiController.resetThemeSelection();
@@ -3414,6 +3416,7 @@ async function initializeAppInteractions() {
                 cancelLabel: "NON"
             });
             if (!confirmed) return;
+            stopQuizTimer();
             currentQuizRunId += 1;
             questionTransitionLocked = false;
             selectedTheme = null;
@@ -3430,6 +3433,57 @@ async function initializeAppInteractions() {
 // =========================================================
 // FONCTION : LANCEMENT TACTIQUE
 // =========================================================
+
+function formatQuizTimer(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return [hours, minutes, remainingSeconds]
+        .map(value => String(value).padStart(2, "0"))
+        .join(":");
+}
+
+function updateQuizTimerDisplay(seconds) {
+    const timerNode = document.getElementById("quiz-timer");
+    if (!timerNode) return;
+    const displayNode = document.getElementById("quiz-timer-display") || timerNode;
+    displayNode.innerText = `CHRONO ${formatQuizTimer(seconds)}`;
+    timerNode.classList.toggle("urgent", seconds <= 300);
+}
+
+function stopQuizTimer() {
+    if (quizTimerInterval === null) return;
+    clearInterval(quizTimerInterval);
+    quizTimerInterval = null;
+}
+
+function startQuizTimer(quizRunId) {
+    stopQuizTimer();
+    const timerNode = document.getElementById("quiz-timer");
+    if (!timerNode) return;
+
+    let remainingSeconds = 60 * 60;
+    timerNode.hidden = false;
+    updateQuizTimerDisplay(remainingSeconds);
+    let intervalId;
+    intervalId = setInterval(() => {
+        if (quizTimerInterval !== intervalId) return;
+        if (quizRunId !== currentQuizRunId) {
+            stopQuizTimer();
+            return;
+        }
+
+        remainingSeconds = Math.max(0, remainingSeconds - 1);
+        updateQuizTimerDisplay(remainingSeconds);
+        if (remainingSeconds === 0) {
+            stopQuizTimer();
+            void Promise.resolve(bilanFinal(quizRunId)).catch(error => {
+                console.error("Finalisation du quiz après expiration du chrono impossible.", error);
+            });
+        }
+    }, 1000);
+    quizTimerInterval = intervalId;
+}
 
 function startQuiz() {
     const email = currentAuthenticatedAccount?.email || "anonymous";
@@ -3458,6 +3512,16 @@ function startQuiz() {
 
     // Passage à l’écran quiz
     uiController.switchScreen("quiz-screen");
+    if (quizFeedbackMode === "exam") {
+        startQuizTimer(currentQuizRunId);
+    } else {
+        stopQuizTimer();
+        const timerNode = document.getElementById("quiz-timer");
+        if (timerNode) {
+            timerNode.hidden = true;
+            timerNode.classList.remove("urgent");
+        }
+    }
 
     // Affichage de la première question
     afficherSituation(currentQuizRunId);
@@ -3628,6 +3692,7 @@ function marquerBoutons(selected, correct) {
 async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : 0) {
     const activeQuizRunId = typeof currentQuizRunId === "number" ? currentQuizRunId : quizRunId;
     if (quizRunId !== activeQuizRunId) return;
+    stopQuizTimer();
     const isCurrentQuizRun = () =>
         (typeof currentQuizRunId === "number" ? currentQuizRunId : activeQuizRunId) === quizRunId;
 

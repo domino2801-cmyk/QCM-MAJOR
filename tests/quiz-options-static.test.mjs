@@ -17,9 +17,17 @@ test("theme selection keeps the exam question count only for the global campaign
     assert.match(appJs, /setQuestionCount\(clampQuestionCount\(50, getAllQuestions\(\)\.length\)\)/);
 });
 
-test("the app and styles use fresh cache versions for report notifications", () => {
-    assert.match(indexHtml, /app\.js\?v=admin-tabs-gating-20261004/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=admin-delete-mobile-20261009/);
+test("the app and styles use fresh cache versions", () => {
+    assert.match(indexHtml, /app\.js\?v=assault-final-countdown-20261010/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=assault-final-bomb-20261010/);
+    const css = readFileSync(`${root}/ui/Style.css`, "utf8");
+    assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);
+    assert.match(indexHtml, /id="quiz-timer"[^>]*hidden>[\s\S]*id="quiz-timer-display">CHRONO 01:00:00/);
+    assert.match(css, /\.quiz-timer\[hidden\]\s*\{\s*display:\s*none;/);
+    assert.match(css, /\.quiz-timer\.urgent/);
+    assert.match(indexHtml, /class="timer-bomb-wick"><span class="timer-bomb-flame"/);
+    assert.match(css, /@keyframes timer-wick-burn\s*\{\s*to\s*\{\s*width:\s*0;/);
+    assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.timer-bomb-wick,/);
 });
 
 function extractFunction(source, functionName) {
