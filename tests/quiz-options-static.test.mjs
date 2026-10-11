@@ -19,7 +19,7 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions", () => {
     assert.match(indexHtml, /app\.js\?v=assault-objective-intensity-20261011/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=assault-intensity-single-row-20261011/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=assault-objective-placeholder-20261011/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*\.theme-selector-panel:has\(#theme-select option:checked:not\(\[value=""\]\)\) \.qty-choice-btn\.active,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);
@@ -45,6 +45,8 @@ test("intensity choices include 40 questions in a four-column row", () => {
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.qty-choice-row\s*\{[^}]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\);/);
     assert.match(css, /\.qty-choice-btn\s*\{[^}]*min-width:\s*0;[^}]*white-space:\s*nowrap;/);
+    assert.doesNotMatch(css, /^\.qty-choice-btn\.active\s*\{/m);
+    assert.match(css, /#theme-select:has\(option\[value=""\]:checked\)\s*\{\s*font-size:\s*0\.95rem;/);
 });
 
 test("report button uses muted red and gold without flashing or sheen", () => {

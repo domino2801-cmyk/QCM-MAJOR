@@ -1028,6 +1028,10 @@ h1 {
     padding-right: 44px;
 }
 
+#theme-select:has(option[value=""]:checked) {
+    font-size: 0.95rem;
+}
+
 #theme-select:hover,
 #theme-select:focus,
 .qty-choice-btn:hover,
@@ -2397,10 +2401,6 @@ body {
     min-height: 54px;
     border-radius: 10px;
     color: #ffdf73;
-}
-
-.qty-choice-btn.active {
-    color: var(--accent);
 }
 
 .theme-global-btn {
