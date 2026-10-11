@@ -156,6 +156,9 @@ function adminFormFixture({ editing = false, fail = false, sourceReady = true } 
     let handler;
     const context = vm.createContext({
         questionsBank: bank, editingQuestionIndex: editing ? 0 : null,
+        adminEditingReportId: null, clearAdminQuestionDraft: () => {},
+        setAdminOperationPending: () => {},
+        getStoredSupabaseSession: () => ({ access_token: "admin" }),
         supabase: {}, questionSourceReady: sourceReady, getQuestionTheme,
         document: { getElementById(id) {
             if (id === "question-form") return { addEventListener: (_, callback) => { handler = callback; } };
@@ -172,7 +175,7 @@ function adminFormFixture({ editing = false, fail = false, sourceReady = true } 
         setAuthMessage: (_, message) => messages.push(message),
         renderAdminQuestions: () => {}
     });
-    const start = app.indexOf('document.getElementById("question-form").addEventListener(');
+    const start = app.indexOf('document.getElementById("question-form").addEventListener("submit"');
     const end = app.indexOf('document.getElementById("close-app")', start);
     vm.runInContext(app.slice(start, end), context);
     return { bank, fields, mutations, saved, messages, run: () => handler({ preventDefault() {} }) };

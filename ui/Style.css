@@ -1743,9 +1743,145 @@ h1 {
     margin-bottom: 18px;
 }
 
+#admin-screen button,
+#admin-screen summary {
+    min-height: 44px;
+    box-sizing: border-box;
+}
+
+#admin-screen input,
+#admin-screen select,
+#admin-screen textarea {
+    font-size: 1rem;
+}
+
+#admin-resolve-report {
+    width: auto;
+}
+
+#admin-screen #admin-question-theme {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin: 8px 0;
+    background: #101b26;
+    color: var(--text);
+    border: 1px solid var(--primary);
+    border-radius: 10px;
+}
+
+.admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.admin-pagination p {
+    margin: 0;
+}
+
+.admin-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    box-sizing: border-box;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+#admin-screen .admin-toolbar button {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+    justify-self: stretch;
+    margin: 0;
+    padding: 10px 6px;
+    font-size: 0.85rem;
+    white-space: normal;
+}
+
+#admin-data-status:empty,
+#admin-history-status:empty,
+#admin-push-status:empty {
+    display: none;
+}
+
+#admin-screen .admin-edit-btn {
+    border-radius: 10px;
+    background: #164d35;
+    color: #effff3;
+    border-color: #5d9c74;
+}
+
+#admin-screen .admin-delete-btn {
+    border-radius: 10px;
+    background: #46282b;
+    color: #ffd8d8;
+}
+
+#admin-screen .btn-main {
+    animation: none;
+}
+
+#admin-screen .btn-main::before {
+    display: none;
+}
+
+.admin-editor-open .admin-question-list,
+.admin-editor-open #admin-add-question-btn {
+    display: none;
+}
+
+.admin-editor-open #admin-restore-draft-btn {
+    display: none;
+}
+
+#question-form {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    background: #101b26;
+}
+
+#question-form.hidden {
+    display: none;
+}
+
+#admin-screen .admin-editor-actions {
+    position: sticky;
+    bottom: 0;
+    background: #101b26;
+    padding: 12px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+#admin-screen .admin-editor-actions button {
+    width: 100%;
+    margin: 0;
+    padding: 12px 8px;
+    font-size: 0.9rem;
+    line-height: 1.25;
+    letter-spacing: 0;
+    white-space: normal;
+}
+
+.admin-correct-answer {
+    color: #9ee4b6;
+}
+
+#admin-screen details summary {
+    cursor: pointer;
+    padding: 12px 4px;
+}
+
 .admin-nav {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 22px;
 }
@@ -1858,11 +1994,6 @@ h1 {
     flex-wrap: wrap;
 }
 
-.admin-push-actions {
-    margin-top: 24px;
-    justify-content: center;
-}
-
 .admin-actions .btn-main {
     width: auto;
     flex: 1;
@@ -1963,6 +2094,98 @@ h1 {
     .container {
         padding: 20px 14px;
         border-radius: 6px;
+    }
+
+    body:has(#admin-screen.active) {
+        background-image: none;
+        background-color: #08111b;
+    }
+
+    body:has(#admin-screen.active) .container {
+        overflow: visible;
+    }
+
+    #admin-screen .admin-nav {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        margin: 0;
+        padding: 8px 0;
+        background: #101b26;
+    }
+
+    #admin-screen .admin-nav-btn {
+        min-width: 0;
+        min-height: 60px;
+        font-size: 0.65rem;
+        padding: 6px 2px;
+        border-radius: 10px;
+        overflow-wrap: anywhere;
+    }
+
+    #admin-screen .admin-nav-btn.active {
+        background: #225e40;
+        color: #effff3;
+        border-color: #74b78e;
+    }
+
+    #admin-screen .admin-table-wrapper {
+        overflow: visible;
+    }
+
+    #admin-screen .admin-table,
+    #admin-screen .admin-table tbody {
+        display: block;
+        min-width: 0;
+        width: 100%;
+    }
+
+    #admin-screen .admin-table thead {
+        display: none;
+    }
+
+    #admin-screen .admin-table tr {
+        display: block;
+        margin: 12px 0;
+        padding: 14px;
+        background: #111e2b;
+        border: 1px solid #35475b;
+        border-radius: 12px;
+    }
+
+    #admin-screen .admin-table td {
+        display: block;
+        border: 0;
+        padding: 6px 0;
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+
+    #admin-screen .admin-table td:empty {
+        display: none;
+    }
+
+    #admin-screen .admin-table td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.72rem;
+        color: #b1bea2;
+        margin-bottom: 3px;
+    }
+
+    #admin-screen .admin-table td:first-child {
+        font-weight: 700;
+    }
+
+    #admin-screen .question-table td:nth-child(3) {
+        display: none;
+    }
+
+    #admin-screen .admin-table td:last-child button {
+        margin: 4px 4px 4px 0;
+    }
+
+    #admin-screen .admin-editor-actions {
+        bottom: env(safe-area-inset-bottom);
     }
 
     h1 {
@@ -2180,6 +2403,14 @@ body {
         linear-gradient(180deg, rgba(11, 19, 31, 0.42), rgba(8, 15, 26, 0.54));
     backdrop-filter: blur(7px);
     padding: 6px 20px;
+}
+
+.container:has(#admin-screen.active) {
+    backdrop-filter: none;
+}
+
+#admin-screen .hidden {
+    display: none;
 }
 
 #auth-screen .terminal-shell {

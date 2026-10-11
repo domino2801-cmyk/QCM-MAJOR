@@ -27,7 +27,7 @@ test("register markup keeps required ids and HTML5 constraints", () => {
 
     assert.match(html, /id="register-password"[^>]*minlength="6"/);
     assert.match(html, /id="register-specialty"[^>]*required/);
-    assert.equal((html.match(/Canal d'extraction direct du combattant/g) || []).length, 4);
+    assert.equal((html.match(/Canal d'extraction direct du combattant/g) || []).length, 3);
     assert.match(html, /<label for="login-password">Code de reconnaissance<\/label>/);
     assert.match(html, /<label for="register-password">Code de reconnaissance<\/label>/);
     assert.match(html, /class="password-toggle" type="button" aria-label="Afficher le mot de passe" aria-pressed="false" aria-controls="login-password"/);

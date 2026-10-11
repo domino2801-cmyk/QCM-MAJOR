@@ -67,6 +67,8 @@ function harness(customResults) {
         { candidateId: "a", email: "a@test.fr", name: "Alpha", theme: "5", score: -2, createdAt: "2020-01-01T00:00:00Z" }
     ];
     const context = vm.createContext({
+        getAdminListPage: (_, items) => items,
+        labelAdminRow: () => {},
         document: { getElementById: id => nodes.get(id), createElement: element },
         getResults: () => results,
         Option: function (label, value) { this.label = label; this.value = value; }
@@ -110,7 +112,7 @@ test("tous les candidats ou une sélection disparue ne conserve pas une recomman
         h.nodes.get("admin-results-candidate-filter").value = value;
         vm.runInContext("renderAdminResults()", h.context);
         assert.equal(h.nodes.get("admin-history-panel").classList.contains("hidden"), true);
-        assert.match(h.nodes.get("admin-history-status").innerText, /Sélectionnez un candidat/);
+        assert.equal(h.nodes.get("admin-history-status").innerText, "");
         assert.equal(h.nodes.get("admin-results-table").children.length, 6);
         assert.doesNotMatch(h.nodes.get("admin-history-recommendation").innerText, /Thème 5/);
     }

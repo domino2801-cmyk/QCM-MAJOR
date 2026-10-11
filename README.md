@@ -1,5 +1,35 @@
 # Question pour un Major - Édition Tactique 🎖️
 
+## Administration sur téléphone
+
+- « Actualiser » et « Activer notification » sont sur une même ligne, suivis de
+  quatre onglets : Comptes, Questions, Signalements et Résultats. Aucun panneau
+  ne s’ouvre avant la sélection d’un onglet. Sur téléphone, les tableaux deviennent
+  des cartes ; sur ordinateur,
+  ils restent des tableaux.
+- Chaque liste affiche 25 éléments, puis « Charger plus ». Les recherches sont
+  différées de 250 ms ; changer un filtre remet la liste à 25 éléments.
+  Les données Supabase sont récupérées par pages, sans limiter le total à la
+  première réponse. La recherche s’effectue ensuite sur les données chargées.
+- Dans Questions, choisir le thème puis « Ajouter une question » ou « Modifier ».
+  Les boutons Enregistrer et Annuler restent accessibles pendant le défilement.
+  Une confirmation protège les modifications non enregistrées.
+- Le brouillon est conservé dans le stockage de l’onglet pour le compte concerné,
+  et peut être repris après rechargement. Il est supprimé après enregistrement,
+  annulation ou déconnexion ; il n’est pas envoyé au serveur avant sauvegarde.
+- Les signalements peuvent être filtrés par statut. « Corriger la question »
+  ouvre la question correspondante ; une case permet de marquer le signalement
+  comme traité après un enregistrement réussi.
+- « Actualiser » bloque les commandes pendant le chargement et affiche uniquement
+  les erreurs avec possibilité de réessayer. Hors connexion, les données peuvent
+  être anciennes : il ne s’agit pas d’une synchronisation en temps réel.
+- Pendant une opération sur la banque, les commandes sont temporairement
+  bloquées. Les suppressions demandent confirmation et ne sont appliquées
+  localement qu’après confirmation du serveur.
+
+Les autorisations Supabase et politiques RLS existantes restent nécessaires et
+inchangées. Aucune nouvelle migration n’est requise pour cette présentation.
+
 Le Top 3 est visible sur la connexion candidat avant identification, au-dessus du
 formulaire. Le bloc reste visible pendant le chargement, sans résultats ou en cas
 d'erreur, avec un message explicite. Il utilise uniquement la RPC publique et son
@@ -35,7 +65,7 @@ pour retrouver le même histogramme de Campagne Globale, la moyenne de Campagne
 Globale (sans les notes des autres thèmes) et le thème
 à travailler que dans l'historique personnel. Le filtre de période s'applique à
 ces indicateurs ; le tableau conserve son filtre candidat et sa recherche.
-Sans candidat sélectionné, une invitation remplace les indicateurs individuels.
+Sans candidat sélectionné, les indicateurs individuels restent masqués.
 Le podium administrateur reprend les icônes et effets or, argent et bronze.
 Le podium reste compact sur ces trois écrans : icônes, textes du premier résultat
 et espacements réduits, tout en conservant les effets lumineux et les couleurs.
@@ -254,7 +284,7 @@ Prérequis côté Supabase :
 ### Notifications Android des signalements
 
 Les administrateurs peuvent activer les notifications depuis Chrome sur Android avec
-« Activer les notifications sur ce téléphone », puis utiliser le bouton de test.
+« Activer notification », puis utiliser le bouton de test.
 L'application peut être installée sur l'écran d'accueil. Android affiche un badge
 selon le lanceur et les réglages des notifications ; ce badge n'est pas un compteur
 garanti des signalements non traités. La déconnexion administrateur désactive

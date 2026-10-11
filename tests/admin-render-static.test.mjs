@@ -41,7 +41,7 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(js, /admin-results-candidate-filter/);
     assert.match(js, /candidate_id/);
     assert.match(js, /user_id/);
-    assert.match(js, /Synchronisation des comptes avec Supabase/);
+    assert.doesNotMatch(js, /Synchronisé à|Configuration des notifications/);
     assert.match(js, /renderCandidateHistory/);
     assert.match(js, /score-critical/);
     assert.match(js, /Thème à travailler/);
@@ -95,6 +95,10 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
 
 test("showAdminApp refreshes the ranking before and after admin sync", async () => {
     const context = {
+        adminActiveSection: "accounts",
+        sessionStorage: { getItem: () => null },
+        adminDraftStorageKey: "draft",
+        document: { getElementById: () => ({ classList: { toggle() {} } }) },
         calls: [],
         setAuthAudioPlaying() {},
         renderAdminAccounts() {
@@ -126,6 +130,15 @@ test("showAdminApp refreshes the ranking before and after admin sync", async () 
         async loadAdminData() {
             context.calls.push("load");
         },
+        async refreshAdminData() {
+            context.calls.push("load");
+            context.renderAdminAccounts();
+            context.renderAdminQuestions();
+            context.renderAdminResults();
+            context.renderAdminQuestionReports();
+            context.renderGlobalRanking(context.getResults());
+            context.setAuthMessage("admin-data-status", "Synchronisé.");
+        },
         async refreshAdminPushStatus() {
             context.calls.push("push-status");
         },
@@ -145,6 +158,7 @@ test("showAdminApp refreshes the ranking before and after admin sync", async () 
     assert.deepEqual(context.calls.filter(entry => Array.isArray(entry) && entry[0] === "ranking").length, 2);
     assert.equal(context.calls.filter(entry => entry === "questions").length, 2);
     assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "screen" && entry[1] === "admin-screen"));
+    assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "section" && entry[1] === null));
     assert.ok(context.calls.some(entry => Array.isArray(entry) && entry[0] === "message" && entry[1] === "admin-data-status"));
 });
 

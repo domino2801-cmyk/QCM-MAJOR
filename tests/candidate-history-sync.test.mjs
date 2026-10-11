@@ -79,6 +79,7 @@ test("le chargement refuse d'enregistrer des résultats si la session a changé"
     let saved = false;
     const context = vm.createContext({
         supabase: {},
+        isAdminSession: () => false,
         getStoredSupabaseSession: () => ({ access_token: token }),
         supabaseRestRequest: async () => {
             token = "candidate-b-token";

@@ -23,6 +23,7 @@ function createHarness(response) {
     const calls = [];
     const context = {
         supabase: {},
+        isAdminSession: () => true,
         getStoredSupabaseSession: () => ({ access_token: "admin-token" }),
         supabaseRestRequest: async (...args) => {
             calls.push(args);
@@ -99,6 +100,13 @@ test("une création non confirmée par Supabase est signalée comme un échec", 
         context.syncQuestionMutation({ action: "create", question }),
         /n’a pas confirmé la création/
     );
+});
+
+test("une session non administrateur ne peut pas envoyer de mutation de banque", async () => {
+    const { context, calls } = createHarness([]);
+    context.isAdminSession = () => false;
+    await assert.rejects(context.syncQuestionMutation({ action: "create", question }), /session administrateur/);
+    assert.equal(calls.length, 0);
 });
 
 test("le chargement parcourt toutes les pages de questions Supabase", async () => {

@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=assault-objective-placeholder-20261011">
+    <link rel="stylesheet" href="ui/Style.css?v=admin-mobile-20261011">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -175,6 +175,13 @@
             <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Déconnexion</button></div>
             <h1>Interface administrateur</h1>
             <p class="subtitle">Comptes, questions et résultats</p>
+            <div class="admin-toolbar">
+                <button id="admin-refresh-btn" class="admin-edit-btn" type="button">Actualiser</button>
+                <button id="admin-push-enable-btn" class="admin-edit-btn" type="button">Activer notification</button>
+                <button id="admin-push-disable-btn" class="admin-edit-btn hidden" type="button">Désactiver notification</button>
+            </div>
+            <p id="admin-data-status" class="terminal-note" role="status" aria-live="polite"></p>
+            <p id="admin-push-status" class="terminal-note" role="status" aria-live="polite"></p>
             <nav class="admin-nav" aria-label="Gestion administrateur">
                 <button class="admin-nav-btn" type="button" data-admin-section="accounts">
                     <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
@@ -194,43 +201,51 @@
                     <span>Résultats</span>
                 </button>
             </nav>
-            <div class="admin-actions admin-push-actions">
-                <button id="admin-push-enable-btn" class="admin-edit-btn" type="button">Activer les notifications sur ce téléphone</button>
-                <button id="admin-push-disable-btn" class="admin-edit-btn hidden" type="button">Désactiver les notifications</button>
-            </div>
             <section id="admin-accounts-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="admin-edit-btn" type="button">Actualiser depuis Supabase</button></div>
                 <input id="admin-accounts-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou un email" aria-label="Rechercher un compte">
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Trigramme</th><th>Canal d'extraction direct du combattant</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
+                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Pseudo</th><th>Email</th><th>Spécialité</th><th>Action</th></tr></thead><tbody id="admin-accounts-table"></tbody></table></div>
+                <div class="admin-pagination"><p id="admin-accounts-count" role="status"></p><button id="admin-accounts-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
             </section>
             <section id="admin-questions-section" class="admin-section admin-panel hidden">
                 <h2>Questions</h2>
-                <form id="question-form" class="auth-form">
+                <div class="admin-question-toolbar"><button id="admin-add-question-btn" class="admin-edit-btn" type="button">+ Ajouter une question</button></div>
+                <button id="admin-restore-draft-btn" class="admin-edit-btn hidden" type="button">Reprendre le brouillon</button>
                     <label for="admin-question-theme">Thème</label>
                     <select id="admin-question-theme" required><option value="0">1. Organisation et Commandement</option><option value="1">2. Matériels, Armements et Technologies</option><option value="2">3. Lois de Programmation Militaire</option><option value="3">4. Opérations Extérieures</option><option value="4">5. Histoire &amp; Traditions</option><option value="5">6. Implantation des unités</option></select>
+                <form id="question-form" class="auth-form hidden" aria-label="Édition de question">
+                    <h3 id="admin-editor-title">Ajouter une question</h3>
                     <label for="admin-question-text">Question</label><textarea id="admin-question-text" rows="3" required></textarea>
                     <label for="admin-answer-1">Réponse 1</label><input id="admin-answer-1" type="text" required>
                     <label for="admin-answer-2">Réponse 2</label><input id="admin-answer-2" type="text" required>
                     <label for="admin-answer-3">Réponse 3</label><input id="admin-answer-3" type="text" required>
                     <label for="admin-answer-4">Réponse 4</label><input id="admin-answer-4" type="text" required>
                     <label for="admin-correct-answer">Bonne réponse</label><select id="admin-correct-answer" required><option value="0">Réponse 1</option><option value="1">Réponse 2</option><option value="2">Réponse 3</option><option value="3">Réponse 4</option></select>
-                    <div class="admin-actions"><button class="btn-main" type="submit" id="question-submit-btn">Ajouter la question</button><button class="auth-tab hidden" type="button" id="question-cancel-btn">Annuler</button></div>
+                    <label id="admin-resolve-report-label" class="hidden"><input id="admin-resolve-report" type="checkbox"> Marquer le signalement comme traité après enregistrement</label>
+                    <div class="admin-actions admin-editor-actions"><button class="btn-main" type="submit" id="question-submit-btn">Ajouter la question</button><button class="auth-tab" type="button" id="question-cancel-btn">Annuler</button></div>
                     <p id="question-message" class="auth-message" role="alert"></p>
                 </form>
+                <p id="admin-question-status" class="terminal-note" role="status" aria-live="polite"></p>
+                <div class="admin-question-list">
                 <div class="admin-question-toolbar"><button id="cleanup-questions-btn" class="admin-delete-btn" type="button">Supprimer les doublons</button></div>
                 <input id="admin-questions-search" class="admin-search" type="search" placeholder="Rechercher une question" aria-label="Rechercher une question">
                 <div class="admin-table-wrapper"><table class="admin-table question-table"><thead><tr><th>Question</th><th>Réponses</th><th>Bonne réponse</th><th>Actions</th></tr></thead><tbody id="admin-questions-table"></tbody></table></div>
+                <div class="admin-pagination"><p id="admin-questions-count" role="status"></p><button id="admin-questions-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
+                </div>
             </section>
             <section id="admin-question-reports-section" class="admin-section admin-panel hidden">
                 <h2>Signalements de questions</h2>
+                <label for="admin-reports-filter">Statut</label>
+                <select id="admin-reports-filter" class="admin-search"><option value="pending">À traiter</option><option value="resolved">Traités</option><option value="all">Tous</option></select>
                 <p id="admin-question-reports-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Question signalée</th><th>Détail</th><th>Candidat</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead><tbody id="admin-question-reports-table"></tbody></table></div>
+                <div class="admin-pagination"><p id="admin-reports-count" role="status"></p><button id="admin-reports-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><h2>Résultats</h2></div>
                 <label for="admin-results-candidate-filter">Filtrer par candidat</label>
                 <select id="admin-results-candidate-filter" class="admin-search" aria-label="Filtrer les résultats par candidat"><option value="">Tous les candidats</option></select>
-                <p id="admin-history-status" class="terminal-note" role="status" aria-live="polite">Sélectionnez un candidat pour afficher son historique et son thème à travailler.</p>
+                <p id="admin-history-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <section id="admin-history-panel" class="global-evolution candidate-history-panel hidden" aria-labelledby="admin-history-title">
                     <h2 id="admin-history-title">Historique du candidat sélectionné</h2>
                     <label class="global-evolution-filter" for="admin-history-period">Période</label>
@@ -241,6 +256,7 @@
                 </section>
                 <input id="admin-results-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou une note" aria-label="Rechercher un résultat">
                 <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-results-table"></tbody></table></div>
+                <div class="admin-pagination"><p id="admin-results-count" role="status"></p><button id="admin-results-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
             </section>
         </div>
 
@@ -332,6 +348,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=assault-objective-intensity-20261011"></script>
+    <script type="module" src="app.js?v=admin-mobile-20261011"></script>
 </body>
 </html>
