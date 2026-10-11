@@ -9,9 +9,9 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const admin = app.slice(app.indexOf("const deletableResultEmail ="), app.indexOf("function renderAdminQuestionReports("));
 const history = app.slice(app.indexOf("function renderCandidateHistory("), app.indexOf("function setTerminalState("));
 
-test("les listes de l'historique et leurs options utilisent un fond blanc et un texte noir", () => {
-    assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) \{\s*background: #fff;\s*color: #000;\s*color-scheme: light;/);
-    assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) option \{\s*background: #fff;\s*color: #000;/);
+test("les filtres de l'historique et leurs options utilisent un fond gris et un texte clair", () => {
+    assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) \{\s*background: #343b43;\s*color: #e2e6eb;\s*color-scheme: dark;/);
+    assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) option \{\s*background: #343b43;\s*color: #e2e6eb;/);
 });
 
 test("la suppression d'un résultat reste réservée au compte domino2801@gmail.com", () => {

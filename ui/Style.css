@@ -1634,14 +1634,14 @@ h1 {
 }
 
 :is(.global-evolution-period, #admin-results-candidate-filter) {
-    background: #fff;
-    color: #000;
-    color-scheme: light;
+    background: #343b43;
+    color: #e2e6eb;
+    color-scheme: dark;
 }
 
 :is(.global-evolution-period, #admin-results-candidate-filter) option {
-    background: #fff;
-    color: #000;
+    background: #343b43;
+    color: #e2e6eb;
 }
 
 .global-evolution-chart {

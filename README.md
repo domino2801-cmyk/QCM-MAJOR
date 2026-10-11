@@ -83,7 +83,7 @@ l'ensemble des résultats. La consultation, la recherche et les filtres restent
 disponibles ; les politiques Supabase ne sont pas modifiées par ce changement.
 Les historiques candidat et administrateur affichent la moyenne des seules
 Campagnes Globales de la période, ou leur absence explicite. Les listes de période
-et le filtre candidat des résultats utilisent un fond blanc et un texte noir,
+et le filtre candidat des résultats utilisent un fond gris et un texte clair,
 y compris dans leurs options déroulantes.
 
 
