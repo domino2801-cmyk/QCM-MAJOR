@@ -335,6 +335,59 @@ body:has(#history-screen.active) .close-app {
     opacity: 1;
 }
 
+.password-input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-wrap input {
+    padding-right: 48px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    padding: 7px;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    color: var(--text);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.password-toggle svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.password-toggle-slash {
+    display: none;
+}
+
+.password-toggle[aria-pressed="true"] .password-toggle-slash {
+    display: block;
+}
+
 .auth-form .btn-main {
     margin-top: 6px;
     padding: 12px 24px;

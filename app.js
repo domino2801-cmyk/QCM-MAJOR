@@ -2741,6 +2741,15 @@ function initializeAuth() {
     initializeOtpInputs();
     initializeRegisterFormValidation();
 
+    const loginPassword = document.getElementById("login-password");
+    const loginPasswordToggle = document.querySelector('[aria-controls="login-password"]');
+    loginPasswordToggle.addEventListener("click", () => {
+        const isVisible = loginPassword.type === "text";
+        loginPassword.type = isVisible ? "password" : "text";
+        loginPasswordToggle.setAttribute("aria-pressed", String(!isVisible));
+        loginPasswordToggle.setAttribute("aria-label", isVisible ? "Afficher le mot de passe" : "Masquer le mot de passe");
+    });
+
     document.querySelectorAll(".auth-tab").forEach(tab => {
         tab.addEventListener("click", () => {
             clearAuthMessages();
