@@ -18,9 +18,10 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=assault-final-hidden-points-20261010/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=assault-final-hidden-points-20261010/);
+    assert.match(indexHtml, /app\.js\?v=assault-answer-confirm-green-skip-20261011/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=assault-muted-report-20261011/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
+    assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);
     assert.match(indexHtml, /id="quiz-timer"[^>]*hidden>[\s\S]*id="quiz-timer-display">60:00/);
     assert.match(css, /\.quiz-timer\.badge\[hidden\]\s*\{\s*display:\s*none;/);
@@ -31,6 +32,18 @@ test("the app and styles use fresh cache versions", () => {
     assert.match(css, /@keyframes timer-explosion-burst/);
     assert.match(indexHtml, /id="quiz-expiry-status"[^>]*role="alert"/);
     assert.match(css, /#live-points\[hidden\]\s*\{\s*display:\s*none;/);
+});
+
+test("quiz action buttons share the confirmation button style", () => {
+    for (const id of ["question-report-toggle", "next-question-btn", "confirm-cancel-btn", "confirm-ok-btn"]) {
+        assert.match(indexHtml, new RegExp(`id="${id}" class="btn-main" type="button"`));
+    }
+});
+
+test("report button uses muted red and gold without flashing or sheen", () => {
+    const css = readFileSync(`${root}/ui/Style.css`, "utf8");
+    assert.match(css, /#question-report-toggle:not\(:disabled\)\s*\{[^}]*background:\s*linear-gradient\(135deg, #713c3b, #4d292b\);[^}]*border-color:\s*#a88a58;[^}]*animation:\s*none;/);
+    assert.match(css, /#question-report-toggle::before\s*\{\s*display:\s*none;/);
 });
 
 function extractFunction(source, functionName) {

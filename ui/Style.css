@@ -851,7 +851,7 @@ h1 {
         margin-bottom: 8px;
     }
 
-    .question-action-row .btn-secondary,
+    .question-action-row #question-report-toggle,
     #next-question-btn {
         font-size: 0.78rem;
         letter-spacing: 0;
@@ -1173,11 +1173,13 @@ h1 {
     border-color: #ff4d4d;
 }
 
-.options-grid .btn.selected {
-    background: rgba(255, 193, 7, 0.18) !important;
-    color: var(--accent) !important;
-    border-color: rgba(255, 207, 85, 0.65);
-    box-shadow: 0 0 0 1px rgba(255, 207, 85, 0.35);
+.options-grid .btn.selected,
+#skip-btn.selected {
+    background: linear-gradient(135deg, rgba(24, 132, 68, 0.96), rgba(16, 91, 49, 0.96)) !important;
+    color: #f1fff5 !important;
+    border-color: #72f0a0;
+    box-shadow: 0 0 0 2px rgba(80, 231, 132, 0.36), 0 0 18px rgba(45, 210, 105, 0.52), inset 0 0 14px rgba(155, 255, 190, 0.12);
+    font-weight: 700;
 }
 
 .btn-skip {
@@ -1261,6 +1263,24 @@ h1 {
 
 .btn-main:disabled::before {
     display: none;
+}
+
+#question-report-toggle:not(:disabled) {
+    background: linear-gradient(135deg, #713c3b, #4d292b);
+    color: #f3dfbd;
+    border-color: #a88a58;
+    box-shadow: inset 0 1px 0 rgba(222, 185, 123, 0.16);
+    animation: none;
+}
+
+#question-report-toggle::before {
+    display: none;
+}
+
+#question-report-toggle:hover:not(:disabled),
+#question-report-toggle:focus-visible {
+    border-color: #c5a16a;
+    box-shadow: 0 0 0 1px rgba(197, 161, 106, 0.2);
 }
 
 .result-box {

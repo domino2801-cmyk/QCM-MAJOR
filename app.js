@@ -3708,6 +3708,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     optionsGrid.innerHTML = "";
 
     // Génération des options
+    let pendingExamAnswer;
     answers.forEach((optionText, index) => {
         const btn = document.createElement("button");
         btn.className = "btn";
@@ -3716,6 +3717,17 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         btn.onclick = () => {
             if (isQuizTimeExpired(activeQuizRunId)) return;
             if (questionTransitionLocked) return;
+            if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
+                Array.from(optionsGrid.children).forEach(option => option.classList.remove("selected"));
+                skip.classList.remove("selected");
+                btn.classList.add("selected");
+                pendingExamAnswer = index;
+                nextQuestion.innerText = quizEngine.index + 1 < quizEngine.questions.length
+                    ? "Question suivante"
+                    : "Voir le bilan";
+                nextQuestion.disabled = false;
+                return;
+            }
             questionTransitionLocked = true;
             verrouillerOptions();
             if (typeof quizFeedbackMode === "undefined" || quizFeedbackMode !== "exam") {
@@ -3748,6 +3760,16 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     skip.onclick = () => {
         if (isQuizTimeExpired(activeQuizRunId)) return;
         if (questionTransitionLocked) return;
+        if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
+            Array.from(optionsGrid.children).forEach(option => option.classList.remove("selected"));
+            skip.classList.add("selected");
+            pendingExamAnswer = null;
+            nextQuestion.innerText = quizEngine.index + 1 < quizEngine.questions.length
+                ? "Question suivante"
+                : "Voir le bilan";
+            nextQuestion.disabled = false;
+            return;
+        }
         questionTransitionLocked = true;
         verrouillerOptions();
         reviewItems.push({
@@ -3767,6 +3789,37 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     };
     nextQuestion.onclick = () => {
         if (isQuizTimeExpired(activeQuizRunId)) return;
+        if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
+            if (questionTransitionLocked || nextQuestion.disabled || pendingExamAnswer === undefined) return;
+            questionTransitionLocked = true;
+            verrouillerOptions();
+            if (pendingExamAnswer === null) {
+                reviewItems.push({
+                    type: "skipped",
+                    question: q.q,
+                    correct: answers[q.correct]
+                });
+            } else if (pendingExamAnswer !== q.correct) {
+                reviewItems.push({
+                    type: "wrong",
+                    question: q.q,
+                    selected: answers[pendingExamAnswer],
+                    correct: answers[q.correct]
+                });
+            }
+            const encore = quizEngine.answer(pendingExamAnswer);
+            pendingExamAnswer = undefined;
+            updateLivePoints();
+            nextQuestion.disabled = true;
+            if (encore) {
+                afficherSituation(activeQuizRunId);
+                return;
+            }
+            void Promise.resolve(bilanFinal(activeQuizRunId)).catch(error => {
+                console.error("Finalisation du quiz impossible.", error);
+            });
+            return;
+        }
         if (!questionTransitionLocked || nextQuestion.disabled) return;
         nextQuestion.disabled = true;
         const encore = quizEngine.index < quizEngine.questions.length;

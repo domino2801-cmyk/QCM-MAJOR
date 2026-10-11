@@ -48,6 +48,9 @@ function createButton() {
             add(...tokens) {
                 tokens.forEach(token => classes.add(token));
             },
+            remove(...tokens) {
+                tokens.forEach(token => classes.delete(token));
+            },
             contains(token) {
                 return classes.has(token);
             }
@@ -495,6 +498,69 @@ test("exam hides live points after correct, wrong and skipped answers but preser
     assert.equal(harness.savedResults[0].correct, 1);
     assert.equal(harness.savedResults[0].wrong, 1);
     assert.equal(harness.savedResults[0].skipped, 1);
+});
+
+test("exam answers stay editable and are recorded only after moving to the next question", async () => {
+    const questions = [
+        { q: "Question 1", r: ["A", "B", "C", "D"], correct: 0 },
+        { q: "Question 2", r: ["A", "B", "C", "D"], correct: 1 }
+    ];
+    const harness = createQuizFlowHarness({ questions });
+    harness.context.quizFeedbackMode = "exam";
+    harness.context.afficherSituation();
+
+    harness.optionsGrid.children[1].onclick();
+    assert.equal(harness.optionsGrid.children[1].classList.contains("selected"), true);
+    assert.equal(harness.context.quizEngine.index, 0);
+    assert.equal(harness.context.quizEngine.stats.wrong, 0);
+    assert.equal(harness.context.reviewItems.length, 0);
+
+    harness.optionsGrid.children[0].onclick();
+    assert.equal(harness.optionsGrid.children[1].classList.contains("selected"), false);
+    assert.equal(harness.optionsGrid.children[0].classList.contains("selected"), true);
+    assert.equal(harness.context.quizEngine.index, 0);
+    assert.equal(harness.nextQuestionButton.disabled, false);
+
+    await advanceQuiz(harness);
+    assert.equal(harness.context.quizEngine.index, 1);
+    assert.equal(harness.context.quizEngine.stats.correct, 1);
+    assert.equal(harness.context.quizEngine.stats.wrong, 0);
+    assert.equal(harness.context.reviewItems.length, 0);
+
+    harness.skipButton.onclick();
+    assert.equal(harness.skipButton.classList.contains("selected"), true);
+    assert.equal(harness.nextQuestionButton.disabled, false);
+    harness.optionsGrid.children[1].onclick();
+    assert.equal(harness.skipButton.classList.contains("selected"), false);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("selected"), true);
+    await advanceQuiz(harness);
+
+    assert.equal(harness.context.quizEngine.stats.correct, 2);
+    assert.equal(harness.context.quizEngine.stats.skipped, 0);
+    assert.equal(harness.context.quizEngine.stats.wrong, 0);
+    assert.equal(harness.savedResults[0].correct, 2);
+    assert.equal(harness.savedResults[0].skipped, 0);
+});
+
+test("exam skip can be selected and remains editable until next question", async () => {
+    const questions = [
+        { q: "Question 1", r: ["A", "B", "C", "D"], correct: 0 },
+        { q: "Question 2", r: ["A", "B", "C", "D"], correct: 1 }
+    ];
+    const harness = createQuizFlowHarness({ questions });
+    harness.context.quizFeedbackMode = "exam";
+    harness.context.afficherSituation();
+
+    harness.optionsGrid.children[2].onclick();
+    harness.skipButton.onclick();
+    assert.equal(harness.optionsGrid.children[2].classList.contains("selected"), false);
+    assert.equal(harness.skipButton.classList.contains("selected"), true);
+    assert.equal(harness.context.quizEngine.index, 0);
+
+    await advanceQuiz(harness);
+    assert.equal(harness.context.quizEngine.index, 1);
+    assert.equal(harness.context.quizEngine.stats.skipped, 1);
+    assert.equal(harness.context.reviewItems[0].type, "skipped");
 });
 
 test("returning to training restores live points", () => {
