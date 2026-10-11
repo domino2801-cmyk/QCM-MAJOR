@@ -1854,6 +1854,7 @@ async function refreshAdminData() {
         if (!await confirmAdminEditorExit()) return;
         if (!document.getElementById("question-form").classList.contains("hidden")) resetQuestionForm();
         const accessToken = getStoredSupabaseSession()?.access_token;
+        document.getElementById("admin-refresh-btn").classList.remove("admin-state-ready");
         setAdminOperationPending(true);
         setAuthMessage("admin-data-status", "");
         try {
@@ -1873,6 +1874,7 @@ async function refreshAdminData() {
             renderGlobalRanking(getResults());
             setAuthMessage("admin-data-status", "");
             document.getElementById("admin-refresh-btn").innerText = "Actualiser";
+            document.getElementById("admin-refresh-btn").classList.add("admin-state-ready");
         } catch (error) {
             console.warn("Chargement des données administrateur impossible.", error);
             setAuthMessage("admin-data-status", `Données non actualisées. ${error.message}`);
@@ -1899,7 +1901,7 @@ function getAdminListPage(key, items, filter) {
     const count = document.getElementById(`admin-${key}-count`);
     if (count) count.innerText = items.length
         ? `${visible.length} / ${items.length} élément(s)`
-        : "Aucun élément correspondant.";
+        : "";
     document.getElementById(`admin-${key}-more`)?.classList.toggle("hidden", visible.length >= items.length);
     return visible;
 }
@@ -2049,6 +2051,7 @@ function initializeAdminMobile() {
         event.returnValue = "";
     });
     window.addEventListener("offline", () => {
+        document.getElementById("admin-refresh-btn").classList.remove("admin-state-ready");
         if (document.getElementById("admin-screen").classList.contains("active")) {
             setAuthMessage("admin-data-status", "Hors connexion. Les données affichées peuvent être anciennes.");
         }
@@ -2069,19 +2072,17 @@ function getAdminPushOptions() {
 }
 
 async function refreshAdminPushStatus() {
+    const button = document.getElementById("admin-push-enable-btn");
+    button.classList.remove("admin-state-ready");
+    button.dataset.enabled = "false";
+    button.setAttribute("aria-pressed", "false");
     try {
         const options = getAdminPushOptions();
-        let enabled = await reportNotificationsEnabled(options);
-        if (!enabled && typeof Notification !== "undefined" && Notification.permission !== "denied") {
-            try {
-                await enableReportNotifications(options);
-                enabled = true;
-            } catch (autoEnableError) {
-                console.warn("Activation automatique des notifications impossible.", autoEnableError);
-            }
-        }
-        document.getElementById("admin-push-enable-btn")?.classList.toggle("hidden", enabled);
-        document.getElementById("admin-push-disable-btn")?.classList.toggle("hidden", !enabled);
+        const enabled = await reportNotificationsEnabled(options);
+        button.classList.toggle("admin-state-ready", enabled);
+        button.dataset.enabled = String(enabled);
+        button.setAttribute("aria-pressed", String(enabled));
+        button.title = enabled ? "Désactiver les notifications" : "Activer les notifications";
         setAuthMessage("admin-push-status", "");
     } catch (error) {
         setAuthMessage("admin-push-status", error.message);
@@ -2314,7 +2315,7 @@ async function deleteAdminResult(resultId) {
     if (!supabase) return;
     try {
         await flushPendingResultSync();
-        setAuthMessage("admin-data-status", "Résultat supprimé de Supabase.");
+        setAuthMessage("admin-data-status", "");
     } catch (error) {
         setAuthMessage("admin-data-status", `Suppression impossible : ${error.message}`);
     }
@@ -3621,23 +3622,21 @@ async function initializeAppInteractions() {
         showAuthView("login");
     });
 
-    [
-        ["admin-push-enable-btn", enableReportNotifications],
-        ["admin-push-disable-btn", disableReportNotifications]
-    ].forEach(([id, action]) => {
-        document.getElementById(id)?.addEventListener("click", async event => {
+    document.getElementById("admin-push-enable-btn").addEventListener("click", async event => {
             const button = event.currentTarget;
+            const action = button.dataset.enabled === "true"
+                ? disableReportNotifications : enableReportNotifications;
             button.disabled = true;
             setAuthMessage("admin-push-status", "");
             try {
                 await action(getAdminPushOptions());
                 await refreshAdminPushStatus();
             } catch (error) {
+                await refreshAdminPushStatus();
                 setAuthMessage("admin-push-status", `Notifications impossibles : ${error.message}`);
             } finally {
                 button.disabled = false;
             }
-        });
     });
 
     document.getElementById("admin-question-theme").addEventListener("change", () => {

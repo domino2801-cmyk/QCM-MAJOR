@@ -18,6 +18,7 @@ test("la suppression d'un résultat reste réservée au compte domino2801@gmail.
     assert.doesNotMatch(html, /clear-results-btn|Effacer les résultats/);
     assert.doesNotMatch(app, /async function (deleteResult|clearResults)\(/);
     assert.match(admin, /deletableResultEmail = "domino2801@gmail\.com"/);
+    assert.doesNotMatch(admin, /Résultat supprimé de Supabase/);
 
     const now = new Date().toISOString();
     const h = harness([

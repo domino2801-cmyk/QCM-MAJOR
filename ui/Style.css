@@ -1770,6 +1770,17 @@ h1 {
     border-radius: 10px;
 }
 
+#admin-reports-filter {
+    background: #101b26;
+    color: var(--text);
+    color-scheme: dark;
+}
+
+#admin-reports-filter option {
+    background: #101b26;
+    color: var(--text);
+}
+
 .admin-pagination {
     display: flex;
     align-items: center;
@@ -1780,6 +1791,10 @@ h1 {
 
 .admin-pagination p {
     margin: 0;
+}
+
+.admin-pagination:has(p:empty):has(button.hidden) {
+    display: none;
 }
 
 .admin-toolbar {
@@ -1814,6 +1829,18 @@ h1 {
     background: #164d35;
     color: #effff3;
     border-color: #5d9c74;
+}
+
+#admin-screen .admin-toolbar .admin-edit-btn {
+    background: #343b43;
+    border-color: #68717c;
+    color: #e2e6eb;
+}
+
+#admin-screen .admin-toolbar .admin-edit-btn.admin-state-ready {
+    background: #164d35;
+    border-color: #5d9c74;
+    color: #effff3;
 }
 
 #admin-screen .admin-delete-btn {

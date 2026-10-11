@@ -39,7 +39,7 @@ test("les listes affichent 25 éléments puis conservent la limite tant que le f
     assert.equal(page("questions", items, "1:").length, 25);
     assert.equal(page("questions", [], "1:absent").length, 0);
     assert.equal(controls["admin-questions-more"].hidden, true);
-    assert.match(controls["admin-questions-count"].innerText, /Aucun/);
+    assert.equal(controls["admin-questions-count"].innerText, "");
 });
 
 test("la sortie d'éditeur respecte le refus et interdit de quitter pendant une opération", async () => {
@@ -138,7 +138,10 @@ test("les actualisations simultanées partagent une seule requête et affichent 
     const messages = [];
     const nodes = {
         "question-form": { classList: { contains: () => true } },
-        "admin-refresh-btn": { innerText: "" }
+        "admin-refresh-btn": { innerText: "", classList: {
+            add() { this.ready = true; },
+            remove() { this.ready = false; }
+        } }
     };
     const context = vm.createContext({
         adminRefreshPromise: null, supabase: {},
@@ -156,6 +159,7 @@ test("les actualisations simultanées partagent une seule requête et affichent 
     assert.equal(context.adminRefreshPromise, null);
     assert.match(messages.at(-1), /Données non actualisées.*Serveur indisponible/);
     assert.equal(nodes["admin-refresh-btn"].innerText, "Réessayer");
+    assert.equal(nodes["admin-refresh-btn"].classList.ready, false);
     let rendered = 0;
     context.loadAdminData = async () => { loads++; };
     context.loadQuestionsFromSupabase = async () => true;
@@ -166,6 +170,7 @@ test("les actualisations simultanées partagent une seule requête et affichent 
     await refresh();
     assert.equal(rendered, 5);
     assert.equal(messages.at(-1), "");
+    assert.equal(nodes["admin-refresh-btn"].classList.ready, true);
 });
 
 function element() {
@@ -317,4 +322,38 @@ test("retirer du cache demande OUI/NON et ne modifie rien en cas de refus", asyn
     await button.listeners.click();
     assert.equal(accounts["candidate@test"], undefined);
     assert.equal(list.children.length, 0);
+});
+
+test("le combo Statut et ses options conservent un fond sombre", () => {
+    assert.match(css, /#admin-reports-filter\s*\{\s*background: #101b26;\s*color: var\(--text\);\s*color-scheme: dark;/);
+    assert.match(css, /#admin-reports-filter option\s*\{\s*background: #101b26;\s*color: var\(--text\);/);
+});
+
+test("le bouton notification est vert uniquement lorsque l'abonnement est confirmé", async () => {
+    const button = {
+        dataset: {}, setAttribute() {},
+        classList: {
+            remove() { this.ready = false; },
+            toggle(_, enabled) { this.ready = enabled; }
+        }
+    };
+    let enabled = true;
+    const messages = [];
+    const context = vm.createContext({
+        document: { getElementById: () => button },
+        getAdminPushOptions: () => ({}),
+        reportNotificationsEnabled: async () => enabled,
+        setAuthMessage: (_, message) => messages.push(message)
+    });
+    const refresh = loadFunction("refreshAdminPushStatus", context);
+    await refresh();
+    assert.equal(button.classList.ready, true);
+    assert.equal(button.dataset.enabled, "true");
+    enabled = false;
+    await refresh();
+    assert.equal(button.classList.ready, false);
+    context.reportNotificationsEnabled = async () => { throw new Error("Indisponible"); };
+    await refresh();
+    assert.equal(button.classList.ready, false);
+    assert.equal(messages.at(-1), "Indisponible");
 });

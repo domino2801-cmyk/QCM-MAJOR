@@ -7,6 +7,10 @@
   ne s’ouvre avant la sélection d’un onglet. Sur téléphone, les tableaux deviennent
   des cartes ; sur ordinateur,
   ils restent des tableaux.
+- Les deux boutons sont gris par défaut. « Actualiser » devient vert après une
+  synchronisation réussie ; « Activer notification » devient vert lorsque
+  l’abonnement est confirmé. Un nouveau clic sur ce dernier désactive les
+  notifications et le remet en gris.
 - Chaque liste affiche 25 éléments, puis « Charger plus ». Les recherches sont
   différées de 250 ms ; changer un filtre remet la liste à 25 éléments.
   Les données Supabase sont récupérées par pages, sans limiter le total à la
