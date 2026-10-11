@@ -1242,12 +1242,12 @@ function updateThemeQuestionCounts() {
     if (!themeSelect) return;
 
     const themeTitles = {
-        1: "1. Organisation et Commandement",
-        2: "2. Matériels, Armements et Technologies",
-        3: "3. Lois de Programmation Militaire",
-        4: "4. Opérations Extérieures",
-        5: "5. Histoire & Traditions",
-        6: "6. Implantation des unités"
+        1: "Organisation et Commandement",
+        2: "Matériels, Armements et Technologies",
+        3: "Lois de Programmation Militaire",
+        4: "Opérations Extérieures",
+        5: "Histoire & Traditions",
+        6: "Implantation des unités"
     };
 
     Object.entries(themeTitles).forEach(([themeId, label]) => {
