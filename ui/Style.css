@@ -120,6 +120,49 @@ body {
     overflow: hidden;
 }
 
+.legal-footer {
+    margin-top: 24px;
+    border-top: 1px solid var(--primary);
+    padding-top: 16px;
+}
+
+.legal-footer nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px 24px;
+    text-align: center;
+}
+
+.legal-footer a,
+.legal-section a {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.legal-footer a:hover,
+.legal-section a:hover {
+    color: var(--accent);
+}
+
+.legal-footer a:focus-visible,
+.legal-section a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+}
+
+.legal-section {
+    display: none;
+    margin-top: 24px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.legal-section:target {
+    display: block;
+}
+
 .close-app {
     position: fixed;
     top: 12px;

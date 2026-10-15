@@ -1,5 +1,18 @@
 # Question pour un Major - Édition Tactique 🎖️
 
+## Informations légales
+
+Le pied de page commun donne accès aux « Mentions légales » et à la
+« Politique de confidentialité », sans connexion. Ces sections de `index.html`
+utilisent les ancres `#mentions-legales` et `#politique-confidentialite` :
+aucune route serveur n’est nécessaire, même sous un sous-chemin GitHub Pages.
+Le lien « Retour à l’application » referme la section sans réinitialiser l’écran
+en cours ; le chrono d’un quiz continue pendant la consultation.
+
+Les textes sont des modèles : l’éditeur doit compléter les champs signalés
+(identité, contact privé, hébergement, bases légales, conservation et transferts)
+et vérifier leur adéquation au déploiement avant publication.
+
 ## Administration sur téléphone
 
 - « Actualiser » et « Activer notification » sont sur une même ligne, suivis de
