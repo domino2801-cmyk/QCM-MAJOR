@@ -19,7 +19,7 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions", () => {
     assert.match(indexHtml, /app\.js\?v=admin-mobile-20261011/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=admin-mobile-20261011/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=legal-20261015/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*\.theme-selector-panel:has\(#theme-select option:checked:not\(\[value=""\]\)\) \.qty-choice-btn\.active,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);

@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=admin-mobile-20261011">
+    <link rel="stylesheet" href="ui/Style.css?v=legal-20261015">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -335,6 +335,48 @@
             <div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div id="options-grid" class="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button><div class="question-action-row"><div class="question-report"><button id="question-report-toggle" class="btn-main" type="button" aria-expanded="false">Signaler une erreur</button><form id="question-report-form" class="question-report-form hidden"><label for="question-report-details">Détail du signalement</label><textarea id="question-report-details" maxlength="1000" rows="4" placeholder="Décrivez l’erreur constatée"></textarea><div class="admin-actions"><button id="question-report-cancel" class="btn-secondary" type="button">Annuler</button><button id="question-report-submit" class="btn-main" type="submit">Envoyer</button></div><p id="question-report-status" class="auth-message" role="alert"></p></form></div><button id="next-question-btn" class="btn-main" type="button" disabled>Question suivante</button></div></div>
 
         <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">NOTE FINALE</div><div id="score-display" class="score-large">0 / 20</div><div class="details-list"><div>Réponses correctes : <span id="stat-correct">0</span></div><div>Réponses fausses : <span id="stat-wrong">0</span></div><div>Passées : <span id="stat-skipped">0</span></div><div>Points bruts : <span id="stat-brut">0</span><span id="brut-max"></span></div></div></div><section id="review-section" class="review-section hidden"><h2>Revue tactique</h2><div id="review-list" class="review-list"></div></section><button id="btn-new-mission" class="btn-main" type="button">Nouvelle mission</button><button id="btn-evolution-result" class="btn-secondary hidden" type="button" aria-expanded="false">Voir l’évolution</button><section id="global-evolution-section" class="global-evolution hidden" aria-labelledby="global-evolution-title"><h2 id="global-evolution-title">Évolution globale</h2><label class="global-evolution-filter" for="global-evolution-period">Période</label><select id="global-evolution-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="90">90 derniers jours</option></select><div id="global-evolution-summary" class="global-evolution-summary"></div><div id="global-evolution-chart" class="global-evolution-chart" aria-label="Histogramme des résultats globaux"></div><ol id="global-evolution-list" class="global-evolution-list"></ol></section></div>
+        <footer class="legal-footer">
+            <nav id="legal-links" tabindex="-1" aria-label="Informations légales">
+                <a href="#mentions-legales">Mentions légales</a>
+                <a href="#politique-confidentialite">Politique de confidentialité</a>
+            </nav>
+        </footer>
+
+        <section id="mentions-legales" class="legal-section" tabindex="-1" aria-labelledby="mentions-legales-title">
+            <h2 id="mentions-legales-title">Mentions légales</h2>
+            <p class="terminal-note">Modèle à compléter par l’éditeur avant publication : identité, coordonnées, responsable de publication et hébergeur.</p>
+            <h3>Éditeur et contact</h3>
+            <p>Question pour un Major — Édition Tactique (QCM-MAJOR) est une application de quiz destinée à la préparation au BM4.</p>
+            <p>Éditeur : [nom ou raison sociale, adresse et mentions d’immatriculation applicables à compléter]. Responsable de publication : [à compléter]. Contact : [adresse électronique à compléter].</p>
+            <h3>Hébergement</h3>
+            <p>Hébergeur du site statique : [nom, adresse et coordonnées à compléter selon le déploiement, par exemple GitHub Pages]. Les services d’authentification et de stockage des données utilisent Supabase ; les coordonnées de l’entité hébergeuse et la région du projet sont à préciser par l’éditeur.</p>
+            <h3>Contenus et utilisation</h3>
+            <p>Les quiz sont un support d’entraînement et ne remplacent pas les textes officiels ni les consignes de formation. Des erreurs peuvent subsister ; elles peuvent être signalées depuis l’application. Aucun résultat ne vaut certification officielle.</p>
+            <p>Les textes, images et autres ressources restent soumis aux droits de leurs auteurs et aux licences applicables. Leur présence sur le site n’autorise pas une réutilisation sans vérification de ces droits.</p>
+            <p><a href="#politique-confidentialite">Consulter la politique de confidentialité</a></p>
+            <a href="#legal-links">Retour à l’application</a>
+        </section>
+
+        <section id="politique-confidentialite" class="legal-section" tabindex="-1" aria-labelledby="politique-confidentialite-title">
+            <h2 id="politique-confidentialite-title">Politique de confidentialité</h2>
+            <p class="terminal-note">Modèle à compléter par l’éditeur avant publication : responsable du traitement, contact, bases légales, durées de conservation et éventuels transferts.</p>
+            <h3>Données et finalités</h3>
+            <p>L’application traite les informations de compte (adresse électronique, pseudo, spécialité et identifiant), les données d’authentification, ainsi que les résultats de quiz (notes, thèmes et dates), pour permettre la connexion, les exercices et le suivi de progression.</p>
+            <p>Les signalements de questions et leur contenu servent à corriger la banque de questions. Les administrateurs qui activent les notifications transmettent également les données techniques de leur abonnement push. Évitez de saisir des informations personnelles ou sensibles dans les signalements.</p>
+            <h3>Accès aux données et classement public</h3>
+            <p>Supabase assure l’authentification et le stockage distant. Les administrateurs autorisés peuvent consulter les comptes, résultats et signalements pour gérer le service. Le Top 3 public affiche le pseudo, la note et la date des résultats retenus, y compris avant connexion ; choisissez un pseudo qui ne révèle pas votre identité.</p>
+            <p>L’hébergeur et les prestataires techniques peuvent traiter des données de connexion nécessaires au service. L’éditeur doit préciser les prestataires, les lieux de traitement, les éventuels transferts hors de l’Union européenne et leurs garanties.</p>
+            <h3>Stockage sur votre appareil</h3>
+            <p>Le navigateur conserve des données techniques dans localStorage et sessionStorage : session de connexion, inscription en cours, historique et résultats en cache, synchronisations en attente, questions et brouillons d’administration. Ce stockage facilite le fonctionnement de l’application ; les notifications sont facultatives et peuvent être désactivées.</p>
+            <p>Vous pouvez effacer les données du site dans les paramètres du navigateur. Cela peut vous déconnecter et supprimer les données locales non synchronisées, mais ne supprime pas les données déjà enregistrées sur le serveur.</p>
+            <h3>Responsable, bases légales et conservation</h3>
+            <p>Responsable du traitement et contact privé : [identité et adresse électronique à compléter]. Bases légales pour chaque finalité et durées de conservation, y compris des comptes inactifs, résultats, signalements et sauvegardes : [à préciser par l’éditeur].</p>
+            <h3>Vos droits</h3>
+            <p>Selon la réglementation applicable, vous pouvez demander l’accès, la rectification, l’effacement, la limitation, la portabilité de vos données ou vous opposer à certains traitements. Adressez votre demande au contact privé de l’éditeur indiqué ci-dessus, sans publier vos données dans un signalement public. Lorsque le traitement repose sur votre consentement, vous pouvez le retirer.</p>
+            <p>Vous pouvez également adresser une réclamation à la <a href="https://www.cnil.fr/fr/plaintes">CNIL</a>.</p>
+            <p><a href="#mentions-legales">Consulter les mentions légales</a></p>
+            <a href="#legal-links">Retour à l’application</a>
+        </section>
     </div>
 
     <div id="confirm-overlay" class="confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
