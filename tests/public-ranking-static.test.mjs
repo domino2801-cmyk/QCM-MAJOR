@@ -52,7 +52,7 @@ test("candidate login screen keeps the Top 3 above the identification form", () 
     const rankingIndex = html.indexOf('id="login-global-ranking-section"');
     const tabsIndex = html.indexOf('data-auth-mode="login"');
     const formIndex = html.indexOf('id="login-form"');
-    const buttonIndex = html.indexOf("Préparation au combat");
+    const buttonIndex = html.indexOf("Entrez au CENTAC du BM4");
     const forgotPasswordIndex = html.indexOf('id="login-forgot-password-btn"');
 
     assert.notEqual(loginViewIndex, -1);

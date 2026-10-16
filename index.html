@@ -48,7 +48,7 @@
                         <button class="auth-tab active" type="button" data-auth-mode="login">Rallier l’unité</button>
                     </div>
                     <form id="login-form" class="auth-form">
-                        <label for="login-email">Canal d'extraction direct du combattant</label>
+                        <label for="login-email">Canal d'infiltration du combattant</label>
                         <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <label for="login-password">Code de reconnaissance</label>
                         <div class="password-input-wrap">
@@ -62,7 +62,23 @@
                             </button>
                         </div>
                         <p id="login-message" class="auth-message" role="alert"></p>
-                        <button class="btn-main" type="submit">Préparation au combat</button>
+                        <button class="btn-main auth-preparation-btn" type="submit">
+                            <svg class="auth-preparation-icon auth-preparation-icon-left" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                                <path d="M7 15c8-4 16-3 25 2v34c-9-5-17-6-25-2V15Zm50 0c-8-4-16-3-25 2v34c9-5 17-6 25-2V15Z"></path>
+                                <path d="M13 23c5-2 10-1 14 1m-14 7c5-2 10-1 14 1m24-9c-3-1-6-1-9 0m9 8c-3-1-6-1-9 0"></path>
+                                <path d="m39 39 5 5 10-12"></path>
+                            </svg>
+                            <span class="auth-preparation-copy">
+                                <span class="auth-preparation-title">Entrez au CENTAC du BM4</span>
+                                <span class="auth-preparation-subtitle">Accès immédiat à la zone de confrontation</span>
+                            </span>
+                            <svg class="auth-preparation-icon auth-preparation-icon-right" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                                <circle cx="30" cy="34" r="19"></circle>
+                                <circle cx="30" cy="34" r="11"></circle>
+                                <circle cx="30" cy="34" r="3"></circle>
+                                <path d="m52 12-16 16m5-16h11v11M36 28l-6 6"></path>
+                            </svg>
+                        </button>
                     </form>
                     <div class="auth-actions">
                         <button id="login-forgot-password-btn" class="auth-link" type="button">Code de reconnaissance oublié</button>
@@ -76,7 +92,7 @@
                     <form id="register-form" class="auth-form">
                         <label for="register-pseudo">Pseudo</label>
                         <input id="register-pseudo" name="pseudo" type="text" autocomplete="nickname" placeholder="Pseudo de guerre" required>
-                        <label for="register-email">Canal d'extraction direct du combattant</label>
+                        <label for="register-email">Canal d'infiltration du combattant</label>
                         <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <label for="register-password">Code de reconnaissance</label>
                         <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" title="Le code de reconnaissance doit contenir au moins 6 caractères." required>
@@ -135,7 +151,7 @@
                     <div class="terminal-panel-title">Récupération du code de reconnaissance</div>
                     <p id="reset-copy" class="terminal-copy">Renseignez votre adresse email pour recevoir un lien de réinitialisation.</p>
                     <form id="reset-request-form" class="auth-form">
-                        <label for="reset-email">Canal d'extraction direct du combattant</label>
+                        <label for="reset-email">Canal d'infiltration du combattant</label>
                         <input id="reset-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <p id="reset-request-message" class="auth-message" role="alert"></p>
                         <button class="btn-main" type="submit">Envoyer le lien de récupération</button>
