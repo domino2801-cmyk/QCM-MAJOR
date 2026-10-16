@@ -6,7 +6,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const pages = [
     ["mentions-legales", "Mentions légales"],
-    ["politique-confidentialite", "Politique de confidentialité"]
+    ["confidentialite", "Confidentialité"]
 ];
 
 test("legal links are in a shared footer after the app screens", () => {
@@ -17,6 +17,7 @@ test("legal links are in a shared footer after the app screens", () => {
     for (const [id, title] of pages) {
         assert.ok(footer[1].includes(`<a href="#${id}">${title}</a>`));
     }
+    assert.doesNotMatch(footer[1], /Politique de confidentialité/);
 });
 
 test("French legal sections have static anchor targets and return links", () => {
@@ -34,10 +35,10 @@ test("French legal sections have static anchor targets and return links", () => 
     assert.match(sections.get("mentions-legales"), /GitHub Pages/);
     assert.match(sections.get("mentions-legales"), /Supabase \(région eu-west-1\)/);
     assert.match(sections.get("mentions-legales"), /libres de droits d’auteur/);
-    assert.doesNotMatch(sections.get("politique-confidentialite"), /Modèle à compléter par l’éditeur avant publication/);
-    assert.match(sections.get("politique-confidentialite"), /Responsable du traitement et contact privé : Domino2801/);
-    assert.match(sections.get("politique-confidentialite"), /domino2801@gmail\.com/);
-    assert.match(sections.get("politique-confidentialite"), /Durée de conservation : 1 an pour les comptes inactifs, les résultats, les signalements et les sauvegardes/);
+    assert.doesNotMatch(sections.get("confidentialite"), /Modèle à compléter par l’éditeur avant publication/);
+    assert.match(sections.get("confidentialite"), /Responsable du traitement et contact privé : Domino2801/);
+    assert.match(sections.get("confidentialite"), /domino2801@gmail\.com/);
+    assert.match(sections.get("confidentialite"), /Durée de conservation : 1 an pour les comptes inactifs, les résultats, les signalements et les sauvegardes/);
     assert.match(html, /classement public/);
     assert.match(html, /localStorage et sessionStorage/);
     assert.match(html, /Vos droits/);
@@ -46,6 +47,6 @@ test("French legal sections have static anchor targets and return links", () => 
 test("legal navigation works through CSS anchors without app routing", () => {
     assert.match(css, /\.legal-section\s*\{[^}]*display:\s*none;/);
     assert.match(css, /\.legal-section:target\s*\{\s*display:\s*block;/);
-    assert.match(css, /\.legal-footer nav\s*\{[^}]*flex-wrap:\s*wrap;/);
+    assert.match(css, /\.legal-footer nav\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/);
     assert.match(css, /\.legal-footer a:focus-visible,\s*\.legal-section a:focus-visible\s*\{[^}]*outline:/);
 });

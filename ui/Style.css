@@ -127,10 +127,10 @@ body {
 }
 
 .legal-footer nav {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: center;
-    gap: 12px 24px;
+    gap: 12px;
     text-align: center;
 }
 
