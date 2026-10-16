@@ -20,13 +20,21 @@ test("legal links are in a shared footer after the app screens", () => {
 });
 
 test("French legal sections have static anchor targets and return links", () => {
-    for (const [id, title] of pages) {
+    const sections = new Map(pages.map(([id, title]) => {
         const section = html.match(new RegExp(`<section id="${id}" class="legal-section" tabindex="-1" aria-labelledby="${id}-title">([\\s\\S]*?)<\\/section>`));
         assert.ok(section, `Missing static section: ${id}`);
         assert.ok(section[1].includes(`<h2 id="${id}-title">${title}</h2>`));
-        assert.match(section[1], /Modèle à compléter par l’éditeur avant publication/);
         assert.match(section[1], /<a href="#legal-links">Retour à l’application<\/a>/);
-    }
+        return [id, section[1]];
+    }));
+    assert.doesNotMatch(sections.get("mentions-legales"), /Modèle à compléter par l’éditeur avant publication/);
+    assert.match(sections.get("mentions-legales"), /Éditeur : Domino2801/);
+    assert.match(sections.get("mentions-legales"), /Responsable de publication : Domino2801/);
+    assert.match(sections.get("mentions-legales"), /domino2801@gmail\.com/);
+    assert.match(sections.get("mentions-legales"), /GitHub Pages/);
+    assert.match(sections.get("mentions-legales"), /Supabase \(région eu-west-1\)/);
+    assert.match(sections.get("mentions-legales"), /libres de droits d’auteur/);
+    assert.match(sections.get("politique-confidentialite"), /Modèle à compléter par l’éditeur avant publication/);
     assert.match(html, /classement public/);
     assert.match(html, /localStorage et sessionStorage/);
     assert.match(html, /Vos droits/);
