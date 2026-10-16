@@ -44,15 +44,15 @@
                         <ol id="login-global-ranking-list" class="global-ranking-list"></ol>
                     </section>
                     <div class="auth-tabs" role="tablist" aria-label="Authentification">
-                        <button class="auth-tab active" type="button" data-auth-mode="login">Connexion</button>
-                        <button class="auth-tab" type="button" data-auth-mode="register">S'engager</button>
+                        <button class="auth-tab" type="button" data-auth-mode="register">S'enrôler</button>
+                        <button class="auth-tab active" type="button" data-auth-mode="login">Rallier l’unité</button>
                     </div>
                     <form id="login-form" class="auth-form">
                         <label for="login-email">Canal d'extraction direct du combattant</label>
                         <input id="login-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <label for="login-password">Code de reconnaissance</label>
                         <div class="password-input-wrap">
-                            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" required>
+                            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="............" title="Code de reconnaissance créé lors de l’enrôlement (6 caractères minimum)." required>
                             <button class="password-toggle" type="button" aria-label="Afficher le mot de passe" aria-pressed="false" aria-controls="login-password">
                                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                     <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path>
@@ -70,8 +70,8 @@
                 </section>
                 <section id="register-view" class="auth-view hidden">
                     <div class="auth-tabs" role="tablist" aria-label="Création de compte">
-                        <button class="auth-tab" type="button" data-auth-mode="login">Connexion</button>
-                        <button class="auth-tab active" type="button" data-auth-mode="register">S'engager</button>
+                        <button class="auth-tab active" type="button" data-auth-mode="register">S'enrôler</button>
+                        <button class="auth-tab" type="button" data-auth-mode="login">Rallier l’unité</button>
                     </div>
                     <form id="register-form" class="auth-form">
                         <label for="register-pseudo">Pseudo</label>
@@ -79,7 +79,7 @@
                         <label for="register-email">Canal d'extraction direct du combattant</label>
                         <input id="register-email" name="email" type="email" autocomplete="email" placeholder="candidat@opérateur.fr" required>
                         <label for="register-password">Code de reconnaissance</label>
-                        <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" required>
+                        <input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" placeholder="............" title="Le code de reconnaissance doit contenir au moins 6 caractères." required>
                         <label for="register-specialty">Spécialité BM4</label>
                         <select id="register-specialty" name="specialty" required>
                             <option value="">Sélectionner une spécialité</option>

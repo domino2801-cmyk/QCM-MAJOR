@@ -26,6 +26,10 @@ test("register markup keeps required ids and HTML5 constraints", () => {
     ].forEach(fragment => assert.ok(html.includes(fragment), `Missing markup fragment: ${fragment}`));
 
     assert.match(html, /id="register-password"[^>]*minlength="6"/);
+    assert.match(html, /id="register-password"[^>]*title="Le code de reconnaissance doit contenir au moins 6 caractères\."/);
+    assert.match(html, /id="login-password"[^>]*title="Code de reconnaissance créé lors de l’enrôlement \(6 caractères minimum\)\."/);
+    assert.match(html, /data-auth-mode="register">S'enrôler<\/button>\s*<button class="auth-tab active" type="button" data-auth-mode="login">Rallier l’unité<\/button>/);
+    assert.match(html, /data-auth-mode="register" class="auth-tab active"|class="auth-tab active" type="button" data-auth-mode="register">S'enrôler<\/button>\s*<button class="auth-tab" type="button" data-auth-mode="login">Rallier l’unité<\/button>/);
     assert.match(html, /id="register-specialty"[^>]*required/);
     assert.equal((html.match(/Canal d'extraction direct du combattant/g) || []).length, 3);
     assert.match(html, /<label for="login-password">Code de reconnaissance<\/label>/);
