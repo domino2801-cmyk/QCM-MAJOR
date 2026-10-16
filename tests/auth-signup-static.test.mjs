@@ -20,6 +20,7 @@ test("register markup keeps required ids and HTML5 constraints", () => {
         'id="register-password"',
         'id="register-specialty"',
         'id="register-message"',
+        ">Valider l’enrôlement</button>",
         'id="otp-view"',
         'id="otp-form"',
         'id="otp-email-display"'

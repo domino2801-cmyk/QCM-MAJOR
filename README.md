@@ -337,7 +337,7 @@ Le flux candidat attendu est :
 4. Finalisation du profil dans `profiles`
 5. Connexion email/mot de passe et récupération de mot de passe via email
 
-### Diagnostic rapide si le bouton « Créer mon compte » semble ne rien faire
+### Diagnostic rapide si le bouton « Valider l’enrôlement » semble ne rien faire
 
 - Si un champ requis est vide ou invalide (email, mot de passe < 6 caractères, spécialité non choisie), l’application doit maintenant afficher la cause directement dans `register-message`.
 - Si le message indique qu’il est impossible de joindre Supabase, vérifier :
