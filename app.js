@@ -3374,6 +3374,7 @@ async function initializeAppInteractions() {
     // =========================================================
 
     const startButton = document.getElementById("start-btn");
+    const startGuidance = document.getElementById("theme-start-guidance");
     const themeSelect = document.getElementById("theme-select");
     const qtyInput = document.getElementById("qty-theme");
     const qtyButtons = [...document.querySelectorAll(".qty-choice-btn")];
@@ -3397,14 +3398,22 @@ async function initializeAppInteractions() {
     const clampQuestionCount = (requested, maxAllowed) =>
         Math.min(Math.max(requested, 1), Math.max(maxAllowed, 1));
 
+    const setStartGuidance = message => {
+        if (!startGuidance) return;
+        startGuidance.textContent = message;
+        startGuidance.hidden = !message;
+    };
+
     const enableStartButton = (themeId) => {
         selectedTheme = themeId;
         updateQuestionRotationStatus(themeId);
         maxQuestions = parseInt(qtyInput?.value, 10) || 20;
+        const hasQuestions = getQuestionPool(themeId).length > 0;
 
         if (startButton) {
-            startButton.disabled = getQuestionPool(themeId).length === 0;
+            startButton.disabled = !hasQuestions;
         }
+        setStartGuidance(hasQuestions ? "" : "Aucune question n’est disponible pour cette zone.");
     };
 
     const applySelectedTheme = () => {
@@ -3417,6 +3426,7 @@ async function initializeAppInteractions() {
             if (globalButton) globalButton.classList.remove("active");
             if (trainingButton) trainingButton.classList.remove("active");
             if (startButton) startButton.disabled = true;
+            setStartGuidance("Sélectionnez une zone d’opération ou un combat pour continuer.");
             return;
         }
 
@@ -3460,6 +3470,7 @@ async function initializeAppInteractions() {
         if (globalButton) globalButton.classList.toggle("active", clickedButton === globalButton);
         if (trainingButton) trainingButton.classList.toggle("active", clickedButton === trainingButton);
         if (startButton) startButton.disabled = false;
+        setStartGuidance("");
         updateQuestionRotationStatus("all");
     };
 

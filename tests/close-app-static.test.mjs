@@ -99,7 +99,7 @@ test("BM4 exam-style campaign keeps a dedicated button", () => {
     assert.match(html, /class="qty-choice-btn" data-qty="30"/);
     assert.match(html, />ZONE OPERATION BRIGADE</);
     assert.match(html, />Sélection de l'objectif</);
-    assert.match(html, />Intensité</);
+    assert.match(html, />INTENSITÉ DU COMBAT</);
     assert.match(html, />Déclencher l'offensive</);
 });
 

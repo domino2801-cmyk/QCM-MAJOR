@@ -17,7 +17,7 @@ test("restored stylesheet retains history and mobile layout rules through its en
     assert.match(css, /#candidate-history-status,\s*#candidate-history-sync-status\s*\{\s*text-align:\s*center;/);
     assert.match(css, /\.candidate-history-recommendation\s*\{/);
     assert.match(css, /@media \(max-width: 600px\)\s*\{\s*#theme-screen/);
-    assert.match(css, /\.qty-choice-btn\s*\{\s*min-height:\s*50px;\s*padding:\s*12px 4px;\s*font-size:\s*0\.9rem;\s*\}\s*\}\s*$/);
+    assert.match(css, /\.qty-choice-count\s*\{\s*font-size:\s*1\.05rem;\s*\}\s*\.qty-choice-level\s*\{\s*font-size:\s*0\.54rem;\s*letter-spacing:\s*0;\s*\}\s*\}\s*$/);
 });
 
 test("application markup is complete rather than truncated", () => {

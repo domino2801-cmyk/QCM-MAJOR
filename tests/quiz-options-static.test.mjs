@@ -18,10 +18,10 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=admin-mobile-20261011/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=legal-20261015/);
+    assert.match(indexHtml, /app\.js\?v=theme-guidance-20261016/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=combat-intensity-20261016/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
-    assert.match(css, /\.options-grid \.btn\.selected,\s*\.theme-selector-panel:has\(#theme-select option:checked:not\(\[value=""\]\)\) \.qty-choice-btn\.active,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
+    assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(31,\s*190,\s*101,\s*0\.72\),\s*rgba\(17,\s*113,\s*69,\s*0\.62\)\)/);
     assert.match(indexHtml, /id="quiz-timer"[^>]*hidden>[\s\S]*id="quiz-timer-display">60:00/);
     assert.match(css, /\.quiz-timer\.badge\[hidden\]\s*\{\s*display:\s*none;/);
@@ -41,10 +41,22 @@ test("quiz action buttons share the confirmation button style", () => {
 });
 
 test("intensity choices include 40 questions in a four-column row", () => {
-    assert.match(indexHtml, /class="qty-choice-btn" data-qty="40">40<\/button>/);
+    assert.match(indexHtml, /class="qty-choice-btn" data-qty="40" aria-pressed="false"><span class="qty-choice-count">40<\/span>/);
+    assert.match(indexHtml, /id="theme-start-guidance"[^>]*>Sélectionnez une zone d’opération ou un combat pour continuer\./);
+    assert.match(appJs, /setStartGuidance\(hasQuestions \? "" : "Aucune question n’est disponible pour cette zone\."\)/);
+    assert.match(appJs, /setStartGuidance\("Sélectionnez une zone d’opération ou un combat pour continuer\."\)/);
+    assert.match(appJs, /setStartGuidance\(""\);/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.qty-choice-row\s*\{[^}]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\);/);
+    assert.match(css, /\.theme-select-row\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);/);
     assert.match(css, /\.qty-choice-btn\s*\{[^}]*min-width:\s*0;[^}]*white-space:\s*nowrap;/);
+    assert.match(indexHtml, /data-qty="10"[^>]*>[\s\S]*qty-choice-level">Reconnaissance/);
+    assert.match(indexHtml, /data-qty="20"[^>]*>[\s\S]*qty-choice-level">Engagement/);
+    assert.match(indexHtml, /data-qty="30"[^>]*>[\s\S]*qty-choice-level">Assaut/);
+    assert.match(indexHtml, /data-qty="40"[^>]*>[\s\S]*qty-choice-level">Offensive/);
+    assert.match(css, /\.qty-choice-level\s*\{[^}]*font-size:\s*clamp\(0\.58rem,\s*1\.5vw,\s*0\.68rem\);/);
+    assert.match(css, /\.theme-start-guidance\s*\{[^}]*margin:\s*0;/);
+    assert.match(css, /\.theme-quantity-field \.qty-choice-btn\.active\s*\{[^}]*border-color:\s*#e2c36d;/);
     assert.doesNotMatch(css, /^\.qty-choice-btn\.active\s*\{/m);
     assert.match(css, /#theme-select:has\(option\[value=""\]:checked\)\s*\{\s*font-size:\s*0\.95rem;/);
 });

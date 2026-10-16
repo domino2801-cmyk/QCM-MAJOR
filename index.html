@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=legal-20261015">
+    <link rel="stylesheet" href="ui/Style.css?v=combat-intensity-20261016">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -299,18 +299,19 @@
                         </select>
                     </div>
                     <div class="theme-field theme-quantity-field">
-                        <span class="theme-select-label" id="qty-theme-label">Intensité</span>
+                        <span class="theme-select-label" id="qty-theme-label">INTENSITÉ DU COMBAT</span>
                         <div class="qty-choice-row" role="group" aria-labelledby="qty-theme-label">
-                            <button type="button" class="qty-choice-btn" data-qty="10">10</button>
-                            <button type="button" class="qty-choice-btn active" data-qty="20" aria-pressed="true">20</button>
-                            <button type="button" class="qty-choice-btn" data-qty="30">30</button>
-                            <button type="button" class="qty-choice-btn" data-qty="40">40</button>
+                            <button type="button" class="qty-choice-btn" data-qty="10" aria-pressed="false"><span class="qty-choice-count">10</span><span class="qty-choice-level">Reconnaissance</span></button>
+                            <button type="button" class="qty-choice-btn active" data-qty="20" aria-pressed="true"><span class="qty-choice-count">20</span><span class="qty-choice-level">Engagement</span></button>
+                            <button type="button" class="qty-choice-btn" data-qty="30" aria-pressed="false"><span class="qty-choice-count">30</span><span class="qty-choice-level">Assaut</span></button>
+                            <button type="button" class="qty-choice-btn" data-qty="40" aria-pressed="false"><span class="qty-choice-count">40</span><span class="qty-choice-level">Offensive</span></button>
                         </div>
                         <input type="hidden" id="qty-theme" value="20">
                     </div>
                 </div>
             </div>
             <p id="question-rotation-status" class="question-rotation-status hidden" aria-live="polite"></p>
+            <p id="theme-start-guidance" class="theme-start-guidance" role="status" aria-live="polite">Sélectionnez une zone d’opération ou un combat pour continuer.</p>
             <button id="start-btn" class="btn-main" disabled>Déclencher l'offensive</button>
             <div class="theme-bottom-actions">
                 <button id="btn-history-theme" class="btn-secondary" type="button" aria-expanded="false" aria-controls="candidate-history-panel">Journal de campagne</button>
@@ -403,6 +404,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=admin-mobile-20261011"></script>
+    <script type="module" src="app.js?v=theme-guidance-20261016"></script>
 </body>
 </html>
