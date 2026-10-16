@@ -3376,10 +3376,28 @@ async function initializeAppInteractions() {
     const startButton = document.getElementById("start-btn");
     const startGuidance = document.getElementById("theme-start-guidance");
     const themeSelect = document.getElementById("theme-select");
+    const objectiveButtons = [...document.querySelectorAll(".theme-objective-btn")];
     const qtyInput = document.getElementById("qty-theme");
     const qtyButtons = [...document.querySelectorAll(".qty-choice-btn")];
     const globalButton = document.getElementById("theme-global-btn");
     const trainingButton = document.getElementById("theme-training-btn");
+
+    const syncCampaignModeButtons = activeButton => {
+        [trainingButton, globalButton].forEach(button => {
+            if (!button) return;
+            const isActive = button === activeButton;
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
+    };
+
+    const syncObjectiveButtons = selectedThemeId => {
+        objectiveButtons.forEach(button => {
+            const isActive = button.dataset.theme === String(selectedThemeId || "");
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+        });
+    };
 
     const syncQtyChoiceButtons = value => {
         qtyButtons.forEach(btn => {
@@ -3423,8 +3441,8 @@ async function initializeAppInteractions() {
             selectedTheme = null;
             maxQuestions = 0;
             quizFeedbackMode = "training";
-            if (globalButton) globalButton.classList.remove("active");
-            if (trainingButton) trainingButton.classList.remove("active");
+            syncCampaignModeButtons(null);
+            syncObjectiveButtons(null);
             if (startButton) startButton.disabled = true;
             setStartGuidance("Sélectionnez une zone d’opération ou un combat pour continuer.");
             return;
@@ -3437,12 +3455,19 @@ async function initializeAppInteractions() {
         }
 
         quizFeedbackMode = "training";
-        if (globalButton) globalButton.classList.remove("active");
-        if (trainingButton) trainingButton.classList.remove("active");
+        syncCampaignModeButtons(null);
+        syncObjectiveButtons(themeId);
         enableStartButton(themeId);
     };
 
     themeSelect?.addEventListener("change", applySelectedTheme);
+    objectiveButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            if (!themeSelect) return;
+            themeSelect.value = button.dataset.theme;
+            themeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    });
     qtyButtons.forEach(btn => {
         btn.addEventListener("click", () => {
             const requested = parseInt(btn.dataset.qty, 10) || 20;
@@ -3467,8 +3492,8 @@ async function initializeAppInteractions() {
         if (qtyInput) {
             setQuestionCount(clampQuestionCount(50, getAllQuestions().length));
         }
-        if (globalButton) globalButton.classList.toggle("active", clickedButton === globalButton);
-        if (trainingButton) trainingButton.classList.toggle("active", clickedButton === trainingButton);
+        syncCampaignModeButtons(clickedButton);
+        syncObjectiveButtons(null);
         if (startButton) startButton.disabled = false;
         setStartGuidance("");
         updateQuestionRotationStatus("all");

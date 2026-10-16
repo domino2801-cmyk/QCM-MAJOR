@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=combat-intensity-20261016">
+    <link rel="stylesheet" href="ui/Style.css?v=compact-geography-20261016">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -280,15 +280,19 @@
                 <p class="subtitle">Préparation au combat du BM4</p>
                 <p id="account-summary" class="account-summary-under"> </p>
                 <p id="connection-status" class="connection-status" aria-live="polite"></p>
-            <div class="theme-selector-panel">
-                <div class="theme-mode-row">
-                    <button id="theme-training-btn" class="theme-global-btn" type="button">SIMULATION DE COMBAT<span class="theme-mode-detail">50 questions • correction immédiate</span></button>
-                    <button id="theme-global-btn" class="theme-global-btn" type="button">COMBAT DE HAUTE INTENSITE<span class="theme-mode-detail">50 questions • sans correction • Chronométré</span></button>
-                </div>
-                <div class="theme-select-row">
-                    <div class="theme-field">
-                        <label for="theme-select" class="theme-select-label">ZONE OPERATION BRIGADE</label>
-                        <select id="theme-select" aria-label="Choisir une zone d'opération">
+                <div class="theme-selector-panel">
+                    <div class="theme-select-row">
+                        <div class="theme-field">
+                            <span class="theme-select-label" id="objective-label">ZONE GÉOGRAPHIQUE BRIGADE</span>
+                        <div class="theme-objective-grid" role="group" aria-labelledby="objective-label">
+                            <button type="button" class="theme-objective-btn" data-theme="1" aria-pressed="false"><span class="theme-objective-name">Organisation et Commandement</span></button>
+                            <button type="button" class="theme-objective-btn" data-theme="2" aria-pressed="false"><span class="theme-objective-name">Matériels, Armements et Technologies</span></button>
+                            <button type="button" class="theme-objective-btn" data-theme="3" aria-pressed="false"><span class="theme-objective-name">Lois de Programmation Militaire</span></button>
+                            <button type="button" class="theme-objective-btn" data-theme="4" aria-pressed="false"><span class="theme-objective-name">Opérations Extérieures</span></button>
+                            <button type="button" class="theme-objective-btn" data-theme="5" aria-pressed="false"><span class="theme-objective-name">Histoire &amp; Traditions</span></button>
+                            <button type="button" class="theme-objective-btn" data-theme="6" aria-pressed="false"><span class="theme-objective-name">Implantation des unités</span></button>
+                        </div>
+                        <select id="theme-select" class="theme-objective-native-select" aria-hidden="true" tabindex="-1">
                             <option value="">Sélection de l'objectif</option>
                             <option value="1">Organisation et Commandement</option>
                             <option value="2">Matériels, Armements et Technologies</option>
@@ -307,6 +311,15 @@
                             <button type="button" class="qty-choice-btn" data-qty="40" aria-pressed="false"><span class="qty-choice-count">40</span><span class="qty-choice-level">Offensive</span></button>
                         </div>
                         <input type="hidden" id="qty-theme" value="20">
+                    </div>
+                </div>
+            </div>
+            <div class="theme-selector-panel theme-high-intensity-panel">
+                <div class="theme-field theme-campaign-field">
+                    <span class="theme-select-label" id="campaign-mode-label">ZONE HAUTE INTENSITÉ</span>
+                    <div class="theme-mode-row" role="group" aria-labelledby="campaign-mode-label">
+                        <button id="theme-training-btn" class="theme-global-btn" type="button" aria-pressed="false">SIMULATION DE COMBAT<span class="theme-mode-detail">50 questions • correction immédiate</span></button>
+                        <button id="theme-global-btn" class="theme-global-btn" type="button" aria-pressed="false">COMBAT DE HAUTE INTENSITE<span class="theme-mode-detail">50 questions • sans correction • Chronométré</span></button>
                     </div>
                 </div>
             </div>
@@ -404,6 +417,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=theme-guidance-20261016"></script>
+    <script type="module" src="app.js?v=objective-cards-20261016"></script>
 </body>
 </html>

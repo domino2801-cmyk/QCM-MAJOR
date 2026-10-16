@@ -82,10 +82,15 @@ test("close-app button is hidden on the candidate theme screen", () => {
     assert.match(css, /body:has\(#history-screen\.active\) \.close-app[\s,]/);
 });
 
-test("theme selection uses a single dropdown selector instead of five buttons", () => {
-    assert.match(html, /id="theme-select"/);
+test("theme selection presents six accessible objective cards backed by the theme selector", () => {
+    assert.match(html, /id="theme-select" class="theme-objective-native-select" aria-hidden="true" tabindex="-1"/);
+    assert.match(html, /class="theme-objective-grid" role="group" aria-labelledby="objective-label"/);
+    assert.equal((html.match(/class="theme-objective-btn" data-theme="/g) || []).length, 6);
+    assert.doesNotMatch(html, /theme-objective-index|>0[1-6]<\/span>/);
     assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="1"/);
     assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="5"/);
+    assert.match(js, /objectiveButtons\.forEach\(button => \{/);
+    assert.match(js, /themeSelect\.dispatchEvent\(new Event\("change", \{ bubbles: true \}\)\)/);
 });
 
 test("BM4 exam-style campaign keeps a dedicated button", () => {
@@ -93,11 +98,12 @@ test("BM4 exam-style campaign keeps a dedicated button", () => {
     assert.match(html, /COMBAT DE HAUTE INTENSITE/);
     assert.match(html, /id="theme-training-btn"/);
     assert.match(html, /SIMULATION DE COMBAT/);
+    assert.match(html, /id="campaign-mode-label">ZONE HAUTE INTENSITÉ<\/span>/);
     assert.match(html, /id="qty-theme" value="20"/);
     assert.match(html, /class="qty-choice-btn" data-qty="10"/);
     assert.match(html, /class="qty-choice-btn active" data-qty="20"/);
     assert.match(html, /class="qty-choice-btn" data-qty="30"/);
-    assert.match(html, />ZONE OPERATION BRIGADE</);
+    assert.match(html, />ZONE GÉOGRAPHIQUE BRIGADE</);
     assert.match(html, />Sélection de l'objectif</);
     assert.match(html, />INTENSITÉ DU COMBAT</);
     assert.match(html, />Déclencher l'offensive</);
@@ -111,6 +117,7 @@ test("btn-new-mission returns to theme selection and resets the current selectio
     );
 
     const listeners = new Map();
+    let stopQuizTimerCalled = false;
     const context = {
         document: {
             getElementById(id) {
@@ -132,6 +139,9 @@ test("btn-new-mission returns to theme selection and resets the current selectio
 
                 assert.fail(`unexpected id: ${id}`);
             }
+        },
+        stopQuizTimer() {
+            stopQuizTimerCalled = true;
         },
         uiController: {
             resetThemeSelectionCalled: false,
@@ -155,6 +165,7 @@ test("btn-new-mission returns to theme selection and resets the current selectio
     const clickHandler = listeners.get("click");
     assert.equal(typeof clickHandler, "function");
     clickHandler();
+    assert.equal(stopQuizTimerCalled, true);
     assert.equal(context.selectedTheme, null);
     assert.equal(context.maxQuestions, 0);
     assert.equal(context.uiController.resetThemeSelectionCalled, true);

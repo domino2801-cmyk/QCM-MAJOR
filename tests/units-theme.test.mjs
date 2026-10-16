@@ -11,12 +11,12 @@ const theme = readFileSync(new URL("../modules/questions-bank/theme-6.js", impor
 const locations = readFileSync(new URL("../modules/questions-bank/unit-locations.js", import.meta.url), "utf8").replace(/export /g, "");
 
 test("le thème 6 vide est disponible côté candidat et administrateur avec les bons identifiants", () => {
-    assert.match(html, /value="6">6\. Implantation des unités/);
-    assert.match(html, /value="5">6\. Implantation des unités/);
+    assert.match(html, /<option value="6">Implantation des unités<\/option>/);
+    assert.match(html, /<option value="5">6\. Implantation des unités<\/option>/);
     assert.match(bank, /"5": deduplicateTheme\(theme6\)/);
     assert.match(theme, /questions: \[\]/);
-    assert.match(app, /6: "6\. Implantation des unités"/);
-    assert.match(app, /startButton\.disabled = getQuestionPool\(themeId\)\.length === 0/);
+    assert.match(app, /6: "Implantation des unités"/);
+    assert.match(app, /startButton\.disabled = !hasQuestions/);
     assert.match(app, /clampQuestionCount\(requested, poolSize\)/);
 });
 

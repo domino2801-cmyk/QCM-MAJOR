@@ -35,6 +35,6 @@ test("application markup is complete rather than truncated", () => {
     ]) {
         assert.ok(html.includes(`id="${id}"`), `${id} should be present`);
     }
-    assert.match(html, /<option value="5">6\. Implantation des unités<\/option><\/select>/);
-    assert.match(html, /<option value="6">6\. Implantation des unités<\/option>/);
+    assert.match(html, /<option value="5">Histoire &amp; Traditions<\/option>/);
+    assert.match(html, /<option value="6">Implantation des unités<\/option>\s*<\/select>/);
 });

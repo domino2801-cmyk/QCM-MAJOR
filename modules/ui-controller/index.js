@@ -70,7 +70,18 @@ export const uiController = {
         if (qtyInput) qtyInput.value = 5;
 
         const globalBtn = document.getElementById("theme-global-btn");
-        if (globalBtn) globalBtn.classList.remove("active");
+        if (globalBtn) {
+            globalBtn.classList.remove("active");
+            globalBtn.setAttribute("aria-pressed", "false");
+        }
+
+        const trainingBtn = document.getElementById("theme-training-btn");
+        [trainingBtn, ...document.querySelectorAll(".theme-objective-btn")]
+            .filter(Boolean)
+            .forEach(button => {
+                button.classList.remove("active");
+                button.setAttribute("aria-pressed", "false");
+            });
 
         const startBtn = document.getElementById("start-btn");
         if (startBtn) startBtn.disabled = true;
