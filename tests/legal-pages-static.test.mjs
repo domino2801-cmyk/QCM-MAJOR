@@ -34,7 +34,10 @@ test("French legal sections have static anchor targets and return links", () => 
     assert.match(sections.get("mentions-legales"), /GitHub Pages/);
     assert.match(sections.get("mentions-legales"), /Supabase \(région eu-west-1\)/);
     assert.match(sections.get("mentions-legales"), /libres de droits d’auteur/);
-    assert.match(sections.get("politique-confidentialite"), /Modèle à compléter par l’éditeur avant publication/);
+    assert.doesNotMatch(sections.get("politique-confidentialite"), /Modèle à compléter par l’éditeur avant publication/);
+    assert.match(sections.get("politique-confidentialite"), /Responsable du traitement et contact privé : Domino2801/);
+    assert.match(sections.get("politique-confidentialite"), /domino2801@gmail\.com/);
+    assert.match(sections.get("politique-confidentialite"), /Durée de conservation : 1 an pour les comptes inactifs, les résultats, les signalements et les sauvegardes/);
     assert.match(html, /classement public/);
     assert.match(html, /localStorage et sessionStorage/);
     assert.match(html, /Vos droits/);
