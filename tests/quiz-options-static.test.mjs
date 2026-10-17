@@ -18,7 +18,7 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=question-bank-instance-fix-20261017/);
+    assert.match(indexHtml, /app\.js\?v=detailed-question-correction-20261017/);
     assert.match(indexHtml, /ui\/Style\.css\?v=server-grading-20261017/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
@@ -144,7 +144,7 @@ function createContainer(initialChildren = []) {
     };
 }
 
-test("afficherSituation renders answer buttons in #options-grid and reuses #skip-btn", () => {
+test("afficherSituation renders answer buttons in #options-grid and reuses #skip-btn", async () => {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
     const afficherSituationSource = extractFunction(appJs, "afficherSituation");
@@ -198,6 +198,9 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
             }
         },
         reviewItems: [],
+        async gradeSupabaseQuestionAnswer() {
+            return { correctIndex: 1, isCorrect: false };
+        },
         playAnswerSound() {},
         verrouillerOptions() {},
         marquerBoutons(selected, correct) {
@@ -227,7 +230,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     assert.equal(skipButton.disabled, false);
     assert.equal(typeof skipButton.onclick, "function");
 
-    skipButton.onclick();
+    await skipButton.onclick();
 
     assert.equal(skipAnswer, null);
     assert.equal(scheduled.length, 0);

@@ -9,6 +9,10 @@ const migration = readFileSync(
     path.join(root, "supabase", "migrations", "20261017192000_server_side_question_grading.sql"),
     "utf8"
 );
+const correctionMigration = readFileSync(
+    path.join(root, "supabase", "migrations", "20261017193000_return_question_correction_index.sql"),
+    "utf8"
+);
 const app = readFileSync(path.join(root, "app.js"), "utf8");
 const questionBankDirectory = path.join(root, "modules", "questions-bank");
 
@@ -32,6 +36,15 @@ test("les RPC de correction et de lecture admin sont protégées et ne renvoient
     assert.match(migration, /not coalesce\(\([\s\S]*?bm4_admin[\s\S]*?\), false\)/i);
     assert.match(migration, /Administrator access required/);
     assert.match(migration, /grant execute on function public\.grade_question_answer\(text, integer\) to authenticated/i);
+});
+
+test("la correction renvoie uniquement l’index de la bonne option, même pour une question passée", () => {
+    assert.match(correctionMigration, /drop function public\.grade_question_answer\(text, integer\)/i);
+    assert.match(correctionMigration, /create function public\.grade_question_answer[\s\S]*?returns integer[\s\S]*?security definer[\s\S]*?set search_path = ''/i);
+    assert.match(correctionMigration, /p_selected_index is not null[\s\S]*?p_selected_index < 0 or p_selected_index > 3/i);
+    assert.match(correctionMigration, /return correct_index/i);
+    assert.match(correctionMigration, /grant execute on function public\.grade_question_answer\(text, integer\) to authenticated/i);
+    assert.match(app, /correctIndex: await supabaseRestRequest|const correctIndex = await supabaseRestRequest/);
 });
 
 test("les corrigés ne sont plus inclus dans le JavaScript envoyé aux candidats", () => {

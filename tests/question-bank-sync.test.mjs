@@ -205,7 +205,7 @@ test("l’administration obtient les corrigés uniquement par RPC paginée", asy
     assert.equal(result.questions[0].correct, 2);
 });
 
-test("la correction envoie le choix au serveur et ne reçoit qu’un booléen", async () => {
+test("la correction transmet l’index choisi et reçoit l’index corrigé", async () => {
     const calls = [];
     const context = {
         supabase: {},
@@ -213,7 +213,7 @@ test("la correction envoie le choix au serveur et ne reçoit qu’un booléen", 
         getStoredSupabaseSession: () => ({ access_token: "candidate-token" }),
         supabaseRestRequest: async (...args) => {
             calls.push(args);
-            return false;
+            return 2;
         },
         String,
         Number,
@@ -223,13 +223,35 @@ test("la correction envoie le choix au serveur et ne reçoit qu’un booléen", 
 
     const result = await context.gradeSupabaseQuestionAnswer("42", 1);
 
-    assert.equal(result, false);
+    assert.deepEqual(JSON.parse(JSON.stringify(result)), { correctIndex: 2, isCorrect: false });
     assert.equal(calls[0][0], "/rpc/grade_question_answer");
     assert.equal(calls[0][1].method, "POST");
     assert.deepEqual(JSON.parse(JSON.stringify(calls[0][1].body)), {
         p_question_id: "42",
         p_selected_index: 1
     });
+});
+
+test("la correction serveur renvoie la bonne option quand une question est passée", async () => {
+    const calls = [];
+    const context = {
+        supabase: {},
+        currentAuthenticatedAccount: { id: "candidate-1" },
+        getStoredSupabaseSession: () => ({ access_token: "candidate-token" }),
+        supabaseRestRequest: async (...args) => {
+            calls.push(args);
+            return 2;
+        },
+        String,
+        Number,
+        Error
+    };
+    vm.runInNewContext(gradeSupabaseQuestionAnswer, context);
+
+    const result = await context.gradeSupabaseQuestionAnswer("42", null);
+
+    assert.deepEqual(JSON.parse(JSON.stringify(result)), { correctIndex: 2, isCorrect: false });
+    assert.equal(calls[0][1].body.p_selected_index, null);
 });
 
 test("un chargement Supabase réussi utilise directement la banque distante sans copier la banque locale", async () => {

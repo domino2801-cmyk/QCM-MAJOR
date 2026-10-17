@@ -203,7 +203,10 @@ function createQuizFlowHarness({
                 return gradeAnswerBehavior(this.quizEngine.getCurrent(), selectedIndex);
             }
             const current = context.quizEngine.getCurrent();
-            return selectedIndex === current.correct;
+            return {
+                correctIndex: current.correct,
+                isCorrect: selectedIndex !== null && selectedIndex === current.correct
+            };
         },
         document: {
             getElementById(id) {
@@ -498,7 +501,7 @@ test("exam hides live points after answers and preserves the final result breakd
     await harness.optionsGrid.children[1].onclick();
     assertHiddenPoints();
     await advanceQuiz(harness);
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
     assertHiddenPoints();
     await advanceQuiz(harness);
 
@@ -537,7 +540,7 @@ test("exam answers stay editable and are recorded only after moving to the next 
     assert.equal(harness.context.quizEngine.stats.wrong, 0);
     assert.equal(harness.context.reviewItems.length, 0);
 
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
     assert.equal(harness.skipButton.classList.contains("selected"), true);
     assert.equal(harness.nextQuestionButton.disabled, false);
     await harness.optionsGrid.children[1].onclick();
@@ -562,7 +565,7 @@ test("exam skip can be selected and remains editable until next question", async
     harness.context.afficherSituation();
 
     await harness.optionsGrid.children[2].onclick();
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
     assert.equal(harness.optionsGrid.children[2].classList.contains("selected"), false);
     assert.equal(harness.skipButton.classList.contains("selected"), true);
     assert.equal(harness.context.quizEngine.index, 0);
@@ -649,7 +652,7 @@ test("expiry strictly blocks late answers and saves unanswered questions once af
     const lateAnswer = harness.optionsGrid.children[0].onclick;
     harness.context.quizTimerDeadline = Date.now() - 1;
     lateAnswer();
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
     harness.nextQuestionButton.onclick();
     harness.context.afficherSituation();
 
@@ -778,8 +781,8 @@ test("last skipped question is counted once and saved in the final note", async 
     const harness = createQuizFlowHarness();
 
     harness.context.afficherSituation();
-    harness.skipButton.onclick();
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
+    await harness.skipButton.onclick();
 
     assert.equal(harness.scheduled.length, 0);
     assert.equal(harness.progress.innerText, "Question 1 / 1");
@@ -833,7 +836,7 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
     assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     await advanceQuiz(harness);
@@ -864,6 +867,9 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.context.reviewItems[0].type, "wrong");
     assert.equal(harness.context.reviewItems[1].type, "skipped");
     assert.equal(harness.context.reviewItems[2].type, "wrong");
+    assert.equal(harness.context.reviewItems[0].correct, "C2");
+    assert.equal(harness.context.reviewItems[1].correct, "B3");
+    assert.equal(harness.context.reviewItems[2].correct, "B5");
 });
 
 test("final screen renders immediately even if remote result sync stays pending", async () => {
@@ -891,7 +897,7 @@ test("final screen still renders when remote result sync fails", async () => {
     });
 
     harness.context.afficherSituation();
-    harness.skipButton.onclick();
+    await harness.skipButton.onclick();
     assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
     await advanceQuiz(harness);
 
@@ -1089,7 +1095,7 @@ test("final screen still renders when answer marking fails on the last answer", 
             }
         },
         async gradeSupabaseQuestionAnswer() {
-            return true;
+            return { correctIndex: 1, isCorrect: true };
         },
         document: {
             getElementById(id) {

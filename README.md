@@ -25,7 +25,7 @@ QCM-MAJOR propose des quiz thématiques ou globaux dans une interface adaptée a
 - synthèse finale avec réponses correctes, fausses, passées et points ;
 - signalement d’erreurs sur les questions ;
 - espace d’administration pour gérer les comptes, questions, résultats et signalements ;
-- correction des réponses par Supabase, sans envoyer les corrigés au navigateur des candidats.
+- correction des réponses par Supabase ; la bonne option est transmise après la réponse afin d’alimenter la revue du bilan, sans être incluse dans la banque de questions initiale.
 
 Le frontend statique est déployé sur GitHub Pages. Supabase fournit l’authentification, les données et les fonctions serveur nécessaires. Les quiz nécessitent une session en ligne ; la correction hors connexion n’est pas prise en charge.
 

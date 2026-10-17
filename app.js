@@ -1036,11 +1036,12 @@ async function gradeSupabaseQuestionAnswer(questionId, selectedIndex) {
     if (!supabase || !accessToken || !currentAuthenticatedAccount?.id) {
         throw new Error("Une connexion active est nécessaire pour corriger la réponse.");
     }
-    if (questionId == null || !Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 3) {
+    if (questionId == null || (selectedIndex !== null
+        && (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 3))) {
         throw new Error("La question ou la réponse sélectionnée est invalide.");
     }
 
-    const isCorrect = await supabaseRestRequest("/rpc/grade_question_answer", {
+    const correctIndex = await supabaseRestRequest("/rpc/grade_question_answer", {
         method: "POST",
         accessToken,
         body: {
@@ -1048,10 +1049,13 @@ async function gradeSupabaseQuestionAnswer(questionId, selectedIndex) {
             p_selected_index: selectedIndex
         }
     });
-    if (typeof isCorrect !== "boolean") {
+    if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) {
         throw new Error("Le serveur n’a pas renvoyé de correction valide.");
     }
-    return isCorrect;
+    return {
+        correctIndex,
+        isCorrect: selectedIndex !== null && selectedIndex === correctIndex
+    };
 }
 
 async function loadQuestionsFromSupabase(expectedAccessToken = null) {
@@ -4367,9 +4371,9 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             }
             questionTransitionLocked = true;
             verrouillerOptions();
-            let isCorrect;
+            let correction;
             try {
-                isCorrect = await gradeSupabaseQuestionAnswer(q.id, index);
+                correction = await gradeSupabaseQuestionAnswer(q.id, index);
             } catch (error) {
                 console.error("Correction de la réponse impossible.", error);
                 questionTransitionLocked = false;
@@ -4380,18 +4384,19 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             }
             if (isQuizTimeExpired(activeQuizRunId)) return;
             if (answerStatus) answerStatus.innerText = "";
-            playAnswerSound(isCorrect);
-            if (!isCorrect) {
+            playAnswerSound(correction.isCorrect);
+            if (!correction.isCorrect) {
                 reviewItems.push({
                     type: "wrong",
                     question: q.q,
-                    selected: optionText
+                    selected: optionText,
+                    correct: answers[correction.correctIndex]
                 });
             }
-            const encore = quizEngine.answer(index, isCorrect);
+            const encore = quizEngine.answer(index, correction.isCorrect);
             updateLivePoints();
             try {
-                marquerBoutons(index, isCorrect);
+                marquerBoutons(index, correction.isCorrect);
             } catch (error) {
                 console.warn("Marquage des réponses indisponible.", error);
             }
@@ -4404,7 +4409,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
 
     // Bouton skip
     skip.disabled = false;
-    skip.onclick = () => {
+    skip.onclick = async () => {
         if (isQuizTimeExpired(activeQuizRunId)) return;
         if (questionTransitionLocked) return;
         if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
@@ -4419,9 +4424,23 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         }
         questionTransitionLocked = true;
         verrouillerOptions();
+        let correction;
+        try {
+            correction = await gradeSupabaseQuestionAnswer(q.id, null);
+        } catch (error) {
+            console.error("Correction de la question passée impossible.", error);
+            questionTransitionLocked = false;
+            Array.from(optionsGrid.children).forEach(option => option.disabled = false);
+            skip.disabled = false;
+            if (answerStatus) answerStatus.innerText = "Correction serveur indisponible. Vérifiez votre connexion et réessayez.";
+            return;
+        }
+        if (isQuizTimeExpired(activeQuizRunId)) return;
+        if (answerStatus) answerStatus.innerText = "";
         reviewItems.push({
             type: "skipped",
-            question: q.q
+            question: q.q,
+            correct: answers[correction.correctIndex]
         });
         const encore = quizEngine.answer(null, false);
         updateLivePoints();
@@ -4440,15 +4459,29 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             questionTransitionLocked = true;
             verrouillerOptions();
             if (pendingExamAnswer === null) {
+                let correction;
+                try {
+                    correction = await gradeSupabaseQuestionAnswer(q.id, null);
+                } catch (error) {
+                    console.error("Correction de la question passée impossible.", error);
+                    questionTransitionLocked = false;
+                    Array.from(optionsGrid.children).forEach(option => option.disabled = false);
+                    skip.disabled = false;
+                    nextQuestion.disabled = false;
+                    if (answerStatus) answerStatus.innerText = "Correction serveur indisponible. Vérifiez votre connexion et réessayez.";
+                    return;
+                }
+                if (isQuizTimeExpired(activeQuizRunId)) return;
                 reviewItems.push({
                     type: "skipped",
-                    question: q.q
+                    question: q.q,
+                    correct: answers[correction.correctIndex]
                 });
                 quizEngine.answer(null, false);
             } else {
-                let isCorrect;
+                let correction;
                 try {
-                    isCorrect = await gradeSupabaseQuestionAnswer(q.id, pendingExamAnswer);
+                    correction = await gradeSupabaseQuestionAnswer(q.id, pendingExamAnswer);
                 } catch (error) {
                     console.error("Correction de la réponse impossible.", error);
                     questionTransitionLocked = false;
@@ -4459,14 +4492,15 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
                     return;
                 }
                 if (isQuizTimeExpired(activeQuizRunId)) return;
-                if (!isCorrect) {
+                if (!correction.isCorrect) {
                     reviewItems.push({
                         type: "wrong",
                         question: q.q,
-                        selected: answers[pendingExamAnswer]
+                        selected: answers[pendingExamAnswer],
+                        correct: answers[correction.correctIndex]
                     });
                 }
-                quizEngine.answer(pendingExamAnswer, isCorrect);
+                quizEngine.answer(pendingExamAnswer, correction.isCorrect);
             }
             pendingExamAnswer = undefined;
             if (answerStatus) answerStatus.innerText = "";
