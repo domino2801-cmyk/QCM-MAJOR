@@ -3838,49 +3838,110 @@ async function initializeAppInteractions() {
     const reportToggle = document.getElementById("question-report-toggle");
     const reportForm = document.getElementById("question-report-form");
     const reportDetails = document.getElementById("question-report-details");
+    const reportType = document.getElementById("question-report-type");
     const reportSubmit = document.getElementById("question-report-submit");
-    const resetQuestionReportForm = () => {
-        reportForm?.classList.add("hidden");
-        reportToggle?.setAttribute("aria-expanded", "false");
-        reportToggle?.removeAttribute("disabled");
-        if (reportToggle) reportToggle.innerText = "Signaler une erreur";
+    const reportCancel = document.getElementById("question-report-cancel");
+    const reportCount = document.getElementById("question-report-count");
+    let reportQuizRunId = -1;
+    let questionReportSubmitted = false;
+    const clearQuestionReport = () => {
         reportForm?.reset();
+        if (reportCount) reportCount.innerText = "0";
         if (reportSubmit) reportSubmit.disabled = false;
+        if (reportCancel) reportCancel.innerText = "Annuler le signalement";
+        reportForm?.querySelectorAll("input, select, textarea").forEach(field => field.disabled = false);
+        questionReportSubmitted = false;
         setAuthMessage("question-report-status", "");
     };
 
-    reportToggle?.addEventListener("click", () => {
-        const isOpening = reportForm?.classList.contains("hidden") || false;
-        reportForm?.classList.toggle("hidden", !isOpening);
-        reportToggle.setAttribute("aria-expanded", String(isOpening));
-        if (isOpening) reportDetails?.focus();
+    reportDetails?.addEventListener("input", () => {
+        if (reportCount) reportCount.innerText = String(reportDetails.value.length);
     });
-    document.getElementById("question-report-cancel")?.addEventListener("click", resetQuestionReportForm);
+
+    reportToggle?.addEventListener("click", () => {
+        if (!displayedQuestion || isQuizTimeExpired(currentQuizRunId)) return;
+        reportQuizRunId = currentQuizRunId;
+        clearQuestionReport();
+        if (reportToggle) {
+            reportToggle.innerText = "Signaler une erreur";
+            reportToggle.disabled = false;
+        }
+        const themeName = selectedTheme === "all"
+            ? (quizFeedbackMode === "exam" ? "Combat de haute intensité" : "Simulation de combat")
+            : document.getElementById("theme-select")?.selectedOptions?.[0]?.textContent
+                || `Zone ${selectedTheme}`;
+        const themeContext = document.getElementById("question-report-theme");
+        const positionContext = document.getElementById("question-report-position");
+        const questionContext = document.getElementById("question-report-question");
+        if (themeContext) themeContext.innerText = themeName;
+        if (positionContext) {
+            positionContext.innerText = `Question ${quizEngine.index + 1} / ${quizEngine.questions.length}`;
+        }
+        if (questionContext) questionContext.innerText = displayedQuestion.q;
+        uiController.switchScreen("report-screen");
+        document.getElementById("report-page-title")?.focus();
+    });
+
+    reportCancel?.addEventListener("click", () => {
+        if (reportQuizRunId !== currentQuizRunId || finalizedQuizRunId === reportQuizRunId) {
+            uiController.switchScreen("result-screen");
+            return;
+        }
+        if (expiredQuizRunId === reportQuizRunId) {
+            uiController.switchScreen("quiz-screen");
+            return;
+        }
+        if (!questionReportSubmitted) clearQuestionReport();
+        uiController.switchScreen("quiz-screen");
+        reportToggle?.focus();
+    });
+
     reportForm?.addEventListener("submit", async event => {
         event.preventDefault();
         const question = displayedQuestion;
-        if (!question) {
+        if (!question || reportQuizRunId !== currentQuizRunId) {
             setAuthMessage("question-report-status", "Cette question n’est plus disponible.");
             return;
         }
+        if (questionReportSubmitted) return;
+        if (isQuizTimeExpired(reportQuizRunId)) {
+            setAuthMessage("question-report-status", "Temps écoulé. Le signalement n’a pas été transmis.");
+            return;
+        }
+        const description = reportDetails?.value.trim() || "";
+        if (!description) {
+            setAuthMessage("question-report-status", "Décrivez l’anomalie avant de transmettre le rapport.");
+            reportDetails?.focus();
+            return;
+        }
 
-        reportSubmit.disabled = true;
-        setAuthMessage("question-report-status", "Envoi du signalement...");
+        if (reportSubmit) reportSubmit.disabled = true;
+        setAuthMessage("question-report-status", "Transmission du compte-rendu...");
         try {
+            const priority = reportForm.querySelector(
+                'input[name="question-report-priority"]:checked'
+            )?.value || "Information";
             await submitQuestionReport(
                 question,
                 resolveQuestionAnswers(question),
                 selectedTheme,
-                reportDetails?.value || ""
+                [
+                    `Type d’incident : ${reportType?.value || "Autre"}`,
+                    `Priorité : ${priority}`,
+                    `Observation : ${description}`
+                ].join("\n")
             );
-            setAuthMessage("question-report-status", "Merci, votre signalement a été envoyé à l’administrateur.");
-            reportToggle.innerText = "Question signalée";
-            reportToggle.disabled = true;
-            reportForm.classList.add("hidden");
-            reportToggle.setAttribute("aria-expanded", "false");
+            questionReportSubmitted = true;
+            setAuthMessage("question-report-status", "Compte-rendu transmis à l’administration.");
+            reportForm.querySelectorAll("input, select, textarea").forEach(field => field.disabled = true);
+            if (reportToggle) {
+                reportToggle.innerText = "Signalement transmis";
+                reportToggle.disabled = true;
+            }
+            if (reportCancel) reportCancel.innerText = "Retour au combat";
         } catch (error) {
-            setAuthMessage("question-report-status", `Envoi impossible : ${error.message}`);
-            reportSubmit.disabled = false;
+            setAuthMessage("question-report-status", `Transmission impossible : ${error.message}`);
+            if (reportSubmit) reportSubmit.disabled = false;
         }
     });
 
@@ -3975,7 +4036,10 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("close-app").addEventListener("click", async () => {
-        if (document.getElementById("quiz-screen")?.classList.contains("active")) {
+        if (
+            document.getElementById("quiz-screen")?.classList.contains("active")
+            || document.getElementById("report-screen")?.classList.contains("active")
+        ) {
             const confirmed = await showConfirmOverlay({
                 title: "Abandonner le combat ?",
                 message: "Abandonner le combat en cours et effectuer un repli stratégique ?",
@@ -4052,7 +4116,8 @@ function expireQuiz(quizRunId) {
     updateQuizTimerDisplay(0);
     document.querySelectorAll("#quiz-screen button, #quiz-screen textarea")
         .forEach(control => control.disabled = true);
-    document.getElementById("question-report-form")?.classList.add("hidden");
+    const reportStatus = document.getElementById("question-report-status");
+    if (reportStatus) reportStatus.innerText = "Temps écoulé. Le signalement n’a pas été transmis.";
     document.getElementById("quiz-timer")?.classList.add("exploded");
     const status = document.getElementById("quiz-expiry-status");
     if (status) {
@@ -4202,14 +4267,23 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     updateLivePoints();
 
     const reportToggle = document.getElementById("question-report-toggle");
-    reportToggle?.removeAttribute("disabled");
-    if (reportToggle) reportToggle.innerText = "Signaler une erreur";
     const reportForm = document.getElementById("question-report-form");
-    reportForm?.classList.add("hidden");
     reportForm?.reset();
+    reportForm?.querySelectorAll("input, select, textarea").forEach(field => field.disabled = false);
     const reportSubmit = document.getElementById("question-report-submit");
     reportSubmit?.removeAttribute("disabled");
-    reportToggle?.setAttribute("aria-expanded", "false");
+    const reportCancel = document.getElementById("question-report-cancel");
+    if (reportCancel) reportCancel.innerText = "Annuler le signalement";
+    reportToggle?.removeAttribute("disabled");
+    if (reportToggle) reportToggle.innerText = "Signaler une erreur";
+    const reportCount = document.getElementById("question-report-count");
+    if (reportCount) reportCount.innerText = "0";
+    const reportTheme = document.getElementById("question-report-theme");
+    const reportPosition = document.getElementById("question-report-position");
+    const reportQuestion = document.getElementById("question-report-question");
+    if (reportTheme) reportTheme.innerText = "—";
+    if (reportPosition) reportPosition.innerText = "—";
+    if (reportQuestion) reportQuestion.innerText = "Aucune question sélectionnée.";
     const reportStatus = document.getElementById("question-report-status");
     if (reportStatus) reportStatus.innerText = "";
 

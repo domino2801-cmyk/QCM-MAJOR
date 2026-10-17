@@ -16,7 +16,7 @@ test("podium artwork keeps the original compact dimensions", () => {
 test("restored stylesheet retains history and mobile layout rules through its end", () => {
     assert.match(css, /#candidate-history-status,\s*#candidate-history-sync-status\s*\{\s*text-align:\s*center;/);
     assert.match(css, /\.candidate-history-recommendation\s*\{/);
-    assert.match(css, /@media \(max-width: 600px\)\s*\{\s*#theme-screen/);
+    assert.match(css, /@media \(max-width: 600px\)\s*\{\s*\.report-panel[\s\S]*?#theme-screen/);
     assert.match(css, /\.qty-choice-count\s*\{\s*font-size:\s*1\.05rem;\s*\}\s*\.qty-choice-level\s*\{\s*font-size:\s*0\.54rem;\s*letter-spacing:\s*0;\s*\}\s*\}\s*$/);
 });
 

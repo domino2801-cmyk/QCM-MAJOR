@@ -36,6 +36,9 @@ test("login screen keeps a close-app button with fallback content", async () => 
                 if (id === "quiz-screen") {
                     return { classList: { contains: () => false } };
                 }
+                if (id === "report-screen") {
+                    return { classList: { contains: () => false } };
+                }
                 assert.equal(id, "close-app");
                 return {
                     addEventListener(eventName, handler) {
@@ -60,6 +63,7 @@ test("login screen keeps a close-app button with fallback content", async () => 
 
 test("close-app returns to candidate screen instead of closing during a quiz", () => {
     assert.match(js, /quiz-screen"\)\?\.classList\.contains\("active"\)/);
+    assert.match(js, /report-screen"\)\?\.classList\.contains\("active"\)/);
     assert.match(js, /Abandonner le combat en cours et effectuer un repli stratégique/);
     assert.match(js, /uiController\.switchScreen\("theme-screen"\)/);
 });

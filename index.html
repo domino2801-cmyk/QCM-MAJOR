@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=compact-geography-20261016">
+    <link rel="stylesheet" href="ui/Style.css?v=tactical-report-20261017">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -396,6 +396,60 @@
             </section>
         </div>
 
+        <div id="report-screen" class="screen report-screen">
+            <section class="global-evolution report-panel" aria-labelledby="report-page-title">
+                <header class="report-header">
+                    <p class="report-kicker">CENTRE DE COMPTE-RENDU • BM4</p>
+                    <h1 id="report-page-title" tabindex="-1">FORMULAIRE DE SIGNALEMENT TACTIQUE</h1>
+                    <p class="report-alert">[ALERTE] Anomalie constatée pendant la mission.</p>
+                </header>
+                <form id="question-report-form" class="report-form">
+                    <section class="report-section" aria-labelledby="report-identification-title">
+                        <h2 id="report-identification-title">IDENTIFICATION DE L’ANOMALIE</h2>
+                        <label for="question-report-type">Type d’incident</label>
+                        <select id="question-report-type" required>
+                            <option value="Erreur dans l’énoncé">Erreur dans l’énoncé</option>
+                            <option value="Réponse incorrecte">Réponse incorrecte</option>
+                            <option value="Réponse manquante">Réponse manquante</option>
+                            <option value="Problème de thème">Problème de thème</option>
+                            <option value="Autre">Autre anomalie</option>
+                        </select>
+                        <div class="report-context-grid">
+                            <div><span>Zone / mode</span><strong id="question-report-theme">—</strong></div>
+                            <div><span>Position</span><strong id="question-report-position">—</strong></div>
+                        </div>
+                        <div class="report-question-context">
+                            <span>Question concernée</span>
+                            <p id="question-report-question">Aucune question sélectionnée.</p>
+                        </div>
+                    </section>
+
+                    <section class="report-section" aria-labelledby="report-description-title">
+                        <h2 id="report-description-title">DESCRIPTION DÉTAILLÉE DE L’INCIDENT</h2>
+                        <label for="question-report-details">Observation terrain</label>
+                        <textarea id="question-report-details" maxlength="500" rows="5" placeholder="Décrivez l’anomalie constatée (500 caractères maximum)." required></textarea>
+                        <div class="report-character-count"><span id="question-report-count">0</span> / 500</div>
+                    </section>
+
+                    <section class="report-section" aria-labelledby="report-priority-title">
+                        <h2 id="report-priority-title">VALIDATION DU RAPPORT</h2>
+                        <fieldset class="report-priority">
+                            <legend>Niveau de priorité</legend>
+                            <label><input type="radio" name="question-report-priority" value="Information" checked> Information</label>
+                            <label><input type="radio" name="question-report-priority" value="Correction requise"> Correction requise</label>
+                            <label><input type="radio" name="question-report-priority" value="Bloquant"> Bloquant</label>
+                        </fieldset>
+                    </section>
+
+                    <p id="question-report-status" class="report-status" role="alert" aria-live="polite"></p>
+                    <div class="report-actions">
+                        <button id="question-report-cancel" class="btn-secondary" type="button">Annuler le signalement</button>
+                        <button id="question-report-submit" class="btn-main" type="submit">Transmettre le compte-rendu</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
         <div id="quiz-screen" class="screen">
             <div id="quiz-timer" class="quiz-timer badge" aria-live="off" hidden>
                 <svg class="timer-fuse" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true">
@@ -407,7 +461,7 @@
                 <span class="timer-readout"><span class="timer-label">CHRONO</span><span id="quiz-timer-display">60:00</span></span>
             </div>
             <p id="quiz-expiry-status" class="quiz-expiry-status" role="alert" hidden></p>
-            <div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div id="options-grid" class="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button><div class="question-action-row"><div class="question-report"><button id="question-report-toggle" class="btn-main" type="button" aria-expanded="false">Signaler une erreur</button><form id="question-report-form" class="question-report-form hidden"><label for="question-report-details">Détail du signalement</label><textarea id="question-report-details" maxlength="1000" rows="4" placeholder="Décrivez l’erreur constatée"></textarea><div class="admin-actions"><button id="question-report-cancel" class="btn-secondary" type="button">Annuler</button><button id="question-report-submit" class="btn-main" type="submit">Envoyer</button></div><p id="question-report-status" class="auth-message" role="alert"></p></form></div><button id="next-question-btn" class="btn-main" type="button" disabled>Question suivante</button></div></div>
+            <div class="stats-grid"><div id="progress" class="badge">Question 0 / 0</div><div id="live-points" class="badge" style="text-align: right;">Points : 0</div></div><div id="question"></div><div id="options-grid" class="options-grid"></div><button id="skip-btn" class="btn-skip" type="button">Passer</button><div class="question-action-row"><button id="question-report-toggle" class="btn-main" type="button">Signaler une erreur</button><button id="next-question-btn" class="btn-main" type="button" disabled>Question suivante</button></div></div>
 
         <div id="result-screen" class="screen"><h1>Bilan de la Campagne</h1><div class="result-box"><div style="text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">BILAN DE DESTRUCTION</div><div id="score-display" class="score-large">0 / 20</div><div id="result-details" class="details-list"><div>Cibles détruites : <span id="stat-correct">0</span></div><div>Cibles manquées : <span id="stat-wrong">0</span></div><div>Cible ignorée : <span id="stat-skipped">0</span></div></div><p id="result-motivation" class="result-motivation" aria-live="polite"></p></div><section id="review-section" class="review-section hidden"><details class="review-accordion"><summary>Revue tactique</summary><div id="review-list" class="review-list"></div></details></section><button id="btn-new-mission" class="btn-main" type="button">Nouvelle mission</button><button id="btn-evolution-result" class="btn-secondary hidden" type="button" aria-expanded="false">Voir l’évolution</button><section id="global-evolution-section" class="global-evolution hidden" aria-labelledby="global-evolution-title"><h2 id="global-evolution-title">Évolution globale</h2><label class="global-evolution-filter" for="global-evolution-period">Période</label><select id="global-evolution-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="90">90 derniers jours</option></select><div id="global-evolution-summary" class="global-evolution-summary"></div><div id="global-evolution-chart" class="global-evolution-chart" aria-label="Histogramme des résultats globaux"></div><ol id="global-evolution-list" class="global-evolution-list"></ol></section></div>
         <footer class="legal-footer">
@@ -462,6 +516,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=objective-cards-20261016"></script>
+    <script type="module" src="app.js?v=tactical-report-20261017"></script>
 </body>
 </html>
