@@ -83,6 +83,7 @@ function createHarness(fetchBehavior, initialResults = []) {
         "supabaseRestRequest",
         "getStoredSupabaseSession",
         "normalizeResultRecord",
+        "isMissingFeedbackModeColumn",
         "setResults",
         "getResults",
         "toSupabaseResultPayload",
@@ -108,6 +109,7 @@ test("remontée Supabase envoie le résultat avec les headers et le payload atte
         email: "candidate@example.com",
         name: "Candidate Test",
         theme: "all",
+        feedbackMode: "exam",
         score: 16,
         correct: 4,
         wrong: 1,
@@ -132,6 +134,7 @@ test("remontée Supabase envoie le résultat avec les headers et le payload atte
         email: "candidate@example.com",
         name: "Candidate Test",
         theme: "all",
+        feedback_mode: "exam",
         score: 16,
         correct: 4,
         wrong: 1,
@@ -140,6 +143,59 @@ test("remontée Supabase envoie le résultat avec les headers et le payload atte
     }]);
     assert.deepEqual(harness.context.pendingResultSync, { upserts: [], deletes: [] });
     assert.equal(harness.context.getResults()[0].synced, true);
+});
+
+test("la normalisation distingue la simulation de combat du combat haute intensité", () => {
+    const harness = createHarness(() => Promise.resolve(createResponse(null)));
+
+    const examResult = vm.runInNewContext(
+        'normalizeResultRecord({ id: "exam", theme: "all", feedback_mode: "exam" })',
+        harness.context
+    );
+    const trainingResult = vm.runInNewContext(
+        'normalizeResultRecord({ id: "training", theme: "all", feedback_mode: "training" })',
+        harness.context
+    );
+    const legacyGlobalResult = vm.runInNewContext(
+        'normalizeResultRecord({ id: "legacy", theme: "all" })',
+        harness.context
+    );
+
+    assert.equal(examResult.feedbackMode, "exam");
+    assert.equal(trainingResult.feedbackMode, "training");
+    assert.equal(legacyGlobalResult.feedbackMode, "exam");
+});
+
+test("la synchronisation reste compatible avant l'ajout de la colonne de mode", async () => {
+    const result = {
+        id: "simulation-local",
+        candidateId: "candidate-1",
+        email: "candidate@example.com",
+        name: "Candidate Test",
+        theme: "all",
+        feedbackMode: "training",
+        score: 12,
+        correct: 3,
+        wrong: 0,
+        skipped: 0,
+        total: 3,
+        synced: false
+    };
+    const harness = createHarness(({ options }) => {
+        if (options.body?.includes("feedback_mode")) {
+            throw new Error("column quiz_results.feedback_mode does not exist");
+        }
+        return Promise.resolve(createResponse(null));
+    }, [result]);
+
+    await vm.runInNewContext("flushPendingResultSync()", harness.context);
+
+    assert.equal(harness.calls.length, 3);
+    assert.equal(harness.context.pendingResultSync.upserts.length, 0);
+    assert.equal(harness.context.getResults()[0].feedbackMode, "training");
+    const legacyPayload = JSON.parse(harness.calls[2].options.body)[0];
+    assert.equal(legacyPayload.user_id, "candidate-1");
+    assert.equal("feedback_mode" in legacyPayload, false);
 });
 
 test("remontée Supabase bascule vers candidate_id si user_id est refusé", async () => {

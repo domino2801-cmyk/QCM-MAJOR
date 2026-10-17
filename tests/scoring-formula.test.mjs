@@ -32,6 +32,17 @@ test("quiz scoring returns 6/20 for 2 correct, 2 wrong and 1 skipped", () => {
     assert.equal(scoring.computeFinal(quizStats, 5), 6);
 });
 
+test("quiz scoring returns 15.5/20 for 8 correct, 1 wrong and 1 skipped", () => {
+    const quizStats = scoring.createStats();
+
+    quizStats.correct = 8;
+    quizStats.wrong = 1;
+    quizStats.skipped = 1;
+    quizStats.points = 31;
+
+    assert.equal(scoring.computeFinal(quizStats, 10), 15.5);
+});
+
 test("quiz scoring never uses a denominator lower than seen questions", () => {
     const quizStats = scoring.createStats();
 

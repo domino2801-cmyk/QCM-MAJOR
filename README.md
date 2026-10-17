@@ -169,7 +169,7 @@ L'application attend au minimum les métadonnées suivantes dans `index.html` :
 - sécuriser les accès avec les politiques RLS adaptées ;
 - configurer les rôles administrateurs via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
-Les migrations du dossier `supabase/migrations/` doivent être appliquées selon le besoin du déploiement, notamment pour les signalements, le Top 3 public et les autorisations d'administration.
+Les migrations du dossier `supabase/migrations/` doivent être appliquées selon le besoin du déploiement, notamment pour les signalements, le Top 3 public, la distinction entre simulation et combat haute intensité dans l'historique, et les autorisations d'administration.
 
 ## Notifications et déploiement
 

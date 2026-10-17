@@ -6,6 +6,10 @@ import vm from "node:vm";
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const modeMigration = readFileSync(
+    new URL("../supabase/migrations/20261017100000_add_quiz_feedback_mode.sql", import.meta.url),
+    "utf8"
+);
 const admin = app.slice(app.indexOf("const deletableResultEmail ="), app.indexOf("function renderAdminQuestionReports("));
 const history = app.slice(app.indexOf("function renderCandidateHistory("), app.indexOf("function setTerminalState("));
 
@@ -38,6 +42,7 @@ function element() {
     const classes = new Set();
     return {
         children: [], innerText: "", value: "", style: {},
+        dataset: {},
         set innerHTML(value) { this.children = []; },
         classList: {
             add(value) { classes.add(value); },
@@ -56,7 +61,8 @@ function harness(customResults) {
         "admin-results-table", "admin-results-candidate-filter", "admin-results-search",
         "admin-history-panel", "admin-history-status", "admin-history-period",
         "admin-history-charts", "admin-history-summary", "admin-history-recommendation",
-        "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation"
+        "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation",
+        "candidate-history-modes"
     ].map(id => [id, element()]));
     const now = new Date().toISOString();
     const results = customResults || [
@@ -68,6 +74,7 @@ function harness(customResults) {
         { candidateId: "a", email: "a@test.fr", name: "Alpha", theme: "5", score: -2, createdAt: "2020-01-01T00:00:00Z" }
     ];
     const context = vm.createContext({
+        candidateHistoryCategory: "combat",
         getAdminListPage: (_, items) => items,
         labelAdminRow: () => {},
         document: { getElementById: id => nodes.get(id), createElement: element },
@@ -122,8 +129,50 @@ test("tous les candidats ou une sélection disparue ne conserve pas une recomman
 test("le rendu candidat conserve son filtrage personnel et les mêmes indicateurs", () => {
     const h = harness();
     vm.runInContext('renderCandidateHistory(getResults(), "b")', h.context);
-    assert.match(h.nodes.get("candidate-history-summary").innerText, /1 résultat.*Moyenne Campagne Globale : 10\.00/);
+    assert.match(h.nodes.get("candidate-history-summary").innerText, /1 résultat.*Moyenne Combat haute intensité : 10\.00/);
     assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 3/);
+});
+
+test("le journal sépare le combat intense, la simulation et les six zones", () => {
+    const now = new Date().toISOString();
+    const results = [
+        { candidateId: "a", theme: "all", feedbackMode: "exam", score: 16, createdAt: now },
+        { candidateId: "a", theme: "all", feedbackMode: "training", score: 12, createdAt: now },
+        { candidateId: "a", theme: "1", feedbackMode: "training", score: 8, createdAt: now },
+        { candidateId: "a", theme: "2", feedbackMode: "training", score: 10, createdAt: now },
+        { candidateId: "a", theme: "3", feedbackMode: "training", score: 12, createdAt: now },
+        { candidateId: "a", theme: "4", feedbackMode: "training", score: 14, createdAt: now },
+        { candidateId: "a", theme: "5", feedbackMode: "training", score: 16, createdAt: now },
+        { candidateId: "a", theme: "6", feedbackMode: "training", score: 18, createdAt: now }
+    ];
+    const h = harness(results);
+    for (const [category, title, score] of [
+        ["combat", "Combat haute intensité", "16.00"],
+        ["simulation", "Simulation de combat", "12.00"],
+        ["theme-1", "Organisation et Commandement", "8.00"],
+        ["theme-2", "Matériels, Armements et Technologies", "10.00"],
+        ["theme-3", "Lois de Programmation Militaire", "12.00"],
+        ["theme-4", "Opérations Extérieures", "14.00"],
+        ["theme-5", "Histoire & Traditions", "16.00"],
+        ["theme-6", "Implantation des unités", "18.00"]
+    ]) {
+        h.context.candidateHistoryCategory = category;
+        vm.runInContext('renderCandidateHistory(getResults(), "a")', h.context);
+        const chartSection = h.nodes.get("candidate-history-charts").children[0];
+        assert.equal(chartSection.children[0].innerText, title);
+        assert.equal(chartSection.children[1].children[0].children[0].innerText, score);
+    }
+});
+
+test("la migration distingue les modes d'entraînement et réserve le Top 3 au combat intense", () => {
+    assert.match(html, /data-history-category="combat"/);
+    assert.match(html, /data-history-category="simulation"/);
+    for (let theme = 1; theme <= 6; theme += 1) {
+        assert.match(html, new RegExp(`data-history-category="theme-${theme}"`));
+    }
+    assert.match(modeMigration, /add column if not exists feedback_mode text/i);
+    assert.match(modeMigration, /coalesce\(theme, 'all'\) = 'all' then 'exam'/i);
+    assert.match(modeMigration, /r\.feedback_mode = 'exam'/i);
 });
 
 test("le nouveau thème implantation peut devenir le thème à travailler", () => {
@@ -142,7 +191,8 @@ test("la moyenne porte uniquement sur les campagnes globales de la période et c
     ];
     vm.runInContext('renderCandidateHistory(results, "a", "", 7)', h.context);
     assert.match(h.nodes.get("candidate-history-summary").innerText, /2 résultat.*6\.00/);
+    h.context.candidateHistoryCategory = "theme-1";
     vm.runInContext('renderCandidateHistory(results.filter(r => r.theme !== "all"), "a")', h.context);
-    assert.equal(h.nodes.get("candidate-history-summary").innerText, "Aucun résultat de Campagne Globale sur cette période.");
+    assert.equal(h.nodes.get("candidate-history-summary").innerText, "1 résultat(s) • Moyenne Organisation et Commandement : 20.00 / 20");
     assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 1/);
 });

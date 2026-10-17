@@ -22,6 +22,7 @@ import {
 let selectedTheme = null;
 let maxQuestions = 0;
 let quizFeedbackMode = "training";
+let candidateHistoryCategory = "combat";
 let reviewItems = [];
 let questionTransitionLocked = false;
 let displayedQuestion = null;
@@ -571,13 +572,19 @@ function createRecordId() {
 function normalizeResultRecord(rawResult = {}) {
     if (!rawResult || typeof rawResult !== "object") return null;
 
+    const theme = rawResult.theme || "all";
+    const savedFeedbackMode = rawResult.feedback_mode || rawResult.feedbackMode;
+
     return {
         id: rawResult.id || createRecordId(),
         candidateId: rawResult.user_id || rawResult.candidate_id || rawResult.candidateId || "candidat-inconnu",
         label: rawResult.label || rawResult.name || rawResult.email || "Candidat inconnu",
         email: rawResult.email || "",
         name: rawResult.name || "",
-        theme: rawResult.theme || "all",
+        theme,
+        feedbackMode: savedFeedbackMode === "exam" || savedFeedbackMode === "training"
+            ? savedFeedbackMode
+            : theme === "all" ? "exam" : "training",
         score: Number(rawResult.score || 0),
         correct: Number(rawResult.correct || 0),
         wrong: Number(rawResult.wrong || 0),
@@ -1033,13 +1040,19 @@ async function loadQuestionsFromSupabase(expectedAccessToken = null) {
     }
 }
 
-function toSupabaseResultPayload(result, candidateColumn = "user_id") {
+function isMissingFeedbackModeColumn(error) {
+    return /(?:column .*feedback_mode.* does not exist|could not find .*feedback_mode)/i
+        .test(String(error?.message || ""));
+}
+
+function toSupabaseResultPayload(result, candidateColumn = "user_id", includeFeedbackMode = true) {
     return {
         id: result.id,
         [candidateColumn]: result.candidateId,
         email: result.email,
         name: result.name,
         theme: result.theme,
+        ...(includeFeedbackMode ? { feedback_mode: result.feedbackMode } : {}),
         score: result.score,
         correct: result.correct,
         wrong: result.wrong,
@@ -1109,8 +1122,32 @@ async function flushPendingResultSync() {
                     prefer: "resolution=merge-duplicates,return=minimal",
                     body: upserts
                 });
-            } catch {
-                throw primaryError;
+            } catch (candidateColumnError) {
+                if (!isMissingFeedbackModeColumn(primaryError) && !isMissingFeedbackModeColumn(candidateColumnError)) {
+                    throw primaryError;
+                }
+
+                try {
+                    upserts = upsertResults.map(result => toSupabaseResultPayload(result, "user_id", false));
+                    await supabaseRestRequest("/quiz_results?on_conflict=id", {
+                        method: "POST",
+                        accessToken,
+                        prefer: "resolution=merge-duplicates,return=minimal",
+                        body: upserts
+                    });
+                } catch {
+                    try {
+                        upserts = upsertResults.map(result => toSupabaseResultPayload(result, "candidate_id", false));
+                        await supabaseRestRequest("/quiz_results?on_conflict=id", {
+                            method: "POST",
+                            accessToken,
+                            prefer: "resolution=merge-duplicates,return=minimal",
+                            body: upserts
+                        });
+                    } catch {
+                        throw primaryError;
+                    }
+                }
             }
         }
         const syncedIds = new Set(upsertResults.map(result => result.id));
@@ -1128,12 +1165,13 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
 
     try {
         const accessToken = getStoredSupabaseSession()?.access_token;
-        const loadRows = async candidateColumn => {
+        const loadRows = async (candidateColumn, includeFeedbackMode = true) => {
             const rows = [];
             const paginated = isAdminSession(getStoredSupabaseSession());
             for (let offset = 0; ; offset += 250) {
+                const selectedColumns = `id,${candidateColumn},email,name,theme,${includeFeedbackMode ? "feedback_mode," : ""}score,correct,wrong,skipped,total,created_at`;
                 const page = await supabaseRestRequest(
-                    `/quiz_results?select=id,${candidateColumn},email,name,theme,score,correct,wrong,skipped,total,created_at&order=created_at.desc${paginated ? `,id.desc&limit=250&offset=${offset}` : ""}`,
+                    `/quiz_results?select=${selectedColumns}&order=created_at.desc${paginated ? `,id.desc&limit=250&offset=${offset}` : ""}`,
                     { accessToken }
                 );
                 if (!Array.isArray(page)) throw new Error("Réponse des résultats invalide.");
@@ -1141,21 +1179,39 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
                 if (!paginated || page.length < 250) return rows;
             }
         };
+        const loadRowsWithOptionalFeedbackMode = async candidateColumn => {
+            try {
+                return await loadRows(candidateColumn);
+            } catch (error) {
+                if (!isMissingFeedbackModeColumn(error)) throw error;
+                return loadRows(candidateColumn, false);
+            }
+        };
         let data;
         try {
-            data = await loadRows("user_id");
+            data = await loadRowsWithOptionalFeedbackMode("user_id");
         } catch (primaryError) {
             try {
-                data = await loadRows("candidate_id");
+                data = await loadRowsWithOptionalFeedbackMode("candidate_id");
             } catch {
                 throw primaryError;
             }
         }
         if (!Array.isArray(data)) return false;
+        const cachedResults = new Map(getResults().map(result => [result.id, result]));
         const remoteResults = data
-            .map(normalizeResultRecord)
-            .filter(Boolean)
-            .map(result => ({ ...result, synced: true }));
+            .map(row => {
+                const result = normalizeResultRecord(row);
+                if (!result) return null;
+                const cached = cachedResults.get(result.id);
+                const hasFeedbackMode = row.feedback_mode === "exam" || row.feedback_mode === "training";
+                return {
+                    ...result,
+                    ...(!hasFeedbackMode && cached ? { feedbackMode: cached.feedbackMode } : {}),
+                    synced: true
+                };
+            })
+            .filter(Boolean);
         const pendingDeleteIds = new Set(pendingResultSync.deletes);
         const pendingUpsertIds = new Set(pendingResultSync.upserts);
         const mergedById = new Map();
@@ -2719,14 +2775,44 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
         ["6", "Thème 6 • Implantation des unités"]
     ];
 
-    const globalHistory = history.filter(result => result.theme === "all");
-    const globalScores = globalHistory.map(result => Number(result.score) || 0);
+    const historyCategories = [
+        { key: "combat", label: "Combat haute intensité", theme: "all", feedbackMode: "exam" },
+        { key: "simulation", label: "Simulation de combat", theme: "all", feedbackMode: "training" },
+        ...themeLabels.slice(1).map(([theme, label]) => ({
+            key: `theme-${theme}`,
+            label: label.replace(/^Thème \d+ • /, ""),
+            theme
+        }))
+    ];
+    const isCandidateHistory = prefix === "candidate-history";
+    const activeCategory = isCandidateHistory
+        ? historyCategories.find(category => category.key === candidateHistoryCategory) || historyCategories[0]
+        : { key: "global", label: themeLabels[0][1], theme: "all" };
+    const modeControls = document.getElementById("candidate-history-modes");
+    if (isCandidateHistory && modeControls) {
+        [...modeControls.children].forEach(button => {
+            const selected = button.dataset.historyCategory === activeCategory.key;
+            button.classList.toggle("active", selected);
+            button.setAttribute("aria-pressed", String(selected));
+        });
+    }
+
+    const selectedHistory = history.filter(result =>
+        String(result.theme) === activeCategory.theme
+        && (!isCandidateHistory || !activeCategory.feedbackMode || (result.feedbackMode
+            || (String(result.theme) === "all" ? "exam" : "training")) === activeCategory.feedbackMode)
+    );
+    const selectedScores = selectedHistory.map(result => Number(result.score) || 0);
     if (summary) {
-        if (globalScores.length > 0) {
-            const average = globalScores.reduce((total, score) => total + score, 0) / globalScores.length;
-            summary.innerText = `${globalHistory.length} résultat(s) de Campagne Globale • Moyenne Campagne Globale : ${average.toFixed(2)} / 20`;
+        if (selectedScores.length > 0) {
+            const average = selectedScores.reduce((total, score) => total + score, 0) / selectedScores.length;
+            summary.innerText = isCandidateHistory
+                ? `${selectedHistory.length} résultat(s) • Moyenne ${activeCategory.label} : ${average.toFixed(2)} / 20`
+                : `${selectedHistory.length} résultat(s) de Campagne Globale • Moyenne Campagne Globale : ${average.toFixed(2)} / 20`;
         } else {
-            summary.innerText = "Aucun résultat de Campagne Globale sur cette période.";
+            summary.innerText = isCandidateHistory
+                ? `Aucun résultat ${activeCategory.label} sur cette période.`
+                : "Aucun résultat de Campagne Globale sur cette période.";
         }
     }
 
@@ -2739,11 +2825,15 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
 
         themeResults.forEach(result => {
             const score = Math.max(0, Math.min(20, Number(result.score) || 0));
+            const parsedDate = result.createdAt && !Number.isNaN(Date.parse(result.createdAt))
+                ? new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
+                    .format(new Date(result.createdAt))
+                : result.date || "";
             const bar = document.createElement("div");
             bar.className = `global-evolution-bar ${score > 10 ? "score-good" : score >= 5 ? "score-warning" : "score-critical"}`;
             bar.style.height = `${Math.max(score * 5, 3)}%`;
-            bar.title = `${score.toFixed(2)} / 20`;
-            bar.setAttribute("aria-label", `${score.toFixed(2)} / 20`);
+            bar.title = `${parsedDate} — ${score.toFixed(2)} / 20`;
+            bar.setAttribute("aria-label", `${parsedDate} — ${score.toFixed(2)} / 20`);
             const value = document.createElement("span");
             value.innerText = score.toFixed(2);
             bar.appendChild(value);
@@ -2755,11 +2845,11 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
     const globalTitle = document.createElement("h3");
     const globalChart = document.createElement("div");
     globalSection.className = "candidate-history-chart-section";
-    globalTitle.innerText = themeLabels[0][1];
+    globalTitle.innerText = activeCategory.label;
     globalChart.className = "global-evolution-chart";
     globalChart.setAttribute("role", "img");
-    globalChart.setAttribute("aria-label", "Histogramme Campagne Globale");
-    appendBars(globalChart, globalHistory);
+    globalChart.setAttribute("aria-label", `Histogramme ${activeCategory.label}`);
+    appendBars(globalChart, selectedHistory);
     globalSection.append(globalTitle, globalChart);
     charts.appendChild(globalSection);
 
@@ -3598,6 +3688,19 @@ async function initializeAppInteractions() {
         event.currentTarget.setAttribute("aria-expanded", "true");
     });
 
+    document.getElementById("candidate-history-modes")?.addEventListener("click", event => {
+        const button = event.target.closest("button[data-history-category]");
+        if (!button) return;
+        candidateHistoryCategory = button.dataset.historyCategory;
+        const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail];
+        renderCandidateHistory(
+            getResults(),
+            String(account?.id || currentCandidateEmail || "candidat-inconnu"),
+            currentCandidateEmail || account?.email || "",
+            Number(document.getElementById("candidate-history-period")?.value || 0)
+        );
+    });
+
     document.getElementById("btn-back-to-campaign")?.addEventListener("click", () => {
         uiController.switchScreen("theme-screen");
         document.getElementById("btn-history-theme")?.setAttribute("aria-expanded", "false");
@@ -4323,6 +4426,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
             email: email === "Candidat inconnu" ? "" : email,
             name: account?.name || "",
             theme: selectedTheme,
+            feedbackMode: quizFeedbackMode,
             score: note,
             correct: quizEngine.stats.correct,
             wrong: quizEngine.stats.wrong,

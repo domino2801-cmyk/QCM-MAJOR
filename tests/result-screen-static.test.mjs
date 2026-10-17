@@ -15,8 +15,7 @@ test("result screen exposes the ids expected by app.js", () => {
     assert.match(html, /id="stat-correct"/);
     assert.match(html, /id="stat-wrong"/);
     assert.match(html, /id="stat-skipped"/);
-    assert.match(html, /id="stat-brut"/);
-    assert.match(html, /id="brut-max"/);
+    assert.doesNotMatch(html, /id="stat-brut"|id="brut-max"/);
     assert.match(html, /id="review-section"/);
     assert.match(html, /id="review-list"/);
     assert.match(html, /id="btn-new-mission"/);
@@ -37,9 +36,9 @@ test("quiz option locking and marking target #options-grid in app.js", () => {
     assert.doesNotMatch(js, /querySelectorAll\("#options \.btn"\)/);
 });
 
-test("result screen in app.js computes and shows max points from total questions", () => {
-    assert.match(js, /const maxPts = total \* 4;/);
-    assert.match(js, /setResultText\(\["brut-max"\], `\/ \$\{maxPts\}`\);/);
+test("result screen calculates and displays the final score out of 20", () => {
+    assert.match(js, /scoring\.computeFinal\(quizEngine\.stats, total\)/);
+    assert.match(js, /setResultText\(\["score-display", "final-score"\], `\$\{note\.toFixed\(2\)\} \/ 20`\)/);
 });
 
 test("result evolution only uses global campaign results", () => {

@@ -128,8 +128,6 @@ function createQuizFlowHarness({
     const statCorrect = createTextNode();
     const statWrong = createTextNode();
     const statSkipped = createTextNode();
-    const statBrut = createTextNode();
-    const brutMax = createTextNode();
     const reviewSection = createClassToggleNode();
     const reviewList = createContainer();
     const optionsGrid = createContainer();
@@ -163,6 +161,7 @@ function createQuizFlowHarness({
             }
         },
         scoring,
+        quizFeedbackMode: "training",
         selectedTheme: "all",
         currentCandidateEmail: "candidat@example.com",
         currentAuthenticatedAccount: {
@@ -219,8 +218,6 @@ function createQuizFlowHarness({
                     "stat-correct": omitResultStatsNodes ? null : statCorrect,
                     "stat-wrong": omitResultStatsNodes ? null : statWrong,
                     "stat-skipped": omitResultStatsNodes ? null : statSkipped,
-                    "stat-brut": omitResultStatsNodes ? null : statBrut,
-                    "brut-max": omitResultStatsNodes ? null : brutMax,
                     "review-section": reviewSection,
                     "review-list": reviewList,
                     ...resultNodes
@@ -263,6 +260,8 @@ function createQuizFlowHarness({
                 email: rawResult.email || "",
                 name: rawResult.name || "",
                 theme: rawResult.theme || "",
+                feedbackMode: rawResult.feedback_mode || rawResult.feedbackMode
+                    || (rawResult.theme === "all" ? "exam" : "training"),
                 score: Number(rawResult.score || 0),
                 correct: Number(rawResult.correct || 0),
                 wrong: Number(rawResult.wrong || 0),
@@ -339,8 +338,6 @@ function createQuizFlowHarness({
         statCorrect,
         statWrong,
         statSkipped,
-        statBrut,
-        brutMax,
         reviewSection,
         savedResults,
         warnings,
@@ -469,7 +466,7 @@ async function advanceQuiz(harness) {
     await new Promise(resolve => setImmediate(resolve));
 }
 
-test("exam hides live points after correct, wrong and skipped answers but preserves the final breakdown", async () => {
+test("exam hides live points after answers and preserves the final result breakdown", async () => {
     const questions = Array.from({ length: 3 }, (_, index) => ({
         q: `Question ${index + 1}`, r: ["A", "B", "C", "D"], correct: 0
     }));
@@ -494,10 +491,11 @@ test("exam hides live points after correct, wrong and skipped answers but preser
     await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
-    assert.equal(harness.statBrut.innerText, 3);
+    assert.equal(harness.scoreDisplay.innerText, "5.00 / 20");
     assert.equal(harness.savedResults[0].correct, 1);
     assert.equal(harness.savedResults[0].wrong, 1);
     assert.equal(harness.savedResults[0].skipped, 1);
+    assert.equal(harness.savedResults[0].feedbackMode, "exam");
 });
 
 test("exam answers stay editable and are recorded only after moving to the next question", async () => {
@@ -601,12 +599,11 @@ test("last correct answer is counted and saved in the final note", async () => {
     assert.equal(harness.savedResults[0].wrong, 0);
     assert.equal(harness.savedResults[0].skipped, 0);
     assert.equal(harness.savedResults[0].total, 1);
+    assert.equal(harness.savedResults[0].feedbackMode, "training");
     assert.equal(harness.scoreDisplay.innerText, "20.00 / 20");
     assert.equal(harness.statCorrect.innerText, 1);
     assert.equal(harness.statWrong.innerText, 0);
     assert.equal(harness.statSkipped.innerText, 0);
-    assert.equal(harness.statBrut.innerText, 4);
-    assert.equal(harness.brutMax.innerText, "/ 4");
     assert.deepEqual(harness.getRankingPayload(), harness.savedResults);
 });
 
@@ -742,8 +739,6 @@ test("last wrong answer is counted and saved in the final note", async () => {
     assert.equal(harness.statCorrect.innerText, 0);
     assert.equal(harness.statWrong.innerText, 1);
     assert.equal(harness.statSkipped.innerText, 0);
-    assert.equal(harness.statBrut.innerText, -1);
-    assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.context.reviewItems.length, 1);
     assert.equal(harness.context.reviewItems[0].type, "wrong");
 });
@@ -773,8 +768,6 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.statCorrect.innerText, 0);
     assert.equal(harness.statWrong.innerText, 0);
     assert.equal(harness.statSkipped.innerText, 1);
-    assert.equal(harness.statBrut.innerText, 0);
-    assert.equal(harness.brutMax.innerText, "/ 4");
     assert.equal(harness.context.reviewItems.length, 1);
     assert.equal(harness.context.reviewItems[0].type, "skipped");
 });
@@ -836,8 +829,6 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.statCorrect.innerText, 2);
     assert.equal(harness.statWrong.innerText, 2);
     assert.equal(harness.statSkipped.innerText, 1);
-    assert.equal(harness.statBrut.innerText, 6);
-    assert.equal(harness.brutMax.innerText, "/ 20");
     assert.equal(harness.context.reviewItems.length, 3);
     assert.equal(harness.context.reviewItems[0].type, "wrong");
     assert.equal(harness.context.reviewItems[1].type, "skipped");
@@ -1014,8 +1005,6 @@ test("final screen still renders when answer marking fails on the last answer", 
     const statCorrect = createTextNode();
     const statWrong = createTextNode();
     const statSkipped = createTextNode();
-    const statBrut = createTextNode();
-    const brutMax = createTextNode();
     const reviewSection = createClassToggleNode();
     const reviewList = createContainer();
     const optionsGrid = createContainer();
@@ -1035,6 +1024,7 @@ test("final screen still renders when answer marking fails on the last answer", 
             }
         },
         scoring,
+        quizFeedbackMode: "training",
         selectedTheme: "all",
         currentCandidateEmail: "candidat@example.com",
         currentAuthenticatedAccount: {
@@ -1081,8 +1071,6 @@ test("final screen still renders when answer marking fails on the last answer", 
                     "stat-correct": statCorrect,
                     "stat-wrong": statWrong,
                     "stat-skipped": statSkipped,
-                    "stat-brut": statBrut,
-                    "brut-max": brutMax,
                     "review-section": reviewSection,
                     "review-list": reviewList
                 }[id] ?? null;
@@ -1119,6 +1107,8 @@ test("final screen still renders when answer marking fails on the last answer", 
                 email: rawResult.email || "",
                 name: rawResult.name || "",
                 theme: rawResult.theme || "",
+                feedbackMode: rawResult.feedback_mode || rawResult.feedbackMode
+                    || (rawResult.theme === "all" ? "exam" : "training"),
                 score: Number(rawResult.score || 0),
                 correct: Number(rawResult.correct || 0),
                 wrong: Number(rawResult.wrong || 0),
