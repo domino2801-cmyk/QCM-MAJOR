@@ -46,6 +46,25 @@ Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tou
 - notifications push pour les signalements côté admin Android/Chrome ;
 - fallback local via `localStorage`.
 
+## Screenshots / captures
+
+Le projet est pensé pour un usage mobile et tactique, avec des écrans très lisibles et une interface d'administration optimisée pour le suivi des résultats. Voici un exemple de structure à remplir avec les captures du projet :
+
+```md
+![Écran de connexion](./docs/screenshots/connexion.png)
+![Accueil candidat](./docs/screenshots/accueil-candidat.png)
+![Campagne globale](./docs/screenshots/campagne-globale.png)
+![Résultats / historique](./docs/screenshots/historique.png)
+![Administration - gestion des questions](./docs/screenshots/admin-questions.png)
+![Administration - signalements](./docs/screenshots/admin-signalements.png)
+```
+
+À compléter avec les captures réelles du projet pour illustrer :
+- l'écran d'authentification et du Top 3 public ;
+- le parcours de quiz en mode "COMBAT DE HAUTE INTENSITE" ;
+- le bilan final candidat ;
+- la gestion des questions et des signalements côté admin.
+
 ## Stack technique
 
 - Frontend : HTML5, CSS3, JavaScript Vanilla
