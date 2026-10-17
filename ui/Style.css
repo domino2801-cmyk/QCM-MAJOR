@@ -1412,15 +1412,6 @@ h1 {
     line-height: 1;
 }
 
-#auth-screen .auth-tab::after {
-    content: "»»";
-    flex: 0 0 auto;
-    font-size: 1.1rem;
-    font-weight: 900;
-    letter-spacing: -0.16em;
-    line-height: 1;
-}
-
 #auth-screen .auth-tab[data-auth-mode="login"]::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%23101713' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='15.5' cy='4.5' r='2' fill='%23101713' stroke='none'/%3E%3Cpath d='m13 8-3 4 4 2 2 4m-6-6-4 1-2 4m6-5 4-3 3 2m-7 7-3 5m8-5 4 5'/%3E%3C/g%3E%3C/svg%3E");
     content: "";
