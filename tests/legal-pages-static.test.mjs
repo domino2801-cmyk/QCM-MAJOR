@@ -6,7 +6,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const pages = [
     ["mentions-legales", "Mentions légales"],
-    ["confidentialite", "Confidentialité"]
+    ["confidentialite", "Politique de confidentialité"]
 ];
 
 test("legal links are in a shared footer after the app screens", () => {
@@ -17,7 +17,7 @@ test("legal links are in a shared footer after the app screens", () => {
     for (const [id, title] of pages) {
         assert.ok(footer[1].includes(`<a href="#${id}">${title}</a>`));
     }
-    assert.doesNotMatch(footer[1], /Politique de confidentialité/);
+    assert.match(footer[1], /Politique de confidentialité/);
 });
 
 test("French legal sections have static anchor targets and return links", () => {
@@ -29,19 +29,23 @@ test("French legal sections have static anchor targets and return links", () => 
         return [id, section[1]];
     }));
     assert.doesNotMatch(sections.get("mentions-legales"), /Modèle à compléter par l’éditeur avant publication/);
-    assert.match(sections.get("mentions-legales"), /Éditeur : Domino2801/);
-    assert.match(sections.get("mentions-legales"), /Responsable de publication : Domino2801/);
+    assert.match(sections.get("mentions-legales"), /Éditeur et responsable de publication : domino2801/);
     assert.match(sections.get("mentions-legales"), /domino2801@gmail\.com/);
     assert.match(sections.get("mentions-legales"), /GitHub Pages/);
-    assert.match(sections.get("mentions-legales"), /Supabase \(région eu-west-1\)/);
-    assert.match(sections.get("mentions-legales"), /libres de droits d’auteur/);
+    assert.match(sections.get("mentions-legales"), /Supabase ; le projet est configuré dans la région eu-west-1/);
+    assert.match(sections.get("mentions-legales"), /Les contenus restent soumis aux droits de leurs auteurs/);
     assert.doesNotMatch(sections.get("confidentialite"), /Modèle à compléter par l’éditeur avant publication/);
-    assert.match(sections.get("confidentialite"), /Responsable du traitement et contact privé : Domino2801/);
+    assert.match(sections.get("confidentialite"), /responsable du traitement est l’éditeur de QCM-MAJOR, domino2801/);
     assert.match(sections.get("confidentialite"), /domino2801@gmail\.com/);
-    assert.match(sections.get("confidentialite"), /Durée de conservation : 1 an pour les comptes inactifs, les résultats, les signalements et les sauvegardes/);
+    assert.match(sections.get("confidentialite"), /Mise à jour : 17 octobre 2026/);
+    assert.match(sections.get("confidentialite"), /Le code de l’application ne prévoit pas de purge automatique après un an/);
+    assert.match(sections.get("confidentialite"), /Les notifications push sont facultatives/);
+    assert.match(sections.get("confidentialite"), /la correction est effectuée par Supabase/);
+    assert.doesNotMatch(sections.get("confidentialite"), /Durée de conservation : 1 an/);
     assert.match(html, /classement public/);
     assert.match(html, /localStorage et sessionStorage/);
     assert.match(html, /Vos droits/);
+    assert.doesNotMatch(sections.get("mentions-legales"), /libres de droits d’auteur/);
 });
 
 test("legal navigation works through CSS anchors without app routing", () => {

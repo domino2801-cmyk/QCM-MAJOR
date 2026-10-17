@@ -1,6 +1,6 @@
 # Question pour un Major - Édition Tactique
 
-Application web de préparation au Brevet Militaire de 4e niveau (BM4), pensée comme un QCM tactique en navigateur pour les candidats et une interface d’administration pour les gestionnaires de contenu.
+Application web de préparation au Brevet militaire de 4e niveau (BM4), avec des parcours de quiz pour les candidats et un espace d’administration pour la gestion des contenus.
 
 <p align="center">
   <strong>QCM-MAJOR</strong> • PWA • Supabase • GitHub Pages • Formation militaire BM4
@@ -8,14 +8,14 @@ Application web de préparation au Brevet Militaire de 4e niveau (BM4), pensée 
 
 ## Vue d’ensemble
 
-QCM-MAJOR transforme la préparation au BM4 en une experience immersive, rapide et mobile-first. L’application met en avant un parcours clair pour les candidats, un suivi pédagogique solide et une gestion administrative fluide pour les formateurs.
+QCM-MAJOR propose des quiz thématiques ou globaux dans une interface adaptée aux mobiles et aux ordinateurs. Les résultats et signalements sont gérés avec Supabase ; les questions sont corrigées côté serveur.
 
 ### Pourquoi ce projet ?
 
 - une préparation au BM4 accessible depuis un navigateur mobile ou desktop ;
 - un rythme de quiz immersif inspiré d’un entraînement de combat ;
-- une expérience de révision plus motivante grâce au scoring, aux classements et au suivi d’historique ;
-- une gestion de contenu centralisée pour les admins, sans backend lourd ni dépendance complexe.
+- une expérience de révision avec scoring, classement et historique ;
+- une gestion centralisée des questions et des signalements pour les administrateurs.
 
 ### Ce que propose l’application
 
@@ -24,9 +24,10 @@ QCM-MAJOR transforme la préparation au BM4 en une experience immersive, rapide 
 - mode “COMBAT DE HAUTE INTENSITE” avec chrono et pression temporelle ;
 - synthèse finale avec réponses correctes, fausses, passées et points ;
 - signalement d’erreurs sur les questions ;
-- espace d’administration pour gérer comptes, questions, résultats et signalements.
+- espace d’administration pour gérer les comptes, questions, résultats et signalements ;
+- correction des réponses par Supabase, sans envoyer les corrigés au navigateur des candidats.
 
-Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tout autre support statique, avec Supabase pour l’authentification, le stockage des données, les résultats et les notifications.
+Le frontend statique est déployé sur GitHub Pages. Supabase fournit l’authentification, les données et les fonctions serveur nécessaires. Les quiz nécessitent une session en ligne ; la correction hors connexion n’est pas prise en charge.
 
 ## Fonctionnalités principales
 
@@ -39,7 +40,7 @@ Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tou
 - campagne globale de révision ;
 - entraînement thématique ;
 - mode "COMBAT DE HAUTE INTENSITE" avec chrono ;
-- scoring, réponses correctes/fausses/passées ;
+- scoring côté serveur, réponses correctes/fausses/passées ;
 - écran de conclusion avec synthèse pédagogique ;
 - signalement de question avec commentaire optionnel.
 
@@ -50,7 +51,7 @@ Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tou
 - consultation des signalements ;
 - suivi des résultats et des listes de candidats ;
 - filtrage, recherche et statistiques ;
-- accès sécurisé via les rôles Supabase (`app_metadata.role = admin` ou `app_metadata.bm4_admin = true`).
+- accès administrateur via les rôles Supabase (`app_metadata.role = admin` ou `app_metadata.bm4_admin = true`).
 
 ### Expérience mobile et PWA
 
@@ -58,11 +59,11 @@ Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tou
 - affichage en plein écran / écran d'accueil ;
 - icônes, splash screens et thème visuel militaire ;
 - notifications push pour les signalements côté admin Android/Chrome ;
-- fallback local via `localStorage`.
+- cache et synchronisation différée de certaines données via le stockage du navigateur (cela ne permet pas de jouer hors connexion).
 
 ## Screenshots / captures
 
-Quelques captures réelles de l’interface du projet pour illustrer les parcours clés :
+Captures de l’interface pour illustrer les principaux parcours :
 
 ### Authentification et Top 3 public
 
@@ -91,8 +92,8 @@ Quelques captures réelles de l’interface du projet pour illustrer les parcour
 - Frontend : HTML5, CSS3, JavaScript Vanilla
 - Authentification : Supabase Auth
 - Base de données / logique applicative : Supabase
-- Stockage local : navigateur (`localStorage`)
-- Hébergement : GitHub Pages ou autre static hosting
+- Stockage local : navigateur (`localStorage` et `sessionStorage`)
+- Hébergement : GitHub Pages
 - PWA : `manifest.json`, service worker, assets graphiques
 
 ## Structure du dépôt
@@ -148,11 +149,11 @@ Puis ouvrir :
 http://localhost:8000
 ```
 
-Le projet est conçu pour être servi via HTTP. Éviter l'ouverture directe du fichier `index.html` dans certains navigateurs si besoin de tester la configuration Supabase et les modules ES.
+Le projet doit être servi via HTTP. L’ouverture directe de `index.html` ne permet pas de tester correctement les modules JavaScript ni l’authentification Supabase.
 
 ## Configuration Supabase
 
-L'application attend au minimum les métadonnées suivantes dans `index.html` :
+L’application lit les paramètres Supabase dans les métadonnées de `index.html` :
 
 ```html
 <meta name="supabase-url" content="https://your-project.supabase.co">
@@ -164,48 +165,40 @@ L'application attend au minimum les métadonnées suivantes dans `index.html` :
 
 - activer le fournisseur Email pour l'inscription et la récupération de mot de passe ;
 - configurer les redirect URLs d'authentification ;
-- prévoir une table `profiles` avec les informations de compte utilisateur ;
-- prévoir les tables `question_bank`, `profiles`, `quiz_results` et `question_reports` ;
-- sécuriser les accès avec les politiques RLS adaptées ;
+- créer et sécuriser les tables `question_bank`, `profiles`, `quiz_results` et `question_reports` ;
+- activer Row Level Security (RLS) et appliquer les politiques d’accès prévues par les migrations ;
 - configurer les rôles administrateurs via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
-Appliquer les migrations du dossier `supabase/migrations/` dans l’ordre chronologique. La migration `20261017192000_server_side_question_grading.sql` limite la lecture publique de `question_bank` aux colonnes nécessaires, réserve la lecture des réponses correctes à une RPC administrateur, et ajoute la correction des réponses par une RPC authentifiée. Les questions nécessitent donc une connexion Supabase active pour être jouées et corrigées ; le mode quiz hors connexion n’est pas disponible. Les signalements candidat ne transmettent plus d’index de réponse correcte.
+Appliquer les migrations du dossier `supabase/migrations/` dans l’ordre chronologique. La migration `20261017192000_server_side_question_grading.sql` limite la lecture de `question_bank` aux colonnes nécessaires, réserve l’accès aux corrigés à une RPC administrateur et ajoute la correction par une RPC authentifiée. Les questions nécessitent une session Supabase active ; le quiz hors connexion n’est pas disponible. Les signalements candidat ne transmettent pas l’index de la réponse correcte.
 
-Vérifier aussi l’existence et les droits d’exécution des fonctions `get_admin_question_bank` et `grade_question_answer` après application des migrations. Ne rétablissez pas de privilège `SELECT` global sur `question_bank` pour `anon` ou `authenticated`, car cela exposerait `correct_answer`.
+Après application, vérifier les fonctions `get_admin_question_bank` et `grade_question_answer`, leurs droits d’exécution et les privilèges de colonnes. Ne rétablissez pas de privilège `SELECT` global sur `question_bank` pour `anon` ou `authenticated` : cela pourrait exposer `correct_answer`.
 
 ### Top 3 public
 
-Le classement affiché avant connexion est chargé par la fonction RPC publique `get_public_global_campaign_top3()`. Cette fonction renvoie uniquement le pseudo, la note et la date des trois meilleurs résultats globaux (`theme = 'all'`), sans accès anonyme direct à la table `quiz_results`. Appliquez la migration `20260926082000_create_public_global_campaign_top3_view.sql` pour activer ce classement.
+Le classement affiché avant connexion est chargé par la fonction RPC publique `get_public_global_campaign_top3()`. Elle renvoie le pseudo, la note et la date des trois meilleurs résultats globaux (`theme = 'all'`), sans accès anonyme direct à la table `quiz_results`. Appliquer la migration `20260926082000_create_public_global_campaign_top3_view.sql` pour activer ce classement.
 
 ## Notifications et déploiement
 
-Le projet supporte :
+Le dépôt contient :
 
 - les notifications de signalement côté admin ;
 - le déploiement statique sur GitHub Pages ;
 - l'installation en tant qu'application sur mobile ;
-- la gestion de contenu avec Supabase sans backend Node.js dédié.
+- une interface statique et des fonctions applicatives hébergées par Supabase.
 
-Pour la partie push, la configuration nécessite des secrets VAPID, un webhook et la fonction Edge `report-push` dans Supabase. Voir le dossier `supabase/functions/` et les migrations associées pour le détail opérationnel.
+Les notifications push de signalement sont réservées aux administrateurs et nécessitent une configuration VAPID, la fonction Edge `report-push` et les migrations associées. Voir `supabase/functions/` et `supabase/migrations/`.
 
 ## Documentation juridique et conformité
 
-Le projet inclut des écrans statiques de mentions légales et de confidentialité, accessibles depuis le footer de l’application, sans dépendre d’un routeur serveur.
+Les mentions légales et la politique de confidentialité sont accessibles depuis le pied de page de l’application. Elles décrivent le fonctionnement observé dans le code : hébergement GitHub Pages, services Supabase, données de compte et d’activité, signalements, classement public, stockage navigateur et notifications push facultatives pour les administrateurs.
 
-Avant publication, vérifier que :
+Les mentions identifient l’éditeur comme domino2801 et indiquent l’adresse de contact fournie. La politique ne prétend pas qu’une purge automatique après un an existe : le code ne prévoit pas de suppression automatique de ce type pour les comptes inactifs, les résultats ou les signalements. L’éditeur doit définir et appliquer ses durées de conservation et vérifier que les bases légales correspondent à sa situation. Les durées appliquées par les prestataires à leurs sauvegardes relèvent de leurs propres règles.
 
-- les textes juridiques correspondent bien à l’hébergement réel et à l’éditeur déclaré ;
-- les informations de contact, l’hébergeur, la région Supabase et la base légale sont cohérentes avec le déploiement effectif ;
-- les données traitées via Supabase Auth, `profiles`, `quiz_results`, `question_reports` et les éventuelles notifications push sont couvertes par des politiques RLS et des règles de conservation adaptées ;
-- les administrateurs autorisés sont bien limités aux accès nécessaires au service (`app_metadata.role = admin` ou `app_metadata.bm4_admin = true`) ;
-- le classement public ne révèle que les données strictement nécessaires (pseudo, score et date), sans exposer d’informations sensibles ou d’identifiant personnel ;
-- le stockage local (`localStorage` / `sessionStorage`) est mentionné dans la confidentialité, avec le rappel que les données non synchronées restent locales tant qu’elles ne sont pas enregistrées sur Supabase.
-
-Le contenu présent dans l’application doit refléter précisément le fonctionnement réel de la stack : GitHub Pages pour le front, Supabase pour l’authentification, la base de données et les notifications, avec une politique de confidentialité explicite sur l’usage des comptes, des résultats, des signalements et des données de connexion.
+Ces textes fournissent une information générale et ne remplacent pas une validation juridique adaptée à l’éditeur et à son activité.
 
 ## Qualité et tests
 
-Le dépôt contient une suite de tests fonctionnels dans le dossier `tests/` pour couvrir les principales parcours :
+Les tests du dossier `tests/` couvrent notamment :
 
 - authentification et inscription ;
 - question bank et thèmes ;
@@ -213,9 +206,15 @@ Le dépôt contient une suite de tests fonctionnels dans le dossier `tests/` pou
 - écrans statiques et parcours de quiz ;
 - notifications et modules de récupération.
 
+Lancer les tests avec Node.js :
+
+```bash
+node --test tests/*.test.mjs
+```
+
 ## À retenir
 
-QCM-MAJOR est une application web de préparation au BM4, orientée mobile, avec un front statique et un back Supabase. Elle combine quiz, gestion de contenu, performance visuelle et fonctionnalités administratives dans un seul projet léger et facilement déployable.
+QCM-MAJOR est une application web de préparation au BM4 avec un frontend statique sur GitHub Pages et des fonctions de données et de correction côté Supabase.
 
 ---
 
