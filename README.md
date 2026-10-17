@@ -1,284 +1,118 @@
-# Question pour un Major - Édition Tactique 🎖️
+# Question pour un Major - Édition Tactique
 
-## Informations légales
+Application web de préparation au Brevet Militaire de 4e niveau (BM4), pensée comme un QCM tactique en navigateur pour les candidats et une interface d’administration pour les gestionnaires de contenu.
 
-Le pied de page commun donne accès aux « Mentions légales » et à la
-« Politique de confidentialité », sans connexion. Ces sections de `index.html`
-utilisent les ancres `#mentions-legales` et `#politique-confidentialite` :
-aucune route serveur n’est nécessaire, même sous un sous-chemin GitHub Pages.
-Le lien « Retour à l’application » referme la section sans réinitialiser l’écran
-en cours ; le chrono d’un quiz continue pendant la consultation.
+## Vue d'ensemble
 
-Les textes sont des modèles : l’éditeur doit compléter les champs signalés
-(identité, contact privé, hébergement, bases légales, conservation et transferts)
-et vérifier leur adéquation au déploiement avant publication.
+QCM-MAJOR est une application statique (PWA) qui permet :
 
-## Administration sur téléphone
+- de s'inscrire et de se connecter à un espace candidat ;
+- de passer des quiz par campagne globale ou par thème ;
+- d'obtenir un score et un bilan pédagogique détaillé ;
+- de signaler des questions suspectes ;
+- de gérer la banque de questions, les comptes et les résultats depuis un espace admin.
 
-- « Actualiser » et « Activer notification » sont sur une même ligne, suivis de
-  quatre onglets : Comptes, Questions, Signalements et Résultats. Aucun panneau
-  ne s’ouvre avant la sélection d’un onglet. Sur téléphone, les tableaux deviennent
-  des cartes ; sur ordinateur,
-  ils restent des tableaux.
-- Les deux boutons sont gris par défaut. « Actualiser » devient vert après une
-  synchronisation réussie ; « Activer notification » devient vert lorsque
-  l’abonnement est confirmé. Un nouveau clic sur ce dernier désactive les
-  notifications et le remet en gris.
-- Chaque liste affiche 25 éléments, puis « Charger plus ». Les recherches sont
-  différées de 250 ms ; changer un filtre remet la liste à 25 éléments.
-  Les données Supabase sont récupérées par pages, sans limiter le total à la
-  première réponse. La recherche s’effectue ensuite sur les données chargées.
-- Dans Questions, choisir le thème puis « Ajouter une question » ou « Modifier ».
-  Les boutons Enregistrer et Annuler restent accessibles pendant le défilement.
-  Une confirmation protège les modifications non enregistrées.
-- Le brouillon est conservé dans le stockage de l’onglet pour le compte concerné,
-  et peut être repris après rechargement. Il est supprimé après enregistrement,
-  annulation ou déconnexion ; il n’est pas envoyé au serveur avant sauvegarde.
-- Les signalements peuvent être filtrés par statut. « Corriger la question »
-  ouvre la question correspondante ; une case permet de marquer le signalement
-  comme traité après un enregistrement réussi.
-- « Actualiser » bloque les commandes pendant le chargement et affiche uniquement
-  les erreurs avec possibilité de réessayer. Hors connexion, les données peuvent
-  être anciennes : il ne s’agit pas d’une synchronisation en temps réel.
-- Pendant une opération sur la banque, les commandes sont temporairement
-  bloquées. Les suppressions demandent confirmation et ne sont appliquées
-  localement qu’après confirmation du serveur.
+Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tout autre support statique, avec Supabase pour l'authentification, les données et les notifications.
 
-Les autorisations Supabase et politiques RLS existantes restent nécessaires et
-inchangées. Aucune nouvelle migration n’est requise pour cette présentation.
+## Fonctionnalités principales
 
-Le Top 3 est visible sur la connexion candidat avant identification, au-dessus du
-formulaire. Le bloc reste visible pendant le chargement, sans résultats ou en cas
-d'erreur, avec un message explicite. Il utilise uniquement la RPC publique et son
-cache dédié, jamais les résultats privés d'un compte précédemment connecté.
-Appliquer `supabase/migrations/20260926082000_create_public_global_campaign_top3_view.sql`
-puis `supabase/migrations/20261003000000_public_top3_display_names.sql` avant
-publication. Seuls le pseudo, la note et la date sont renvoyés ; les pseudos
-contenant une adresse email sont masqués. Les politiques RLS de `quiz_results`
-restent inchangées. Le classement conserve les trois meilleurs résultats, même
-si un candidat apparaît plusieurs fois, et privilégie l'ancienneté à note égale.
-Sur la connexion et l'historique, le premier résultat est mis en avant dans une
-carte au même dégradé doré et aux mêmes animations lumineuses que le bouton
-« Préparation au combat », sans devenir un bouton. Le trophée, le pseudo et
-la note sont agrandis, avec une présentation adaptée aux écrans mobiles.
-Le deuxième résultat est encadré en argent avec un halo pulsant et un reflet
-lumineux argentés sur ces deux écrans.
-Le troisième résultat reprend cet encadrement et ces effets lumineux en bronze.
-Sur l'accueil et l'historique, des icônes SVG remplacent les emojis : coupe avec
-étoile, médaille argent numérotée 2 et médaille bronze numérotée 3. Ces décorations
-suivent l'ordre des trois résultats affichés, y compris en cas de notes égales.
-Le Top 3 reste accessible dans l'historique candidat, mais n'est pas affiché sur
-l'écran de choix de campagne.
+### Espace candidat
 
-L'historique personnel est actualisé depuis Supabase à chaque connexion candidat,
-ainsi qu'à la restauration d'une session. Les graphiques, dont celui de Campagne
-Globale, sont recalculés pour le candidat connecté et la période sélectionnée.
-Un message indique le chargement, la réussite ou l'échec de cette actualisation ;
-un échec ne bloque pas l'accès aux campagnes et ne présente pas le cache comme
-un historique à jour.
+- inscription via Supabase Auth ;
+- connexion avec email/mot de passe ;
+- vérification OTP à l'inscription ;
+- récupération de mot de passe ;
+- campagne globale de révision ;
+- entraînement thématique ;
+- mode "COMBAT DE HAUTE INTENSITE" avec chrono ;
+- scoring, réponses correctes/fausses/passées ;
+- écran de conclusion avec synthèse pédagogique ;
+- signalement de question avec commentaire optionnel.
 
-Dans « Gestion des résultats », l'administrateur peut sélectionner un candidat
-pour retrouver le même histogramme de Campagne Globale, la moyenne de Campagne
-Globale (sans les notes des autres thèmes) et le thème
-à travailler que dans l'historique personnel. Le filtre de période s'applique à
-ces indicateurs ; le tableau conserve son filtre candidat et sa recherche.
-Sans candidat sélectionné, les indicateurs individuels restent masqués.
-Le podium administrateur reprend les icônes et effets or, argent et bronze.
-Le podium reste compact sur ces trois écrans : icônes, textes du premier résultat
-et espacements réduits, tout en conservant les effets lumineux et les couleurs.
-Le titre est rapproché du premier résultat ; un statut de classement vide
-n'occupe pas d'espace, tandis que les messages de chargement et d'erreur restent visibles.
-La présentation du podium réduit sa hauteur d'environ moitié, à largeur conservée :
-sur mobile, icône sur deux lignes, pseudo et note sur la première, date sur la
-seconde ; sur ordinateur, toutes les informations tiennent sur une ligne.
-L'interface administrateur ne permet plus de supprimer une note ni d'effacer
-l'ensemble des résultats. La consultation, la recherche et les filtres restent
-disponibles ; les politiques Supabase ne sont pas modifiées par ce changement.
-Les historiques candidat et administrateur affichent la moyenne des seules
-Campagnes Globales de la période, ou leur absence explicite. Les listes de période
-et le filtre candidat des résultats utilisent un fond gris et un texte clair,
-y compris dans leurs options déroulantes.
+### Espace administrateur
 
+- gestion des comptes et profils ;
+- gestion des questions (ajout, édition, suppression, dédoublonnage) ;
+- consultation des signalements ;
+- suivi des résultats et des listes de candidats ;
+- filtrage, recherche et statistiques ;
+- accès sécurisé via les rôles Supabase (`app_metadata.role = admin` ou `app_metadata.bm4_admin = true`).
 
-**Question pour un Major - Édition Tactique** est une application web de quiz (QCM) interactive conçue pour accompagner les militaires dans leur préparation au **Brevet Militaire de 4e niveau (BM4)**. 
+### Expérience mobile et PWA
 
-Le site permet aux candidats de tester leurs connaissances à travers différentes thématiques clés de la culture militaire et offre aux administrateurs une interface dédiée pour gérer le contenu pédagogique.
+- interface adaptée mobile et bureau ;
+- affichage en plein écran / écran d'accueil ;
+- icônes, splash screens et thème visuel militaire ;
+- notifications push pour les signalements côté admin Android/Chrome ;
+- fallback local via `localStorage`.
 
-Le mode « COMBAT DE HAUTE INTENSITE » dispose d'un chrono de 60 minutes et d'une mèche qui
-se consume avec le temps restant. À zéro, les réponses et la navigation sont
-bloquées immédiatement, même si l'onglet a été laissé en arrière-plan.
-Une courte explosion décorative avec un son synthétisé de 0,8 seconde précède
-le bilan ; les questions non répondues
-sont comptées comme passées. L'effet respecte la réduction des animations.
-Le chrono s'arrête au bilan si le questionnaire est terminé avant l'échéance.
-La simulation de combat et les exercices par thème restent sans chrono.
-Pendant le COMBAT DE HAUTE INTENSITE, les points ne sont pas affichés pour ne pas révéler
-la correction ; ils restent disponibles au bilan. La simulation et les
-exercices par thème conservent les points en direct.
-Le son est préparé au lancement du COMBAT DE HAUTE INTENSITE pour autoriser sa lecture.
-Si le navigateur bloque l'audio, le questionnaire se termine normalement.
+## Stack technique
 
-Le thème 6, « Implantation des unités », regroupe les questions d'implantation,
-de garnison et de stationnement auparavant présentes dans les autres thèmes.
-Le reclassement de la banque locale s'applique aussi aux anciennes copies locales
-et au chargement Supabase, sans changer les réponses ou les identifiants. Les
-questions sur l'organigramme, les missions et l'histoire du Musée de l'armée
-restent dans leurs thèmes d'origine. Appliquer la migration
-`supabase/migrations/20261003173000_move_unit_location_questions.sql` avec la
-publication du thème 6 : elle change uniquement `question_bank.theme_id`, sans
-modifier les résultats historiques. L'identifiant de banque du thème 6 est `5`,
-alors que ses résultats utilisent `6`. Ses questions participent toujours à la
-Campagne Globale et ses notes alimentent le thème à travailler.
+- Frontend : HTML5, CSS3, JavaScript Vanilla
+- Authentification : Supabase Auth
+- Base de données / logique applicative : Supabase
+- Stockage local : navigateur (`localStorage`)
+- Hébergement : GitHub Pages ou autre static hosting
+- PWA : `manifest.json`, service worker, assets graphiques
 
-### Concordance des questions et des six thèmes
-
-Le classement suit le sujet principal de chaque question :
-
-1. **Organisation et Commandement** : organigrammes, ressources humaines,
-   formation, statut, commandement, éthique et doctrine, y compris la RNS.
-2. **Matériels, Armements et Technologies** : caractéristiques, emploi technique,
-   équipements, systèmes numériques et rations.
-3. **Lois de Programmation Militaire** : LPM, budgets, coûts et cibles
-   programmées d'effectifs ou d'équipements.
-4. **Opérations Extérieures** : opérations nommées, missions extérieures ou
-   intérieures, engagements et exercices.
-5. **Histoire & Traditions** : créations et événements historiques, emblèmes,
-   devises, saints patrons, mascottes et commémorations.
-6. **Implantation des unités** : lieux d'implantation, garnisons, stationnements
-   et quartiers généraux. Une mention géographique accessoire ne suffit pas :
-   l'attribution d'un drapeau au CFIM de Caylus reste en Histoire & Traditions,
-   et le nom complet du CENTAC relève de l'Organisation.
-
-Les affectations auditées dans `modules/questions-bank/theme-assignments.js`
-s'appliquent à la banque intégrée, aux anciennes copies locales, au chargement
-Supabase et à l'enregistrement administrateur. Les intitulés génériques
-« Désignez l'intrus » et « Quel est l'intrus » sont distingués par leurs réponses.
-Les autres nouvelles questions conservent le thème choisi par l'administrateur,
-sauf les implantations reconnues par le classement existant.
-
-La migration `supabase/migrations/20261003190000_reconcile_question_themes.sql`
-reclasse 752 questions de l'inventaire audité de 1 293 entrées. Elle est
-transactionnelle et réexécutable ; elle refuse les intitulés ou affectations
-modifiés depuis l'audit, plutôt que d'écraser une modification concurrente.
-Elle ne change que `question_bank.theme_id` : questions, réponses, identifiants,
-activation et résultats historiques sont conservés. L'entrée de démonstration
-« Your question » (id 1) est signalée comme contenu à corriger séparément ;
-elle n'est ni supprimée ni réécrite par ce reclassement.
-
----
-
-## 🚀 Fonctionnalités
-
-### 👨‍🎓 Espace Candidat
-* **Inscription et Connexion :** Authentification Supabase avec vérification OTP email à l’inscription.
-* **Mot de passe oublié :** Envoi d’un lien de récupération puis définition d’un nouveau mot de passe au retour dans l’application.
-* **Campagnes de Révision :** Lancement d'une "Campagne Globale" ou entraînement par thématique ciblée.
-* **Système de Notation :** Évaluation dynamique avec un score final sur **20 points**.
-* **Bilan Pédagogique :** Résumé détaillé en fin de partie (réponses correctes, fausses, sautées) et rappel des questions à revoir.
-* **Signalement d’erreur :** Envoi à l’administrateur d’une question suspecte, de sa bonne réponse enregistrée et d’un commentaire facultatif.
-
-### ⚙️ Interface Administrateur
-Une zone d'administration sécurisée est intégrée pour centraliser la gestion de l'application :
-* **Gestion des comptes :** Visualisation et suivi des candidats inscrits.
-* **Gestion des questions :** Ajout, modification, suppression et dédoublonnage automatique des QCM.
-* **Signalements :** Consultation des questions signalées et de l’adresse e-mail du candidat, marquage comme traité et suppression par un administrateur.
-* **Gestion des résultats :** Suivi des notes, des réponses fournies et des dates de passage des candidats, avec option de réinitialisation.
-* **Accès admin sécurisé :** Connexion avec un compte Supabase autorisé via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
-
----
-
-## 📚 Thématiques de Révision (BM4)
-
-Les questions sont structurées autour de **5 piliers majeurs** du programme :
-1. 📋 **Organisation et Commandement**
-2. 🔬 **Matériels, Armements et Technologies**
-3. 📜 **Lois de Programmation Militaire (LPM)**
-4. 🌍 **Opérations Extérieures (OPEX)**
-5. 🏛️ **Histoire & Traditions**
-
----
-
-## 📂 Structure du Projet
-
-L'arborescence du projet est organisée de manière modulaire pour séparer les responsabilités (Styles, Logique métier, Données) :
+## Structure du dépôt
 
 ```text
 QCM-MAJOR/
-│
-├── index.html                 # Interface principale (3 écrans)
-├── app.js                     # Point d’entrée, coordination des modules
-│
+├── index.html                  # Point d'entrée de l'application
+├── app.js                      # Coordination générale des modules
+├── manifest.json               # Configuration PWA
+├── service-worker.js           # Service worker / notifications
 ├── ui/
-│   └── Style.css              # Style militaire (HUD, couleurs, animations)
-│
+│   └── Style.css               # Styles applicatifs
 ├── public/
-│   ├── images/                # Logos, décor, icônes
-│   ├── splash/
-│   │   ├── ios/               # Splash screens iPhone et iPad
-│   │   └── android/           # Splash screens Android téléphone et tablette
-│   └── audio/                 # Sonar, sons tactiques
-│
+│   ├── audio/                  # Sons tactiques
+│   ├── icons/                  # Icônes PWA
+│   ├── images/                 # Logos et visuels
+│   └── splash/                 # Splash screens mobile
 ├── modules/
-│   │
-│   ├── questions-bank/        # Banque de questions (découpée par thèmes)
-│   │   ├── index.js           # Fusion des thèmes + accès global
-│   │   ├── theme-1.js
-│   │   ├── theme-2.js
-│   │   ├── theme-3.js
-│   │   ├── theme-4.js
-│   │   └── theme-5.js
-│   │
-│   ├── quiz-engine/           # Moteur tactique
-│   │   ├── index.js           # API du moteur
-│   │   ├── engine.js          # Logique pure (chargement, mélange)
-│   │   └── scoring.js         # Barème militaire (+4 / -1 / 0)
-│   │
-│   ├── startup-recovery/      # Fallback explicite en cas de démarrage dégradé
-│   │   └── index.js
-│   │
-│   └── ui-controller/         # Gestion de l’interface
-│       └── index.js           # Changement d’écran, marquage visuel
-
+│   ├── questions-bank/         # Banque de questions et thèmes
+│   ├── quiz-engine/            # Moteur du quiz et scoring
+│   ├── report-notifications/   # Gestion notifications
+│   ├── startup-recovery/       # Restauration de session
+│   └── ui-controller/          # Contrôle de l'interface
+├── supabase/
+│   ├── config.toml             # Configuration des Edge Functions
+│   ├── functions/
+│   └── migrations/             # Scripts SQL de base de données
+├── tests/                      # Tests fonctionnels et UI
+├── README.md                   # Documentation du projet
+└── ...
 ```
 
-### Splash screens mobile
+## Démarrage local
 
-Les images de démarrage sont rangées dans `public/splash/ios/` et `public/splash/android/`.
-Les splash screens iOS sont déclarés dans `index.html` avec leurs dimensions et ratios d'écran.
-Pour Android, le navigateur/PWA utilise les icônes du `manifest.json` et sa couleur de fond ; les images Android sont conservées dans le dépôt pour une future intégration native (Capacitor ou équivalent), sans être utilisées par une balise iOS.
+Aucune étape de build n'est nécessaire pour démarrer le site.
 
-## 🛠️ Technologies Utilisées
+1. Cloner le dépôt :
 
-* **Frontend :** HTML5, CSS3, JavaScript (Vanilla ES6)
-* **Authentification :** Supabase Auth (email/password, OTP signup, recovery)
-* **Persistance principale :** Supabase (profils, questions, résultats)
-* **Repli local :** `localStorage` (copie de secours côté navigateur)
-* **Hébergement :** GitHub Pages
+```bash
+git clone https://github.com/domino2801-cmyk/QCM-MAJOR.git
+cd QCM-MAJOR
+```
 
----
+2. Démarrer un petit serveur web local :
 
-## 💻 Installation et Utilisation Locale
+```bash
+python -m http.server 8000
+```
 
-Pour exécuter ce projet sur votre machine locale, aucune installation complexe n'est requise :
+Puis ouvrir :
 
-1. **Cloner le dépôt :**
-   ```bash
-   git clone https://github.com
-   ```
+```text
+http://localhost:8000
+```
 
-2. **Accéder au dossier :**
-   ```bash
-   cd QCM-MAJOR
-   ```
+Le projet est conçu pour être servi via HTTP. Éviter l'ouverture directe du fichier `index.html` dans certains navigateurs si besoin de tester la configuration Supabase et les modules ES.
 
-3. **Lancer l'application :**
-   Ouvrez simplement le fichier `index.html` dans le navigateur de votre choix.
+## Configuration Supabase
 
----
-
-## 🔐 Configuration Supabase requise
-
-Avant utilisation de l’authentification, renseignez les balises meta de `index.html` à la racine du projet :
+L'application attend au minimum les métadonnées suivantes dans `index.html` :
 
 ```html
 <meta name="supabase-url" content="https://your-project.supabase.co">
@@ -286,64 +120,52 @@ Avant utilisation de l’authentification, renseignez les balises meta de `index
 <meta name="supabase-profiles-rls" content="verified">
 ```
 
-Prérequis côté Supabase :
+### Prérequis côté Supabase
 
-* Activer le fournisseur **Email** pour l’OTP d’inscription et la récupération de mot de passe.
-* Configurer les **Redirect URL(s)** Supabase Auth pour l’URL réelle de l’application (GitHub Pages ou environnement local).
-* Prévoir une table `profiles` avec au minimum `id`, `email`, `name` et une colonne de spécialité nommée `specialty` ou `speciality`, ainsi que des politiques RLS permettant à l’utilisateur authentifié de lire/écrire son propre profil.
-* Prévoir une table `questions` (colonnes : `id` unique, `theme_id`, `q`, `r`, `correct`) avec `r` stocké comme tableau JSON/JSONB et règles de lecture/écriture adaptées à l’administration.
-* Prévoir une table `quiz_results` (colonnes : `id` unique, `candidate_id`, `label`, `email`, `name`, `theme`, `score`, `correct`, `wrong`, `skipped`, `total`, `date`, `created_at`) avec `created_at` alimenté automatiquement (timestamp par défaut) pour l’ordre d’affichage.
-* Appliquer `supabase/migrations/20261004105000_create_question_reports.sql` pour créer la table de signalements et ses règles RLS, puis `supabase/migrations/20261004121500_allow_admin_delete_question_reports.sql` pour autoriser leur suppression par un administrateur. Les candidats authentifiés peuvent seulement soumettre leurs propres signalements ; la consultation, le traitement et la suppression sont réservés aux administrateurs.
-* Exécuter aussi la migration qui crée la fonction RPC publique `get_public_global_campaign_top3()` (champs `display_name`, `score`, `created_at`) et accorde `EXECUTE` à `anon`/`authenticated` pour afficher le Top 3 de connexion sans ouvrir `quiz_results` en lecture anonyme.
-* Ne passer `supabase-profiles-rls` à `verified` qu’après validation effective de ces règles côté projet ; sinon la finalisation du profil est bloquée par l’application.
-* Les comptes administrateurs doivent aussi être couverts par des règles RLS côté Supabase, cohérentes avec les claims `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
+- activer le fournisseur Email pour l'inscription et la récupération de mot de passe ;
+- configurer les redirect URLs d'authentification ;
+- prévoir une table `profiles` avec les informations de compte utilisateur ;
+- prévoir les tables `questions`, `quiz_results` et la table de signalements ;
+- sécuriser les accès avec les politiques RLS adaptées ;
+- configurer les rôles administrateurs via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
-### Notifications Android des signalements
+Les migrations du dossier `supabase/migrations/` doivent être appliquées selon le besoin du déploiement, notamment pour les signalements, le Top 3 public et les autorisations d'administration.
 
-Les administrateurs peuvent activer les notifications depuis Chrome sur Android avec
-« Activer notification », puis utiliser le bouton de test.
-L'application peut être installée sur l'écran d'accueil. Android affiche un badge
-selon le lanceur et les réglages des notifications ; ce badge n'est pas un compteur
-garanti des signalements non traités. La déconnexion administrateur désactive
-l'abonnement sur cet appareil.
+## Notifications et déploiement
 
-Configuration serveur :
+Le projet supporte :
 
-1. Générer une paire de clés VAPID et un secret aléatoire pour le webhook, sans
-   les enregistrer dans Git. Conserver les clés VAPID lors des redéploiements.
-2. Ajouter les secrets `QCM_VAPID_PUBLIC_KEY`, `QCM_VAPID_PRIVATE_KEY` et
-   `QCM_REPORT_PUSH_WEBHOOK_SECRET` dans les secrets des Edge Functions Supabase.
-3. Enregistrer le même secret de webhook dans Supabase Vault, sous le nom
-   `qcm_report_push_webhook_secret`.
-4. Déployer `supabase/functions/report-push/index.ts` sous le nom `report-push`,
-   avec `verify_jwt = false` (voir `supabase/config.toml`). La fonction vérifie
-   elle-même le secret des événements et l'identité des administrateurs pour les tests.
-5. Appliquer `supabase/migrations/20261004130000_admin_report_push.sql`.
-   Cette migration crée les abonnements protégés par RLS et un trigger asynchrone
-   `pg_net` sur les nouveaux signalements. Adapter l'URL du projet dans le trigger
-   si l'application est déployée sur un autre projet Supabase.
+- les notifications de signalement côté admin ;
+- le déploiement statique sur GitHub Pages ;
+- l'installation en tant qu'application sur mobile ;
+- la gestion de contenu avec Supabase sans backend Node.js dédié.
 
-Seuls les endpoints Chrome/FCM sont acceptés. Le contenu envoyé ne contient ni
-e-mail ni texte de la question. Le service worker ne met pas les pages en cache.
-Les abonnements expirés sont retirés après une réponse 404/410 du service push.
-Surveiller les logs `report-push` et `net._http_response` en cas d'échec de livraison :
-un webhook `pg_net` n'offre pas de garantie de relivraison automatique.
+Pour la partie push, la configuration nécessite des secrets VAPID, un webhook et la fonction Edge `report-push` dans Supabase. Voir le dossier `supabase/functions/` et les migrations associées pour le détail opérationnel.
 
-Le flux candidat attendu est :
+## Documentation juridique et conformité
 
-1. Inscription avec email + mot de passe + profil candidat
-2. Réception du code OTP par email
-3. Vérification OTP dans l’interface
-4. Finalisation du profil dans `profiles`
-5. Connexion email/mot de passe et récupération de mot de passe via email
+Une partie du site inclut des écrans de mentions légales et de politique de confidentialité sans dépendre d'un routeur serveur.
 
-### Diagnostic rapide si le bouton « Valider l’enrôlement » semble ne rien faire
+Avant publication, vérifier que :
 
-- Si un champ requis est vide ou invalide (email, mot de passe < 6 caractères, spécialité non choisie), l’application doit maintenant afficher la cause directement dans `register-message`.
-- Si le message indique qu’il est impossible de joindre Supabase, vérifier :
-  - la valeur de `meta[name="supabase-url"]`,
-  - l’activation du fournisseur Email et des Redirect URL Supabase Auth,
-  - un éventuel cache GitHub Pages côté navigateur (forcer le rechargement),
-  - l’absence de blocage réseau/extension navigateur sur les appels `.../auth/v1/signup` et `.../auth/v1/verify`.
+- les textes juridiques correspondent à l'hébergement réel ;
+- les informations de contact, hébergement et base légale sont correctes ;
+- les politiques de conservation et de transfert sont cohérentes avec l'usage des données.
+
+## Qualité et tests
+
+Le dépôt contient une suite de tests fonctionnels dans le dossier `tests/` pour couvrir les principales parcours :
+
+- authentification et inscription ;
+- question bank et thèmes ;
+- résultats, historique et classement ;
+- écrans statiques et parcours de quiz ;
+- notifications et modules de récupération.
+
+## À retenir
+
+QCM-MAJOR est une application web de préparation au BM4, orientée mobile, avec un front statique et un back Supabase. Elle combine quiz, gestion de contenu, performance visuelle et fonctionnalités administratives dans un seul projet léger et facilement déployable.
 
 ---
+
+Pour toute contribution, il est recommandé de garder la logique métier dans les modules du dossier `modules/`, les styles dans `ui/Style.css`, et d'éviter les modifications directes dans le HTML sauf si le besoin concerne la structure ou les métadonnées de configuration.
