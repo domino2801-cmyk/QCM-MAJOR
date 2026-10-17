@@ -329,8 +329,44 @@
             <div class="theme-bottom-actions">
                 <button id="btn-history-theme" class="btn-secondary" type="button" aria-expanded="false" aria-controls="candidate-history-panel">Journal de campagne</button>
                 <button id="logout-btn" class="btn-secondary" type="button">Quitter la zone</button>
+                <button id="btn-help-theme" class="btn-secondary" type="button">Aide</button>
             </div>
             <p id="candidate-history-sync-status" class="terminal-note" role="status" aria-live="polite"></p>
+        </div>
+
+        <div id="help-screen" class="screen help-screen">
+            <section class="global-evolution help-panel" aria-labelledby="help-title">
+                <header class="help-header">
+                    <h1 id="help-title" tabindex="-1">Aide</h1>
+                    <div class="help-branding">
+                        <p class="help-eyebrow">GUIDE DE MISSION</p>
+                        <img src="public/images/renseignements.png" width="93" height="66" alt="Insigne Renseignements" class="help-logo">
+                    </div>
+                </header>
+                <p class="help-intro">Les repères essentiels pour comprendre votre score, choisir un mode de combat et suivre votre progression.</p>
+                <section class="help-section" aria-labelledby="help-scoring-title">
+                    <h2 id="help-scoring-title">Barème</h2>
+                    <ul class="help-scoring-list">
+                        <li><strong>Bonne réponse</strong><span>+4 points</span></li>
+                        <li><strong>Mauvaise réponse</strong><span>−1 point</span></li>
+                        <li><strong>Question passée</strong><span>0 point</span></li>
+                    </ul>
+                    <p>La note sur 20 est calculée à partir des points obtenus et du nombre total de questions : points nets ÷ (4 × questions) × 20.</p>
+                </section>
+                <section class="help-section" aria-labelledby="help-modes-title">
+                    <h2 id="help-modes-title">Modes de combat</h2>
+                    <ul class="help-guide-list">
+                        <li><strong>Entraînement par zone</strong> — choisissez un thème et une intensité de 10 à 40 questions ; la correction apparaît pendant l’exercice.</li>
+                        <li><strong>Simulation de combat</strong> — 50 questions sur l’ensemble des thèmes, avec correction immédiate.</li>
+                        <li><strong>Combat de haute intensité</strong> — 50 questions sur l’ensemble des thèmes, chronométrées et sans correction immédiate ; les réponses sont revues au bilan.</li>
+                    </ul>
+                </section>
+                <section class="help-section" aria-labelledby="help-history-title">
+                    <h2 id="help-history-title">Journal de campagne</h2>
+                    <p>Depuis le briefing, ouvrez le journal pour filtrer vos résultats par période, puis sélectionnez le combat haute intensité, la simulation ou l’une des six zones géographiques. Les histogrammes et moyennes se mettent à jour selon votre sélection.</p>
+                </section>
+                <button id="btn-back-from-help" class="btn-main history-back-btn" type="button">Retour au briefing</button>
+            </section>
         </div>
 
         <div id="history-screen" class="screen">

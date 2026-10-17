@@ -171,6 +171,10 @@ L'application attend au minimum les métadonnées suivantes dans `index.html` :
 
 Les migrations du dossier `supabase/migrations/` doivent être appliquées selon le besoin du déploiement, notamment pour les signalements, le Top 3 public, la distinction entre simulation et combat haute intensité dans l'historique, et les autorisations d'administration.
 
+### Top 3 public
+
+Le classement affiché avant connexion est chargé par la fonction RPC publique `get_public_global_campaign_top3()`. Cette fonction renvoie uniquement le pseudo, la note et la date des trois meilleurs résultats globaux (`theme = 'all'`), sans accès anonyme direct à la table `quiz_results`. Appliquez la migration `20260926082000_create_public_global_campaign_top3_view.sql` pour activer ce classement.
+
 ## Notifications et déploiement
 
 Le projet supporte :

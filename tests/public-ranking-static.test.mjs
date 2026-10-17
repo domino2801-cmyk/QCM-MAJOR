@@ -44,7 +44,7 @@ test("login Top 3 uses the public ranking cache without opening private results"
     assert.match(js, /appendRanking\(loginList, loginRanking\);/);
     assert.match(js, /appendRanking\(historyList, effectiveGlobalRanking\);/);
     assert.match(readme, /fonction RPC publique `get_public_global_campaign_top3\(\)`/);
-    assert.match(readme, /sans ouvrir `quiz_results` en lecture anonyme/);
+    assert.match(readme, /sans accès anonyme direct à la table `quiz_results`/);
 });
 
 test("candidate login screen keeps the Top 3 above the identification form", () => {
@@ -52,7 +52,7 @@ test("candidate login screen keeps the Top 3 above the identification form", () 
     const rankingIndex = html.indexOf('id="login-global-ranking-section"');
     const tabsIndex = html.indexOf('data-auth-mode="login"');
     const formIndex = html.indexOf('id="login-form"');
-    const buttonIndex = html.indexOf("Entrez au CENTAC du BM4");
+    const buttonIndex = html.indexOf('class="auth-preparation-title">');
     const forgotPasswordIndex = html.indexOf('id="login-forgot-password-btn"');
 
     assert.notEqual(loginViewIndex, -1);

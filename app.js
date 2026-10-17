@@ -3688,6 +3688,16 @@ async function initializeAppInteractions() {
         event.currentTarget.setAttribute("aria-expanded", "true");
     });
 
+    document.getElementById("btn-help-theme")?.addEventListener("click", () => {
+        uiController.switchScreen("help-screen");
+        document.getElementById("help-title")?.focus();
+    });
+
+    document.getElementById("btn-back-from-help")?.addEventListener("click", () => {
+        uiController.switchScreen("theme-screen");
+        document.getElementById("btn-help-theme")?.focus();
+    });
+
     document.getElementById("candidate-history-modes")?.addEventListener("click", event => {
         const button = event.target.closest("button[data-history-category]");
         if (!button) return;
