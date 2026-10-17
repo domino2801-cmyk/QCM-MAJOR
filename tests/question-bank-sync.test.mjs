@@ -7,6 +7,7 @@ import vm from "node:vm";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const app = readFileSync(path.join(root, "app.js"), "utf8");
+const quizEngine = readFileSync(path.join(root, "modules", "quiz-engine", "engine.js"), "utf8");
 const start = app.indexOf("async function syncQuestionMutation(");
 const end = app.indexOf("\nasync function fetchSupabaseQuestions(", start);
 assert.notEqual(start, -1);
@@ -21,6 +22,18 @@ const gradeSupabaseQuestionAnswer = app.slice(gradeStart, gradeEnd);
 const loadStart = fetchEnd + 1;
 const loadEnd = app.indexOf("\nfunction toSupabaseResultPayload(", loadStart);
 const loadQuestionsFromSupabase = app.slice(loadStart, loadEnd);
+
+test("l’application et le moteur importent la même instance de banque", () => {
+    const appBankSpecifier = app.match(/from ["'](\.\/modules\/questions-bank\/index\.js[^"']*)["']/)?.[1];
+    const engineBankSpecifier = quizEngine.match(/from ["'](\.\.\/questions-bank\/index\.js[^"']*)["']/)?.[1];
+
+    assert.ok(appBankSpecifier);
+    assert.ok(engineBankSpecifier);
+    assert.equal(
+        path.resolve(root, appBankSpecifier),
+        path.resolve(root, "modules", "quiz-engine", engineBankSpecifier)
+    );
+});
 
 function createHarness(response) {
     const calls = [];
