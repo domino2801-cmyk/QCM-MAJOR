@@ -31,7 +31,8 @@ test("la page Aide présente le barème, les modes et le journal avec son logo",
     assert.match(html, /id="btn-help-theme"[^>]*>Aide<\/button>/);
     assert.match(html, /id="help-screen" class="screen help-screen"/);
     assert.match(html, /id="help-title"[^>]*>Aide<\/h1>/);
-    assert.match(html, /class="help-eyebrow">GUIDE DE MISSION<\/p>\s*<img src="public\/images\/renseignements\.png"/);
+    assert.match(html, /id="help-logo" src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
+    assert.doesNotMatch(html, /GUIDE DE MISSION/);
     assert.match(html, /Bonne réponse<\/strong><span>\+4 points<\/span>/);
     assert.match(html, /Mauvaise réponse<\/strong><span>−1 point<\/span>/);
     assert.match(html, /Question passée<\/strong><span>0 point<\/span>/);

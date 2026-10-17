@@ -3374,27 +3374,18 @@ body {
     gap: 8px;
 }
 
-.help-logo {
-    flex: 0 0 auto;
-    height: auto;
-    max-width: 93px;
-    object-fit: contain;
-}
-
-.help-eyebrow {
-    color: #ffdf73;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    margin: 0;
-    text-align: center;
-}
-
 .help-header h1 {
     color: var(--accent);
     font-size: 1.45rem;
     margin: 0;
     text-align: center;
+}
+
+.help-logo {
+    flex: 0 0 auto;
+    height: auto;
+    max-width: 93px;
+    object-fit: contain;
 }
 
 .help-intro,
