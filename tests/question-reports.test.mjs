@@ -37,6 +37,64 @@ function extractListener(marker) {
     throw new Error(`Unable to extract listener: ${marker}`);
 }
 
+test("le rendu des signalements retrouve la bonne réponse dans la banque admin", () => {
+    const start = app.indexOf("function renderAdminQuestionReports()");
+    const end = app.indexOf("\nfunction renderGlobalRanking(", start);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+
+    class MockElement {
+        constructor() {
+            this.children = [];
+            this.classList = { toggle() {} };
+            this.dataset = {};
+        }
+        appendChild(child) { this.children.push(child); }
+        append(...children) { this.children.push(...children); }
+        prepend(...children) { this.children.unshift(...children); }
+        addEventListener() {}
+        setAttribute() {}
+    }
+
+    const badge = new MockElement();
+    const table = new MockElement();
+    const nodes = new Map([
+        ["admin-question-reports-badge", badge],
+        ["admin-question-reports-table", table],
+        ["admin-reports-filter", { value: "all" }]
+    ]);
+    const report = {
+        id: "report-1",
+        question_id: "question-1",
+        question_text: "Question signalée",
+        answers: ["A", "B", "C", "D"],
+        status: "pending"
+    };
+    const context = {
+        questionReports: [report],
+        questionsBank: {
+            "0": { questions: [{
+                id: "question-1",
+                r: ["A", "B", "C", "D"],
+                correct: 2
+            }] }
+        },
+        document: {
+            getElementById: id => nodes.get(id) || null,
+            querySelector: () => null,
+            createElement: () => new MockElement()
+        },
+        getAdminListPage: (_key, items) => items,
+        normalizeQuestionAnswers: answers => answers,
+        labelAdminRow() {}
+    };
+
+    vm.runInNewContext(app.slice(start, end), context);
+    context.renderAdminQuestionReports();
+
+    assert.match(table.children[0].children[0].innerText, /Bonne réponse enregistrée : C/);
+});
+
 test("le formulaire tactique signale la question, le type d’incident et sa priorité", () => {
     assert.match(html, /id="question-report-toggle"/);
     assert.match(html, /id="report-screen" class="screen report-screen"/);

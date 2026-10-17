@@ -2524,7 +2524,9 @@ function renderAdminQuestionReports() {
         const resolveButton = document.createElement("button");
         const deleteButton = document.createElement("button");
         const answers = Array.isArray(report.answers) ? report.answers : [];
-        const bankQuestion = questions.find(question => String(question.id) === String(report.question_id));
+        const bankQuestion = Object.values(questionsBank)
+            .flatMap(theme => theme.questions)
+            .find(question => String(question.id) === String(report.question_id));
         const expectedAnswer = bankQuestion
             ? normalizeQuestionAnswers(bankQuestion.r)[bankQuestion.correct]
             : Number.isInteger(report.correct_answer_index)
