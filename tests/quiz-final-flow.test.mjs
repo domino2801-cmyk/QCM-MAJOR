@@ -761,6 +761,8 @@ test("last wrong answer is counted and saved in the final note", async () => {
     await harness.optionsGrid.children[0].onclick();
 
     assert.equal(harness.progress.innerText, "Question 1 / 1");
+    assert.equal(harness.optionsGrid.children[0].classList.contains("incorrect"), true);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
     await advanceQuiz(harness);
 
     assert.deepEqual(harness.getAnswerSounds(), [false]);

@@ -4396,7 +4396,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             const encore = quizEngine.answer(index, correction.isCorrect);
             updateLivePoints();
             try {
-                marquerBoutons(index, correction.isCorrect);
+                marquerBoutons(index, correction.isCorrect, correction.correctIndex);
             } catch (error) {
                 console.warn("Marquage des réponses indisponible.", error);
             }
@@ -4541,7 +4541,7 @@ function verrouillerOptions() {
 // MARQUAGE VISUEL DES RÉPONSES
 // =========================================================
 
-function marquerBoutons(selected, correct) {
+function marquerBoutons(selected, correct, correctIndex = null) {
     const btns = document.querySelectorAll("#options-grid .btn");
 
     if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
@@ -4553,6 +4553,9 @@ function marquerBoutons(selected, correct) {
 
     if (selected !== null && btns[selected]) {
         btns[selected].classList.add(correct ? "correct" : "incorrect");
+    }
+    if (selected !== null && !correct && btns[correctIndex]) {
+        btns[correctIndex].classList.add("correct");
     }
 }
 
