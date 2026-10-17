@@ -1374,12 +1374,16 @@ h1 {
     align-items: center;
     border-radius: 2px;
     display: flex;
-    justify-content: space-between;
-    min-height: 48px;
+    justify-content: center;
+    gap: 10px;
+    min-height: 52px;
     overflow: hidden;
-    padding: 8px 12px;
+    padding: 10px 12px;
     position: relative;
     text-align: center;
+    font-size: 1.02rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
     text-shadow: 0 1px rgba(255, 255, 255, 0.45);
 }
 
