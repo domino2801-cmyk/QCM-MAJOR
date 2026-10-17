@@ -4263,6 +4263,31 @@ function marquerBoutons(selected, correct) {
     }
 }
 
+function getRandomMotivationalPhrase(note) {
+    const phrases = {
+        high: [
+            "Le niveau de combat est au rendez-vous. Continuez à tenir la ligne.",
+            "Vous avez montré du sang-froid et de la précision.",
+            "Le terrain est désormais sous votre contrôle."
+        ],
+        medium: [
+            "Une bonne base. Il faut maintenant transformer l’initiative en domination.",
+            "Le profil tactique est présent. Il reste à pousser la précision.",
+            "Le combat est maîtrisé dans l’ensemble, mais l’impact doit être plus net."
+        ],
+        low: [
+            "Le plan de combat doit être repris, mais le potentiel est là.",
+            "Le terrain reste à reconquérir. Reprendre la bonne ligne de tir.",
+            "La prochaine mission exigera plus de précision et de discipline."
+        ]
+    };
+
+    const category = note >= 8 ? "high" : note >= 5 ? "medium" : "low";
+    const pool = phrases[category];
+    const selected = pool[Math.floor(Math.random() * pool.length)];
+    return selected;
+}
+
 // =========================================================
 // BILAN FINAL
 // =========================================================
@@ -4318,9 +4343,10 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         setResultText(["stat-wrong"], quizEngine.stats.wrong);
         setResultText(["stat-skipped"], quizEngine.stats.skipped);
 
-        const maxPts = total * 4;
-        setResultText(["stat-brut"], quizEngine.stats.points);
-        setResultText(["brut-max"], `/ ${maxPts}`);
+        const motivationElement = document.getElementById("result-motivation");
+        if (motivationElement) {
+            motivationElement.textContent = getRandomMotivationalPhrase(note);
+        }
 
         const evolutionButton = document.getElementById("btn-evolution-result");
         const isGlobalCampaign = selectedTheme === "all";
@@ -4392,15 +4418,29 @@ function renderReview() {
         const article = document.createElement("article");
         const title = document.createElement("strong");
         const question = document.createElement("div");
-        const detail = document.createElement("div");
+        const answers = document.createElement("div");
 
         article.className = `review-item ${item.type}`;
         title.innerText = item.type === "wrong" ? "Réponse fausse" : "Question passée";
         question.innerText = item.question;
-        detail.innerText = item.type === "wrong"
-            ? `Votre réponse : ${item.selected} | Bonne réponse : ${item.correct}`
-            : `Bonne réponse : ${item.correct}`;
-        article.append(title, question, detail);
+        answers.className = "review-answers";
+
+        if (item.type === "wrong") {
+            const selectedAnswer = document.createElement("div");
+            const correction = document.createElement("div");
+            selectedAnswer.className = "review-answer review-answer-selected";
+            correction.className = "review-answer review-answer-correction";
+            selectedAnswer.innerText = `Votre réponse : ${item.selected}`;
+            correction.innerText = `Correction : ${item.correct}`;
+            answers.append(selectedAnswer, correction);
+        } else {
+            const correctAnswer = document.createElement("div");
+            correctAnswer.className = "review-answer review-answer-correction";
+            correctAnswer.innerText = `Réponse : ${item.correct}`;
+            answers.appendChild(correctAnswer);
+        }
+
+        article.append(title, question, answers);
         list.appendChild(article);
     });
 }
