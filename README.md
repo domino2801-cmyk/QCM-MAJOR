@@ -2,17 +2,31 @@
 
 Application web de préparation au Brevet Militaire de 4e niveau (BM4), pensée comme un QCM tactique en navigateur pour les candidats et une interface d’administration pour les gestionnaires de contenu.
 
-## Vue d'ensemble
+<p align="center">
+  <strong>QCM-MAJOR</strong> • PWA • Supabase • GitHub Pages • Formation militaire BM4
+</p>
 
-QCM-MAJOR est une application statique (PWA) qui permet :
+## Vue d’ensemble
 
-- de s'inscrire et de se connecter à un espace candidat ;
-- de passer des quiz par campagne globale ou par thème ;
-- d'obtenir un score et un bilan pédagogique détaillé ;
-- de signaler des questions suspectes ;
-- de gérer la banque de questions, les comptes et les résultats depuis un espace admin.
+QCM-MAJOR transforme la préparation au BM4 en une experience immersive, rapide et mobile-first. L’application met en avant un parcours clair pour les candidats, un suivi pédagogique solide et une gestion administrative fluide pour les formateurs.
 
-Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tout autre support statique, avec Supabase pour l'authentification, les données et les notifications.
+### Pourquoi ce projet ?
+
+- une préparation au BM4 accessible depuis un navigateur mobile ou desktop ;
+- un rythme de quiz immersif inspiré d’un entraînement de combat ;
+- une expérience de révision plus motivante grâce au scoring, aux classements et au suivi d’historique ;
+- une gestion de contenu centralisée pour les admins, sans backend lourd ni dépendance complexe.
+
+### Ce que propose l’application
+
+- inscription et connexion candidat avec Supabase Auth ;
+- campagne globale ou entraînement par thème ;
+- mode “COMBAT DE HAUTE INTENSITE” avec chrono et pression temporelle ;
+- synthèse finale avec réponses correctes, fausses, passées et points ;
+- signalement d’erreurs sur les questions ;
+- espace d’administration pour gérer comptes, questions, résultats et signalements.
+
+Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tout autre support statique, avec Supabase pour l’authentification, le stockage des données, les résultats et les notifications.
 
 ## Fonctionnalités principales
 
