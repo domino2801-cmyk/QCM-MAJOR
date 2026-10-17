@@ -731,6 +731,12 @@ body:has(#help-screen.active) .close-app {
     font-weight: 700;
 }
 
+.quiz-answer-status {
+    min-height: 1.25em;
+    color: #ffb3ad;
+    font-weight: 700;
+}
+
 @keyframes timer-explosion-burst {
     0% { transform: scale(0.4); opacity: 1; }
     60% { transform: scale(1.6); opacity: 0.8; }

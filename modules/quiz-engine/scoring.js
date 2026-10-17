@@ -19,14 +19,13 @@ export const scoring = {
     // -----------------------------------------------------
     // Application du barème
     // -----------------------------------------------------
-    applyAnswer(stats, selected, correct) {
-
+    applyAnswer(stats, selected, isCorrect) {
         if (selected === null) {
             stats.skipped++;
             return;
         }
 
-        if (selected === correct) {
+        if (isCorrect) {
             stats.correct++;
             stats.points += 4;
         } else {

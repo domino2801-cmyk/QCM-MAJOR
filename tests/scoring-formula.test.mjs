@@ -73,9 +73,9 @@ test("quiz scoring returns 0 when there is no question", () => {
 test("quiz scoring applyAnswer keeps the tactical barème", () => {
     const quizStats = scoring.createStats();
 
-    scoring.applyAnswer(quizStats, 2, 2);
-    scoring.applyAnswer(quizStats, 1, 3);
-    scoring.applyAnswer(quizStats, null, 0);
+    scoring.applyAnswer(quizStats, 2, true);
+    scoring.applyAnswer(quizStats, 1, false);
+    scoring.applyAnswer(quizStats, null, false);
 
     assert.equal(quizStats.correct, 1);
     assert.equal(quizStats.wrong, 1);

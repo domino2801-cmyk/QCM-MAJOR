@@ -15,6 +15,9 @@ const syncQuestionMutation = app.slice(start, end);
 const fetchStart = end + 1;
 const fetchEnd = app.indexOf("\nasync function loadQuestionsFromSupabase(", fetchStart);
 const fetchSupabaseQuestions = app.slice(fetchStart, fetchEnd);
+const gradeStart = app.indexOf("async function gradeSupabaseQuestionAnswer(");
+const gradeEnd = app.indexOf("\nasync function loadQuestionsFromSupabase(", gradeStart);
+const gradeSupabaseQuestionAnswer = app.slice(gradeStart, gradeEnd);
 const loadStart = fetchEnd + 1;
 const loadEnd = app.indexOf("\nfunction toSupabaseResultPayload(", loadStart);
 const loadQuestionsFromSupabase = app.slice(loadStart, loadEnd);
@@ -113,6 +116,7 @@ test("le chargement parcourt toutes les pages de questions Supabase", async () =
     const calls = [];
     const context = {
         supabase: {},
+        isAdminSession: () => false,
         getStoredSupabaseSession: () => ({ access_token: "candidate-token" }),
         supabaseRestRequest: async (query, options) => {
             calls.push({ query, options });
@@ -128,7 +132,7 @@ test("le chargement parcourt toutes les pages de questions Supabase", async () =
                     answer_2: "B",
                     answer_3: "C",
                     answer_4: "D",
-                    correct_answer: "C"
+                    active: true
                 };
             });
         },
@@ -148,7 +152,71 @@ test("le chargement parcourt toutes les pages de questions Supabase", async () =
     assert.equal(calls[0].options.accessToken, "candidate-token");
     assert.equal(result.questions.length, 1002);
     assert.equal(result.questions[1001].id, "1002");
-    assert.equal(result.questions[1001].correct, 2);
+    assert.equal(result.questions[1001].correct, undefined);
+    assert.doesNotMatch(calls[0].query, /correct_answer/);
+});
+
+test("l’administration obtient les corrigés uniquement par RPC paginée", async () => {
+    const calls = [];
+    const context = {
+        supabase: {},
+        isAdminSession: () => true,
+        getStoredSupabaseSession: () => ({ access_token: "admin-token" }),
+        supabaseRestRequest: async (...args) => {
+            calls.push(args);
+            return [{
+                id: "54",
+                theme_id: "0",
+                question: "Question admin",
+                answer_1: "A",
+                answer_2: "B",
+                answer_3: "C",
+                answer_4: "D",
+                correct_index: 2,
+                active: true
+            }];
+        },
+        String,
+        Number,
+        Array,
+        Promise,
+        setTimeout
+    };
+    vm.runInNewContext(fetchSupabaseQuestions, context);
+
+    const result = await context.fetchSupabaseQuestions();
+
+    assert.equal(calls[0][0], "/rpc/get_admin_question_bank");
+    assert.equal(calls[0][1].method, "POST");
+    assert.deepEqual(JSON.parse(JSON.stringify(calls[0][1].body)), { p_limit: 1000, p_offset: 0 });
+    assert.equal(result.questions[0].correct, 2);
+});
+
+test("la correction envoie le choix au serveur et ne reçoit qu’un booléen", async () => {
+    const calls = [];
+    const context = {
+        supabase: {},
+        currentAuthenticatedAccount: { id: "candidate-1" },
+        getStoredSupabaseSession: () => ({ access_token: "candidate-token" }),
+        supabaseRestRequest: async (...args) => {
+            calls.push(args);
+            return false;
+        },
+        String,
+        Number,
+        Error
+    };
+    vm.runInNewContext(gradeSupabaseQuestionAnswer, context);
+
+    const result = await context.gradeSupabaseQuestionAnswer("42", 1);
+
+    assert.equal(result, false);
+    assert.equal(calls[0][0], "/rpc/grade_question_answer");
+    assert.equal(calls[0][1].method, "POST");
+    assert.deepEqual(JSON.parse(JSON.stringify(calls[0][1].body)), {
+        p_question_id: "42",
+        p_selected_index: 1
+    });
 });
 
 test("un chargement Supabase réussi utilise directement la banque distante sans copier la banque locale", async () => {

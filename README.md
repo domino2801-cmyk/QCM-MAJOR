@@ -165,11 +165,13 @@ L'application attend au minimum les métadonnées suivantes dans `index.html` :
 - activer le fournisseur Email pour l'inscription et la récupération de mot de passe ;
 - configurer les redirect URLs d'authentification ;
 - prévoir une table `profiles` avec les informations de compte utilisateur ;
-- prévoir les tables `questions`, `quiz_results` et la table de signalements ;
+- prévoir les tables `question_bank`, `profiles`, `quiz_results` et `question_reports` ;
 - sécuriser les accès avec les politiques RLS adaptées ;
 - configurer les rôles administrateurs via `app_metadata.role = admin` ou `app_metadata.bm4_admin = true`.
 
-Les migrations du dossier `supabase/migrations/` doivent être appliquées selon le besoin du déploiement, notamment pour les signalements, le Top 3 public, la distinction entre simulation et combat haute intensité dans l'historique, et les autorisations d'administration.
+Appliquer les migrations du dossier `supabase/migrations/` dans l’ordre chronologique. La migration `20261017192000_server_side_question_grading.sql` limite la lecture publique de `question_bank` aux colonnes nécessaires, réserve la lecture des réponses correctes à une RPC administrateur, et ajoute la correction des réponses par une RPC authentifiée. Les questions nécessitent donc une connexion Supabase active pour être jouées et corrigées ; le mode quiz hors connexion n’est pas disponible. Les signalements candidat ne transmettent plus d’index de réponse correcte.
+
+Vérifier aussi l’existence et les droits d’exécution des fonctions `get_admin_question_bank` et `grade_question_answer` après application des migrations. Ne rétablissez pas de privilège `SELECT` global sur `question_bank` pour `anon` ou `authenticated`, car cela exposerait `correct_answer`.
 
 ### Top 3 public
 
@@ -188,13 +190,18 @@ Pour la partie push, la configuration nécessite des secrets VAPID, un webhook e
 
 ## Documentation juridique et conformité
 
-Une partie du site inclut des écrans de mentions légales et de politique de confidentialité sans dépendre d'un routeur serveur.
+Le projet inclut des écrans statiques de mentions légales et de confidentialité, accessibles depuis le footer de l’application, sans dépendre d’un routeur serveur.
 
 Avant publication, vérifier que :
 
-- les textes juridiques correspondent à l'hébergement réel ;
-- les informations de contact, hébergement et base légale sont correctes ;
-- les politiques de conservation et de transfert sont cohérentes avec l'usage des données.
+- les textes juridiques correspondent bien à l’hébergement réel et à l’éditeur déclaré ;
+- les informations de contact, l’hébergeur, la région Supabase et la base légale sont cohérentes avec le déploiement effectif ;
+- les données traitées via Supabase Auth, `profiles`, `quiz_results`, `question_reports` et les éventuelles notifications push sont couvertes par des politiques RLS et des règles de conservation adaptées ;
+- les administrateurs autorisés sont bien limités aux accès nécessaires au service (`app_metadata.role = admin` ou `app_metadata.bm4_admin = true`) ;
+- le classement public ne révèle que les données strictement nécessaires (pseudo, score et date), sans exposer d’informations sensibles ou d’identifiant personnel ;
+- le stockage local (`localStorage` / `sessionStorage`) est mentionné dans la confidentialité, avec le rappel que les données non synchronées restent locales tant qu’elles ne sont pas enregistrées sur Supabase.
+
+Le contenu présent dans l’application doit refléter précisément le fonctionnement réel de la stack : GitHub Pages pour le front, Supabase pour l’authentification, la base de données et les notifications, avec une politique de confidentialité explicite sur l’usage des comptes, des résultats, des signalements et des données de connexion.
 
 ## Qualité et tests
 

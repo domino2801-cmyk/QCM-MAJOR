@@ -52,7 +52,7 @@ test("le formulaire tactique signale la question, le type d’incident et sa pri
     assert.match(html, /id="question-report-submit"/);
     assert.match(app, /await submitQuestionReport\(\s*question,\s*resolveQuestionAnswers\(question\),\s*selectedTheme,\s*\[/);
     assert.match(app, /question_id: question\.id == null \? null : String\(question\.id\)/);
-    assert.match(app, /correct_answer_index: question\.correct/);
+    assert.match(app, /correct_answer_index: null/);
 });
 
 test("le bouton Signaler ouvre le formulaire associé au thème et à la question en cours", () => {

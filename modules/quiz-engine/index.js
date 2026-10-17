@@ -33,10 +33,8 @@ export const quizEngine = {
     // -----------------------------------------------------
     // Traitement d’une réponse
     // -----------------------------------------------------
-    answer(choice) {
-        const q = this.getCurrent();
-
-        scoring.applyAnswer(this.stats, choice, q.correct);
+    answer(choice, isCorrect = false) {
+        scoring.applyAnswer(this.stats, choice, isCorrect);
 
         this.index++;
 

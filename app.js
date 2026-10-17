@@ -324,7 +324,7 @@ async function submitQuestionReport(question, answers, themeId, details) {
             question_id: question.id == null ? null : String(question.id),
             question_text: question.q,
             answers,
-            correct_answer_index: question.correct,
+            correct_answer_index: null,
             quiz_theme: String(themeId),
             details: details.trim() || null,
             reporter_id: currentAuthenticatedAccount.id
@@ -828,7 +828,8 @@ function applyQuestionOverrides() {
     Object.entries(overrides).forEach(([themeId, questions]) => {
         if (questionsBank[themeId] && Array.isArray(questions)) {
             questionsBank[themeId].questions = questions.map(question => ({
-                ...question,
+                id: question.id,
+                q: question.q,
                 r: normalizeQuestionAnswers(question.r)
             }));
         }
@@ -843,12 +844,15 @@ function applyRemoteQuestions(questions) {
 
     questions.forEach(question => {
         if (questionsBank[question.themeId]) {
-            questionsBank[question.themeId].questions.push({
+            const normalizedQuestion = {
                 id: question.id,
                 q: question.q,
-                r: normalizeQuestionAnswers(question.r),
-                correct: question.correct
-            });
+                r: normalizeQuestionAnswers(question.r)
+            };
+            if (Number.isInteger(question.correct)) {
+                normalizedQuestion.correct = question.correct;
+            }
+            questionsBank[question.themeId].questions.push(normalizedQuestion);
         }
     });
     reconcileQuestionThemes(questionsBank);
@@ -978,15 +982,22 @@ async function fetchSupabaseQuestions() {
     const pageSize = 1000;
     const questions = [];
     let offset = 0;
+    const isAdmin = isAdminSession(getStoredSupabaseSession());
 
     while (true) {
         let data;
         for (let attempt = 0; attempt < 3; attempt++) {
             try {
-                data = await supabaseRestRequest(
-                    `/question_bank?select=id,theme_id,question,answer_1,answer_2,answer_3,answer_4,correct_answer&active=eq.true&order=id.asc&limit=${pageSize}&offset=${offset}`,
-                    { accessToken }
-                );
+                data = isAdmin
+                    ? await supabaseRestRequest("/rpc/get_admin_question_bank", {
+                        method: "POST",
+                        accessToken,
+                        body: { p_limit: pageSize, p_offset: offset }
+                    })
+                    : await supabaseRestRequest(
+                        `/question_bank?select=id,theme_id,question,answer_1,answer_2,answer_3,answer_4,active&active=eq.true&order=id.asc&limit=${pageSize}&offset=${offset}`,
+                        { accessToken }
+                    );
                 break;
             } catch (error) {
                 if (attempt === 2) throw error;
@@ -1000,20 +1011,17 @@ async function fetchSupabaseQuestions() {
         questions.push(...data.map(question => {
             const answers = [question.answer_1, question.answer_2, question.answer_3, question.answer_4]
                 .map(answer => String(answer || ""));
-            const correctAnswer = String(question.correct_answer || "");
-            const correctIndex = answers.findIndex(answer => answer === correctAnswer);
-            const numericCorrectIndex = Number(correctAnswer);
-            return {
+            const normalizedQuestion = {
                 id: String(question.id),
                 themeId: String(question.theme_id),
                 q: String(question.question || ""),
-                r: answers,
-                correct: correctIndex >= 0
-                    ? correctIndex
-                    : Number.isInteger(numericCorrectIndex) && numericCorrectIndex > 0
-                        ? numericCorrectIndex - 1
-                        : 0
+                r: answers
             };
+            if (isAdmin && Number.isInteger(question.correct_index)
+                && question.correct_index >= 0 && question.correct_index <= 3) {
+                normalizedQuestion.correct = question.correct_index;
+            }
+            return normalizedQuestion;
         }));
 
         if (data.length < pageSize) break;
@@ -1021,6 +1029,29 @@ async function fetchSupabaseQuestions() {
     }
 
     return { questions };
+}
+
+async function gradeSupabaseQuestionAnswer(questionId, selectedIndex) {
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!supabase || !accessToken || !currentAuthenticatedAccount?.id) {
+        throw new Error("Une connexion active est nécessaire pour corriger la réponse.");
+    }
+    if (questionId == null || !Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 3) {
+        throw new Error("La question ou la réponse sélectionnée est invalide.");
+    }
+
+    const isCorrect = await supabaseRestRequest("/rpc/grade_question_answer", {
+        method: "POST",
+        accessToken,
+        body: {
+            p_question_id: String(questionId),
+            p_selected_index: selectedIndex
+        }
+    });
+    if (typeof isCorrect !== "boolean") {
+        throw new Error("Le serveur n’a pas renvoyé de correction valide.");
+    }
+    return isCorrect;
 }
 
 async function loadQuestionsFromSupabase(expectedAccessToken = null) {
@@ -2493,12 +2524,18 @@ function renderAdminQuestionReports() {
         const resolveButton = document.createElement("button");
         const deleteButton = document.createElement("button");
         const answers = Array.isArray(report.answers) ? report.answers : [];
+        const bankQuestion = questions.find(question => String(question.id) === String(report.question_id));
+        const expectedAnswer = bankQuestion
+            ? normalizeQuestionAnswers(bankQuestion.r)[bankQuestion.correct]
+            : Number.isInteger(report.correct_answer_index)
+                ? answers[report.correct_answer_index]
+                : null;
 
         questionCell.className = "question-report-content";
         questionCell.innerText = [
             report.question_text || "Question indisponible",
             `Réponses : ${answers.join(" | ") || "Non renseignées"}`,
-            `Bonne réponse enregistrée : ${answers[report.correct_answer_index] || "Non renseignée"}`,
+            `Bonne réponse enregistrée : ${expectedAnswer || "À vérifier dans la banque"}`,
             `Campagne : ${report.quiz_theme === "all" ? "Globale" : report.quiz_theme}`
         ].join("\n");
         detailsCell.innerText = report.details || "Aucun détail fourni.";
@@ -3408,7 +3445,7 @@ async function initializeApp() {
         const loadedFromSupabase = await loadQuestionsFromSupabase();
         if (!loadedFromSupabase) {
             applyQuestionOverrides();
-            setConnectionStatus("Mode hors connexion : questions locales utilisées.");
+            setConnectionStatus("Mode hors connexion : le lancement et la correction des quiz nécessitent une connexion au serveur.");
         }
         await loadPublicGlobalRanking();
         const loadedResultsFromSupabase = await loadResultsFromSupabase();
@@ -4127,13 +4164,11 @@ function expireQuiz(quizRunId) {
 
     while (quizEngine.index < quizEngine.questions.length) {
         const question = quizEngine.getCurrent();
-        const answers = resolveQuestionAnswers(question);
         reviewItems.push({
             type: "skipped",
-            question: question.q,
-            correct: answers[question.correct]
+            question: question.q
         });
-        quizEngine.answer(null);
+        quizEngine.answer(null, false);
     }
 
     setTimeout(() => {
@@ -4178,6 +4213,16 @@ function startQuizTimer(quizRunId) {
 }
 
 function startQuiz() {
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!supabase || !accessToken || !currentAuthenticatedAccount?.id) {
+        setConnectionStatus("Connectez-vous avec un compte candidat pour lancer une campagne corrigée par le serveur.");
+        return;
+    }
+    if (!questionSourceReady) {
+        setConnectionStatus("La banque Supabase n’est pas disponible. Reconnectez-vous avant de lancer une campagne.");
+        return;
+    }
+
     const email = currentAuthenticatedAccount?.email || "anonymous";
     const history = getQuestionHistory();
     const themeHistory = history[email]?.[selectedTheme] || [];
@@ -4190,6 +4235,11 @@ function startQuiz() {
 
     // Sélection du thème dans le moteur
     quizEngine.selectTheme(selectedTheme, maxQuestions, excludedQuestions);
+    if (quizEngine.questions.some(question => question.id == null)) {
+        setConnectionStatus("Une ou plusieurs questions n’ont pas d’identifiant serveur. Actualisez la banque avant de jouer.");
+        return;
+    }
+    setConnectionStatus("");
     reviewItems = [];
     questionTransitionLocked = false;
     displayedQuestion = null;
@@ -4286,6 +4336,8 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
     if (reportQuestion) reportQuestion.innerText = "Aucune question sélectionnée.";
     const reportStatus = document.getElementById("question-report-status");
     if (reportStatus) reportStatus.innerText = "";
+    const answerStatus = document.getElementById("quiz-answer-status");
+    if (answerStatus) answerStatus.innerText = "";
 
     questionNode.innerText = q.q;
     optionsGrid.innerHTML = "";
@@ -4297,7 +4349,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         btn.className = "btn";
         btn.innerText = optionText;
 
-        btn.onclick = () => {
+        btn.onclick = async () => {
             if (isQuizTimeExpired(activeQuizRunId)) return;
             if (questionTransitionLocked) return;
             if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
@@ -4313,21 +4365,31 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             }
             questionTransitionLocked = true;
             verrouillerOptions();
-            if (typeof quizFeedbackMode === "undefined" || quizFeedbackMode !== "exam") {
-                playAnswerSound(index === q.correct);
+            let isCorrect;
+            try {
+                isCorrect = await gradeSupabaseQuestionAnswer(q.id, index);
+            } catch (error) {
+                console.error("Correction de la réponse impossible.", error);
+                questionTransitionLocked = false;
+                Array.from(optionsGrid.children).forEach(option => option.disabled = false);
+                skip.disabled = false;
+                if (answerStatus) answerStatus.innerText = "Correction serveur indisponible. Vérifiez votre connexion et réessayez.";
+                return;
             }
-            if (index !== q.correct) {
+            if (isQuizTimeExpired(activeQuizRunId)) return;
+            if (answerStatus) answerStatus.innerText = "";
+            playAnswerSound(isCorrect);
+            if (!isCorrect) {
                 reviewItems.push({
                     type: "wrong",
                     question: q.q,
-                    selected: optionText,
-                    correct: answers[q.correct]
+                    selected: optionText
                 });
             }
-            const encore = quizEngine.answer(index);
+            const encore = quizEngine.answer(index, isCorrect);
             updateLivePoints();
             try {
-                marquerBoutons(index, q.correct);
+                marquerBoutons(index, isCorrect);
             } catch (error) {
                 console.warn("Marquage des réponses indisponible.", error);
             }
@@ -4357,20 +4419,19 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         verrouillerOptions();
         reviewItems.push({
             type: "skipped",
-            question: q.q,
-            correct: answers[q.correct]
+            question: q.q
         });
-        const encore = quizEngine.answer(null);
+        const encore = quizEngine.answer(null, false);
         updateLivePoints();
         try {
-            marquerBoutons(null, q.correct);
+            marquerBoutons(null, false);
         } catch (error) {
             console.warn("Marquage des réponses indisponible.", error);
         }
         nextQuestion.innerText = encore ? "Question suivante" : "Voir le bilan";
         nextQuestion.disabled = false;
     };
-    nextQuestion.onclick = () => {
+    nextQuestion.onclick = async () => {
         if (isQuizTimeExpired(activeQuizRunId)) return;
         if (typeof quizFeedbackMode !== "undefined" && quizFeedbackMode === "exam") {
             if (questionTransitionLocked || nextQuestion.disabled || pendingExamAnswer === undefined) return;
@@ -4379,22 +4440,37 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
             if (pendingExamAnswer === null) {
                 reviewItems.push({
                     type: "skipped",
-                    question: q.q,
-                    correct: answers[q.correct]
+                    question: q.q
                 });
-            } else if (pendingExamAnswer !== q.correct) {
-                reviewItems.push({
-                    type: "wrong",
-                    question: q.q,
-                    selected: answers[pendingExamAnswer],
-                    correct: answers[q.correct]
-                });
+                quizEngine.answer(null, false);
+            } else {
+                let isCorrect;
+                try {
+                    isCorrect = await gradeSupabaseQuestionAnswer(q.id, pendingExamAnswer);
+                } catch (error) {
+                    console.error("Correction de la réponse impossible.", error);
+                    questionTransitionLocked = false;
+                    Array.from(optionsGrid.children).forEach(option => option.disabled = false);
+                    skip.disabled = false;
+                    nextQuestion.disabled = false;
+                    if (answerStatus) answerStatus.innerText = "Correction serveur indisponible. Vérifiez votre connexion et réessayez.";
+                    return;
+                }
+                if (isQuizTimeExpired(activeQuizRunId)) return;
+                if (!isCorrect) {
+                    reviewItems.push({
+                        type: "wrong",
+                        question: q.q,
+                        selected: answers[pendingExamAnswer]
+                    });
+                }
+                quizEngine.answer(pendingExamAnswer, isCorrect);
             }
-            const encore = quizEngine.answer(pendingExamAnswer);
             pendingExamAnswer = undefined;
+            if (answerStatus) answerStatus.innerText = "";
             updateLivePoints();
             nextQuestion.disabled = true;
-            if (encore) {
+            if (quizEngine.index < quizEngine.questions.length) {
                 afficherSituation(activeQuizRunId);
                 return;
             }
@@ -4439,14 +4515,8 @@ function marquerBoutons(selected, correct) {
         return;
     }
 
-    if (btns[selected]) {
-        btns[selected].classList.add(
-            selected === correct ? "correct" : "incorrect"
-        );
-    }
-
-    if (btns[correct]) {
-        btns[correct].classList.add("correct");
+    if (selected !== null && btns[selected]) {
+        btns[selected].classList.add(correct ? "correct" : "incorrect");
     }
 }
 
@@ -4619,12 +4689,16 @@ function renderReview() {
             selectedAnswer.className = "review-answer review-answer-selected";
             correction.className = "review-answer review-answer-correction";
             selectedAnswer.innerText = `Votre réponse : ${item.selected}`;
-            correction.innerText = `Correction : ${item.correct}`;
+            correction.innerText = item.correct
+                ? `Correction : ${item.correct}`
+                : "La correction détaillée n’est pas transmise au navigateur.";
             answers.append(selectedAnswer, correction);
         } else {
             const correctAnswer = document.createElement("div");
             correctAnswer.className = "review-answer review-answer-correction";
-            correctAnswer.innerText = `Réponse : ${item.correct}`;
+            correctAnswer.innerText = item.correct
+                ? `Réponse : ${item.correct}`
+                : "Correction détaillée non disponible.";
             answers.appendChild(correctAnswer);
         }
 

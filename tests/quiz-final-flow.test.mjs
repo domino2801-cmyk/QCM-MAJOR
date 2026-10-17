@@ -111,7 +111,8 @@ function createQuizFlowHarness({
     renderGlobalRankingBehavior,
     renderReviewBehavior,
     useLegacyResultIds = false,
-    omitResultStatsNodes = false
+    omitResultStatsNodes = false,
+    gradeAnswerBehavior
 } = {}) {
     const normalizeQuestionAnswersSource = extractFunction(appJs, "normalizeQuestionAnswers");
     const resolveQuestionAnswersSource = extractFunction(appJs, "resolveQuestionAnswers");
@@ -136,6 +137,7 @@ function createQuizFlowHarness({
     const timerNode = createClassToggleNode();
     const timerDisplay = createTextNode();
     const expiryStatus = createTextNode();
+    const answerStatus = createTextNode();
     const scheduled = [];
     const savedResults = [];
     const warnings = [];
@@ -156,6 +158,7 @@ function createQuizFlowHarness({
         Date,
         console: {
             ...console,
+            error() {},
             warn(...args) {
                 warnings.push(args);
             }
@@ -188,12 +191,19 @@ function createQuizFlowHarness({
             getCurrent() {
                 return this.questions[this.index];
             },
-            answer(choice) {
+            answer(choice, isCorrect = false) {
                 const q = this.getCurrent();
-                scoring.applyAnswer(this.stats, choice, q.correct);
+                scoring.applyAnswer(this.stats, choice, isCorrect);
                 this.index += 1;
                 return this.index < this.questions.length;
             }
+        },
+        async gradeSupabaseQuestionAnswer(questionId, selectedIndex) {
+            if (gradeAnswerBehavior) {
+                return gradeAnswerBehavior(this.quizEngine.getCurrent(), selectedIndex);
+            }
+            const current = context.quizEngine.getCurrent();
+            return selectedIndex === current.correct;
         },
         document: {
             getElementById(id) {
@@ -215,6 +225,7 @@ function createQuizFlowHarness({
                     "quiz-timer": timerNode,
                     "quiz-timer-display": timerDisplay,
                     "quiz-expiry-status": expiryStatus,
+                    "quiz-answer-status": answerStatus,
                     "stat-correct": omitResultStatsNodes ? null : statCorrect,
                     "stat-wrong": omitResultStatsNodes ? null : statWrong,
                     "stat-skipped": omitResultStatsNodes ? null : statSkipped,
@@ -345,6 +356,7 @@ function createQuizFlowHarness({
         timerNode,
         timerDisplay,
         expiryStatus,
+        answerStatus,
         getActiveScreen: () => activeScreen,
         getRankingPayload: () => rankingPayload,
         getAnswerSounds: () => answerSounds,
@@ -461,7 +473,7 @@ test("assault-final timer counts down for one hour and finalizes at zero", () =>
 });
 
 async function advanceQuiz(harness) {
-    harness.nextQuestionButton.onclick();
+    await harness.nextQuestionButton.onclick();
     await flushScheduled(harness.scheduled);
     await new Promise(resolve => setImmediate(resolve));
 }
@@ -479,11 +491,11 @@ test("exam hides live points after answers and preserves the final result breakd
         assert.equal(harness.livePoints.innerText, "");
     };
     assertHiddenPoints();
-    harness.optionsGrid.children[0].onclick();
+    await harness.optionsGrid.children[0].onclick();
     assertHiddenPoints();
     await advanceQuiz(harness);
     assertHiddenPoints();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
     assertHiddenPoints();
     await advanceQuiz(harness);
     harness.skipButton.onclick();
@@ -507,13 +519,13 @@ test("exam answers stay editable and are recorded only after moving to the next 
     harness.context.quizFeedbackMode = "exam";
     harness.context.afficherSituation();
 
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
     assert.equal(harness.optionsGrid.children[1].classList.contains("selected"), true);
     assert.equal(harness.context.quizEngine.index, 0);
     assert.equal(harness.context.quizEngine.stats.wrong, 0);
     assert.equal(harness.context.reviewItems.length, 0);
 
-    harness.optionsGrid.children[0].onclick();
+    await harness.optionsGrid.children[0].onclick();
     assert.equal(harness.optionsGrid.children[1].classList.contains("selected"), false);
     assert.equal(harness.optionsGrid.children[0].classList.contains("selected"), true);
     assert.equal(harness.context.quizEngine.index, 0);
@@ -528,7 +540,7 @@ test("exam answers stay editable and are recorded only after moving to the next 
     harness.skipButton.onclick();
     assert.equal(harness.skipButton.classList.contains("selected"), true);
     assert.equal(harness.nextQuestionButton.disabled, false);
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
     assert.equal(harness.skipButton.classList.contains("selected"), false);
     assert.equal(harness.optionsGrid.children[1].classList.contains("selected"), true);
     await advanceQuiz(harness);
@@ -549,7 +561,7 @@ test("exam skip can be selected and remains editable until next question", async
     harness.context.quizFeedbackMode = "exam";
     harness.context.afficherSituation();
 
-    harness.optionsGrid.children[2].onclick();
+    await harness.optionsGrid.children[2].onclick();
     harness.skipButton.onclick();
     assert.equal(harness.optionsGrid.children[2].classList.contains("selected"), false);
     assert.equal(harness.skipButton.classList.contains("selected"), true);
@@ -561,7 +573,7 @@ test("exam skip can be selected and remains editable until next question", async
     assert.equal(harness.context.reviewItems[0].type, "skipped");
 });
 
-test("returning to training restores live points", () => {
+test("returning to training restores live points", async () => {
     const harness = createQuizFlowHarness();
     harness.context.quizFeedbackMode = "exam";
     harness.context.afficherSituation();
@@ -571,15 +583,34 @@ test("returning to training restores live points", () => {
     harness.context.afficherSituation();
     assert.equal(harness.livePoints.hidden, false);
     assert.equal(harness.livePoints.innerText, "Points : 0");
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
     assert.equal(harness.livePoints.innerText, "Points : 4");
+});
+
+test("a server grading failure leaves the answer retryable without scoring it", async () => {
+    const harness = createQuizFlowHarness({
+        gradeAnswerBehavior: async () => {
+            throw new Error("server unavailable");
+        }
+    });
+    harness.context.afficherSituation();
+
+    await harness.optionsGrid.children[1].onclick();
+
+    assert.equal(harness.context.quizEngine.index, 0);
+    assert.equal(harness.context.quizEngine.stats.correct, 0);
+    assert.equal(harness.context.quizEngine.stats.wrong, 0);
+    assert.equal(harness.optionsGrid.children[1].disabled, false);
+    assert.equal(harness.skipButton.disabled, false);
+    assert.equal(harness.nextQuestionButton.disabled, true);
+    assert.match(harness.answerStatus.innerText, /Correction serveur indisponible/);
 });
 
 test("last correct answer is counted and saved in the final note", async () => {
     const harness = createQuizFlowHarness();
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
     harness.context.quizTimerInterval = "active-assault-final-timer";
 
     assert.equal(harness.scheduled.length, 0);
@@ -613,7 +644,7 @@ test("expiry strictly blocks late answers and saves unanswered questions once af
     }));
     const harness = createQuizFlowHarness({ questions });
     harness.context.afficherSituation();
-    harness.optionsGrid.children[0].onclick();
+    await harness.optionsGrid.children[0].onclick();
     await advanceQuiz(harness);
     const lateAnswer = harness.optionsGrid.children[0].onclick;
     harness.context.quizTimerDeadline = Date.now() - 1;
@@ -724,7 +755,7 @@ test("last wrong answer is counted and saved in the final note", async () => {
     const harness = createQuizFlowHarness();
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[0].onclick();
+    await harness.optionsGrid.children[0].onclick();
 
     assert.equal(harness.progress.innerText, "Question 1 / 1");
     await advanceQuiz(harness);
@@ -753,7 +784,7 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.scheduled.length, 0);
     assert.equal(harness.progress.innerText, "Question 1 / 1");
     assert.equal(harness.nextQuestionButton.disabled, false);
-    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
 
     await advanceQuiz(harness);
 
@@ -787,7 +818,7 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.progress.innerText, "Question 1 / 5");
     assert.equal(harness.question.innerText, "Situation 1");
 
-    harness.optionsGrid.children[0].onclick();
+    await harness.optionsGrid.children[0].onclick();
     assert.equal(harness.getActiveScreen(), "");
     assert.equal(harness.progress.innerText, "Question 1 / 5");
     assert.equal(harness.question.innerText, "Situation 1");
@@ -797,24 +828,24 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.progress.innerText, "Question 2 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 4");
 
-    harness.optionsGrid.children[0].onclick();
+    await harness.optionsGrid.children[0].onclick();
     await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
     harness.skipButton.onclick();
-    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 4 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
-    harness.optionsGrid.children[3].onclick();
+    await harness.optionsGrid.children[3].onclick();
     await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 5 / 5");
     assert.equal(harness.livePoints.innerText, "Points : 7");
 
-    harness.optionsGrid.children[2].onclick();
+    await harness.optionsGrid.children[2].onclick();
     await advanceQuiz(harness);
 
     assert.deepEqual(harness.getAnswerSounds(), [true, false, true, false]);
@@ -841,7 +872,7 @@ test("final screen renders immediately even if remote result sync stays pending"
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -861,7 +892,7 @@ test("final screen still renders when remote result sync fails", async () => {
 
     harness.context.afficherSituation();
     harness.skipButton.onclick();
-    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
     await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
@@ -878,7 +909,7 @@ test("final screen still renders with legacy final-score id", async () => {
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -894,7 +925,7 @@ test("final screen still renders when result stat nodes are absent", async () =>
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -910,7 +941,7 @@ test("final ranking includes the last result even before async save settles", as
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -933,7 +964,7 @@ test("final screen still renders when review rendering fails on the last answer"
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -955,7 +986,7 @@ test("final screen still renders when initial ranking rendering fails on the las
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -979,7 +1010,7 @@ test("final screen still renders when ranking refresh fails after save", async (
     });
 
     harness.context.afficherSituation();
-    harness.optionsGrid.children[1].onclick();
+    await harness.optionsGrid.children[1].onclick();
 
     await advanceQuiz(harness);
 
@@ -1051,12 +1082,14 @@ test("final screen still renders when answer marking fails on the last answer", 
             getCurrent() {
                 return this.questions[this.index];
             },
-            answer(choice) {
-                const q = this.getCurrent();
-                scoring.applyAnswer(this.stats, choice, q.correct);
+            answer(choice, isCorrect = false) {
+                scoring.applyAnswer(this.stats, choice, isCorrect);
                 this.index += 1;
                 return this.index < this.questions.length;
             }
+        },
+        async gradeSupabaseQuestionAnswer() {
+            return true;
         },
         document: {
             getElementById(id) {
@@ -1154,7 +1187,7 @@ test("final screen still renders when answer marking fails on the last answer", 
     );
 
     context.afficherSituation();
-    optionsGrid.children[1].onclick();
+    await optionsGrid.children[1].onclick();
 
     assert.equal(activeScreen, "");
     nextQuestionButton.onclick();

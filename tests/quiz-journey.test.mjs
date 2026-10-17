@@ -27,13 +27,13 @@ function extractFunction(functionName) {
 function createStartHarness({ theme, mode, maxQuestions, historyByEmail = {} }) {
     const poolByTheme = {
         "1": [
-            { q: "Question Alpha", r: ["A", "B", "C", "D"], correct: 0 },
-            { q: "Question Bravo", r: ["A", "B", "C", "D"], correct: 1 },
-            { q: "Question Charlie", r: ["A", "B", "C", "D"], correct: 2 }
+            { id: "a", q: "Question Alpha", r: ["A", "B", "C", "D"], correct: 0 },
+            { id: "b", q: "Question Bravo", r: ["A", "B", "C", "D"], correct: 1 },
+            { id: "c", q: "Question Charlie", r: ["A", "B", "C", "D"], correct: 2 }
         ],
         all: [
-            { q: "Question Alpha", r: ["A", "B", "C", "D"], correct: 0 },
-            { q: "Question Delta", r: ["A", "B", "C", "D"], correct: 3 }
+            { id: "a", q: "Question Alpha", r: ["A", "B", "C", "D"], correct: 0 },
+            { id: "d", q: "Question Delta", r: ["A", "B", "C", "D"], correct: 3 }
         ]
     };
     const calls = [];
@@ -53,7 +53,13 @@ function createStartHarness({ theme, mode, maxQuestions, historyByEmail = {} }) 
         selectedTheme: theme,
         quizFeedbackMode: mode,
         maxQuestions,
-        currentAuthenticatedAccount: { email: "candidate@example.com" },
+        currentAuthenticatedAccount: { id: "candidate-id", email: "candidate@example.com" },
+        supabase: {},
+        questionSourceReady: true,
+        getStoredSupabaseSession: () => ({ access_token: "candidate-token" }),
+        setConnectionStatus: message => {
+            if (message) calls.push(["connectionStatus", message]);
+        },
         currentCandidateEmail: "",
         currentQuizRunId: 4,
         finalizedQuizRunId: 3,

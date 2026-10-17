@@ -18,8 +18,8 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=tactical-report-20261017/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=tactical-report-20261017/);
+    assert.match(indexHtml, /app\.js\?v=server-grading-20261017/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=server-grading-20261017/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*209,\s*219,\s*0\.48\),\s*rgba\(88,\s*111,\s*124,\s*0\.42\)\)/);
@@ -233,7 +233,7 @@ test("afficherSituation renders answer buttons in #options-grid and reuses #skip
     assert.equal(scheduled.length, 0);
     assert.equal(nextQuestionButton.disabled, false);
     assert.equal(nextQuestionButton.innerText, "Voir le bilan");
-    assert.deepEqual(markedAnswers, [{ selected: null, correct: 1 }]);
+    assert.deepEqual(markedAnswers, [{ selected: null, correct: false }]);
     nextQuestionButton.onclick();
     assert.equal(finalCalls, 1);
     assert.equal(optionsGrid.children.length, 4);
