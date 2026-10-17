@@ -48,22 +48,29 @@ Le projet est conçu pour être hébergé facilement sur GitHub Pages ou sur tou
 
 ## Screenshots / captures
 
-Le projet est pensé pour un usage mobile et tactique, avec des écrans très lisibles et une interface d'administration optimisée pour le suivi des résultats. Voici un exemple de structure à remplir avec les captures du projet :
+Quelques captures réelles de l’interface du projet pour illustrer les parcours clés :
 
-```md
-![Écran de connexion](./docs/screenshots/connexion.png)
-![Accueil candidat](./docs/screenshots/accueil-candidat.png)
-![Campagne globale](./docs/screenshots/campagne-globale.png)
-![Résultats / historique](./docs/screenshots/historique.png)
-![Administration - gestion des questions](./docs/screenshots/admin-questions.png)
-![Administration - signalements](./docs/screenshots/admin-signalements.png)
-```
+### Authentification et Top 3 public
 
-À compléter avec les captures réelles du projet pour illustrer :
-- l'écran d'authentification et du Top 3 public ;
-- le parcours de quiz en mode "COMBAT DE HAUTE INTENSITE" ;
-- le bilan final candidat ;
-- la gestion des questions et des signalements côté admin.
+![Écran d’authentification et Top 3 public](./docs/screenshots/01-auth-login.png)
+
+### Sélection de mission / préparation au combat
+
+![Sélection des thèmes et mode d’entraînement](./docs/screenshots/02-theme-selection.png)
+
+### Quiz en mode "COMBAT DE HAUTE INTENSITE"
+
+![Parcours de quiz tactique](./docs/screenshots/03-quiz-combat.png)
+
+### Bilan final candidat
+
+![Bilan final et revue tactique](./docs/screenshots/04-result-bilan.png)
+
+### Gestion des questions et signalements côté admin
+
+![Administration - questions](./docs/screenshots/05-admin-questions.png)
+
+![Administration - signalements](./docs/screenshots/06-admin-signalements.png)
 
 ## Stack technique
 
