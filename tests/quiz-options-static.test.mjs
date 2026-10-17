@@ -18,7 +18,7 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=admin-refresh-fix-20261017/);
+    assert.match(indexHtml, /app\.js\?v=question-bank-instance-fix-20261017/);
     assert.match(indexHtml, /ui\/Style\.css\?v=server-grading-20261017/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
