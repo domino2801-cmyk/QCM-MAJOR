@@ -4445,7 +4445,7 @@ function afficherSituation(quizRunId = typeof currentQuizRunId === "number" ? cu
         const encore = quizEngine.answer(null, false);
         updateLivePoints();
         try {
-            marquerBoutons(null, false);
+            marquerBoutons(null, false, correction.correctIndex);
         } catch (error) {
             console.warn("Marquage des réponses indisponible.", error);
         }
@@ -4554,7 +4554,7 @@ function marquerBoutons(selected, correct, correctIndex = null) {
     if (selected !== null && btns[selected]) {
         btns[selected].classList.add(correct ? "correct" : "incorrect");
     }
-    if (selected !== null && !correct && btns[correctIndex]) {
+    if (!correct && btns[correctIndex]) {
         btns[correctIndex].classList.add("correct");
     }
 }

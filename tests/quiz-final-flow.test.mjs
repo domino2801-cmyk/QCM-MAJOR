@@ -789,7 +789,7 @@ test("last skipped question is counted once and saved in the final note", async 
     assert.equal(harness.scheduled.length, 0);
     assert.equal(harness.progress.innerText, "Question 1 / 1");
     assert.equal(harness.nextQuestionButton.disabled, false);
-    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
 
     await advanceQuiz(harness);
 
@@ -839,7 +839,7 @@ test("five-question path reaches the result screen with the full score breakdown
     assert.equal(harness.livePoints.innerText, "Points : 3");
 
     await harness.skipButton.onclick();
-    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
     assert.equal(harness.progress.innerText, "Question 3 / 5");
     await advanceQuiz(harness);
     assert.equal(harness.progress.innerText, "Question 4 / 5");
@@ -900,7 +900,7 @@ test("final screen still renders when remote result sync fails", async () => {
 
     harness.context.afficherSituation();
     await harness.skipButton.onclick();
-    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), false);
+    assert.equal(harness.optionsGrid.children[1].classList.contains("correct"), true);
     await advanceQuiz(harness);
 
     assert.equal(harness.getActiveScreen(), "result-screen");
