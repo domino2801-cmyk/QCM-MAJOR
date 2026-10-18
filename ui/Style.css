@@ -188,6 +188,7 @@ body {
 
 body:has(#theme-screen.active) .close-app,
 body:has(#history-screen.active) .close-app,
+body:has(#retex-screen.active) .close-app,
 body:has(#help-screen.active) .close-app {
     display: none;
 }
@@ -3349,6 +3350,103 @@ body {
     margin: 0;
 }
 
+.retex-group {
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 14px 16px 16px;
+    margin: 0 0 16px;
+    min-width: 0;
+}
+
+.retex-group legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0 8px;
+}
+
+.retex-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.85rem;
+}
+
+.retex-profile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 8px;
+}
+
+.retex-profile div {
+    border: 1px solid var(--primary);
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+
+.retex-profile dt {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.retex-profile dd {
+    margin: 2px 0 0;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.retex-group label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 6px 0;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.retex-group label:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(78, 110, 78, 0.35);
+}
+
+.retex-group input[type="radio"],
+.retex-group input[type="checkbox"] {
+    margin-top: 3px;
+    flex: none;
+}
+
+.retex-question {
+    font-weight: 600;
+    margin: 14px 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+@media (max-width: 480px) {
+    .retex-profile {
+        grid-template-columns: 1fr;
+    }
+}
+
+.retex-panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+}
+
 .theme-history-btn {
     display: block;
     margin: 18px auto 0;
@@ -3900,10 +3998,6 @@ body {
     .theme-bottom-actions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
-    }
-
-    .theme-bottom-actions #btn-help-theme {
-        grid-column: 1 / -1;
     }
 
     .theme-bottom-actions .btn-secondary {

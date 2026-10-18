@@ -89,6 +89,5 @@ test("l’écran d’aide et son accès restent adaptés aux petits écrans", ()
     assert.match(css, /\.help-screen\s*\{[^}]*max-width:\s*760px/s);
     assert.match(css, /\.help-branding\s*\{[^}]*flex-direction:\s*column/s);
     assert.match(css, /\.help-logo\s*\{[^}]*object-fit:\s*contain/s);
-    assert.match(css, /\.theme-bottom-actions #btn-help-theme\s*\{[^}]*grid-column:\s*1 \/ -1/s);
     assert.match(css, /\.help-panel\s*\{[^}]*padding:\s*16px 12px/s);
 });

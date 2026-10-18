@@ -43,13 +43,13 @@ test("motivational feedback uses five note bands with the supplied feedback data
     const getFeedback = note => context.getFeedback(note);
 
     assert.match(getFeedback(7.99).title, /Mission non validée/);
-    assert.equal(getFeedback(8).title, "🛡️ Seuil de tolérance");
-    assert.equal(getFeedback(9.99).title, "🛡️ Seuil de tolérance");
-    assert.equal(getFeedback(10).title, "🎖️ Objectif atteint");
-    assert.equal(getFeedback(12).title, "🎖️ Objectif atteint");
-    assert.equal(getFeedback(12.01).title, "🚀 Domination du terrain");
-    assert.equal(getFeedback(15).title, "🚀 Domination du terrain");
-    assert.equal(getFeedback(15.01).title, "👑 Excellence tactique");
+    assert.equal(getFeedback(8).title, "Seuil de tolérance");
+    assert.equal(getFeedback(9.99).title, "Seuil de tolérance");
+    assert.equal(getFeedback(10).title, "Objectif atteint");
+    assert.equal(getFeedback(12).title, "Objectif atteint");
+    assert.equal(getFeedback(12.01).title, "Domination du terrain");
+    assert.equal(getFeedback(15).title, "Domination du terrain");
+    assert.equal(getFeedback(15.01).title, "Excellence tactique");
     assert.equal(getFeedback(13).description, "Tu domines ton sujet et infliges de lourds dégâts à l'adversaire avec une belle régularité.");
     assert.equal(getFeedback(4).emphasis, "La ligne de défense a cédé au combat.");
     assert.match(getFeedback(4).description, /revue tactique/);
@@ -58,8 +58,8 @@ test("motivational feedback uses five note bands with the supplied feedback data
     assert.equal("phrases" in excellenceFeedback, false);
     randomValue = 0.99;
     assert.equal(getFeedback(16).emphasis, "Victoire majeure.");
-    assert.equal(getFeedback(16).title, "👑 Excellence tactique");
-    assert.equal(getFeedback(13).title, "🚀 Domination du terrain");
+    assert.equal(getFeedback(16).title, "Excellence tactique");
+    assert.equal(getFeedback(13).title, "Domination du terrain");
 });
 
 test("quiz option locking and marking target #options-grid in app.js", () => {

@@ -2707,7 +2707,6 @@ function renderGlobalRanking(results) {
                 : loginRanking.length ? "" : "Aucun résultat de campagne globale pour le moment.";
     }
 
-    const rankingSymbols = ["🏆", "🥈", "🥉"];
     const podiumIcons = [
         { src: "public/icons/podium-gold.svg", alt: "Première place" },
         { src: "public/icons/podium-silver.svg", alt: "Médaille argent : deuxième résultat" },
@@ -2739,7 +2738,7 @@ function renderGlobalRanking(results) {
                 icon.className = "podium-icon";
                 rankElement.appendChild(icon);
             } else {
-                rankElement.innerText = rankingSymbols[rank - 1] || `${rank}.`;
+                rankElement.innerText = `${rank}.`;
             }
             candidateElement.className = "global-ranking-candidate";
             candidateElement.innerText = result.name || result.label || result.email || "Pseudo non renseigné";
@@ -3775,6 +3774,76 @@ async function initializeAppInteractions() {
         document.getElementById("btn-help-theme")?.focus();
     });
 
+    document.getElementById("btn-retex-theme")?.addEventListener("click", () => {
+        const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail] || {};
+        const specialtyCode = String(account.specialty || "").trim();
+        const specialtyOption = [...document.querySelectorAll("#register-specialty option")]
+            .find(option => option.value && option.value === specialtyCode);
+        document.getElementById("retex-pseudo").textContent = account.name || "Non renseigné";
+        document.getElementById("retex-specialty").textContent = specialtyOption?.textContent || specialtyCode || "Non renseignée";
+        uiController.switchScreen("retex-screen");
+        document.getElementById("retex-title")?.focus();
+    });
+
+    document.getElementById("btn-back-from-retex")?.addEventListener("click", () => {
+        uiController.switchScreen("theme-screen");
+        document.getElementById("btn-retex-theme")?.focus();
+    });
+
+    let retexSubmitted = false;
+    document.getElementById("retex-form")?.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (retexSubmitted) return;
+        const form = event.currentTarget;
+        const one = name => form.querySelector(`input[name="${name}"]:checked`)?.value || null;
+        const themes = [...form.querySelectorAll('input[name="retex-themes"]:checked')].map(input => input.value);
+        const comment = form.querySelector("#retex-comment")?.value.trim() || null;
+        const submitButton = document.getElementById("btn-submit-retex");
+        const backButton = document.getElementById("btn-back-from-retex");
+        const accessToken = getStoredSupabaseSession()?.access_token;
+        if (!supabase || !accessToken || !currentAuthenticatedAccount?.id) {
+            setAuthMessage("retex-status", "Connectez-vous pour transmettre le RETEX.");
+            return;
+        }
+        const answers = {
+            navigation: one("retex-navigation"),
+            design: one("retex-design"),
+            best_mode: one("retex-mode"),
+            scoring_opinion: one("retex-bareme"),
+            used_report_form: one("retex-signalement"),
+            recommendation: one("retex-note")
+        };
+        if (!themes.length && !comment && Object.values(answers).every(value => !value)) {
+            setAuthMessage("retex-status", "Renseignez au moins une réponse avant de transmettre le RETEX.");
+            return;
+        }
+
+        if (submitButton) submitButton.disabled = true;
+        setAuthMessage("retex-status", "Transmission du RETEX...");
+        try {
+            await supabaseRestRequest("/retex_responses", {
+                method: "POST",
+                accessToken,
+                prefer: "return=minimal",
+                body: {
+                    user_id: currentAuthenticatedAccount.id,
+                    pseudo: document.getElementById("retex-pseudo")?.textContent || null,
+                    specialty: document.getElementById("retex-specialty")?.textContent || null,
+                    themes,
+                    ...answers,
+                    comment
+                }
+            });
+            retexSubmitted = true;
+            setAuthMessage("retex-status", "RETEX transmis à l’administration. Merci pour ton retour.");
+            form.querySelectorAll("input, select, textarea").forEach(field => field.disabled = true);
+            if (submitButton) submitButton.innerText = "RETEX transmis";
+            if (backButton) backButton.innerText = "Retour au briefing";
+        } catch (error) {
+            setAuthMessage("retex-status", `Transmission impossible : ${error.message}`);
+            if (submitButton) submitButton.disabled = false;
+        }
+    });
     document.getElementById("candidate-history-modes")?.addEventListener("click", event => {
         const button = event.target.closest("button[data-history-category]");
         if (!button) return;
@@ -4597,7 +4666,7 @@ function marquerBoutons(selected, correct, correctIndex = null) {
 function getRandomMotivationalPhrase(note) {
     const bands = [
         {
-            title: "⚠️ Mission non validée",
+            title: "Mission non validée",
             description: "Constat de rupture des lignes, invitant à revoir les bases et à utiliser la revue tactique.",
             phrases: [
                 ["La ligne de défense a cédé au combat.", " Un retour immédiat aux fondamentaux du BM4 est indispensable."],
@@ -4608,7 +4677,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "🛡️ Seuil de tolérance",
+            title: "Seuil de tolérance",
             description: "Le candidat frôle la validation mais la position reste fragile et les erreurs coûtent cher.",
             phrases: [
                 ["La ligne de front progresse, mais la position reste fragile.", " Forcez la décision au prochain assaut."],
@@ -4619,7 +4688,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "🎖️ Objectif atteint",
+            title: "Objectif atteint",
             description: "La mission est validée, le niveau réglementaire est là, mais il y a encore une marge de progression.",
             phrases: [
                 ["Le niveau d'engagement au CENTAC est validé.", " Vos choix tactiques font plier l'adversaire."],
@@ -4630,7 +4699,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "🚀 Domination du terrain",
+            title: "Domination du terrain",
             description: "Tu domines ton sujet et infliges de lourds dégâts à l'adversaire avec une belle régularité.",
             phrases: [
                 ["Une démonstration de force sur le terrain.", " Vous transformez l’initiative en domination nette."],
@@ -4641,7 +4710,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "👑 Excellence tactique",
+            title: "Excellence tactique",
             description: "Félicitations maximales pour les majors d'élite qui affichent un score parfait ou quasi-parfait.",
             phrases: [
                 ["Excellence tactique démontrée.", " Vous maîtrisez le combat de haute intensité au rang de Major."],

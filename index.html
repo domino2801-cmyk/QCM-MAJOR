@@ -330,6 +330,7 @@
                 <button id="btn-history-theme" class="btn-secondary" type="button" aria-expanded="false" aria-controls="candidate-history-panel">Journal de campagne</button>
                 <button id="logout-btn" class="btn-secondary" type="button">Quitter la zone</button>
                 <button id="btn-help-theme" class="btn-secondary" type="button">Aide</button>
+                <button id="btn-retex-theme" class="btn-secondary" type="button">RETEX</button>
             </div>
             <p id="candidate-history-sync-status" class="terminal-note" role="status" aria-live="polite"></p>
         </div>
@@ -394,6 +395,74 @@
                 <p id="candidate-history-recommendation" class="candidate-history-recommendation"></p>
                 <button id="btn-back-to-campaign" class="btn-main history-back-btn" type="button">Retour au briefing</button>
             </section>
+        </div>
+
+        <div id="retex-screen" class="screen help-screen">
+            <form id="retex-form" class="global-evolution help-panel retex-panel" aria-labelledby="retex-title">
+                <div class="brand-lockup"><img src="public/images/logo2.png" width="100" alt="Question pour un Major"></div>
+                <header class="help-header">
+                    <h1 id="retex-title" tabindex="-1">                    RETEX QCM-MAJOR.fr</h1>
+                </header>
+                                    <p class="help-intro">Pour t’aider à valider ton <strong>BM4</strong> et à viser le haut du classement du <strong>Combat Haute Intensité</strong>, nous avons besoin de ton retour terrain. Prends <strong>2 minutes</strong> pour cocher ton ressenti.</p>
+
+                <fieldset class="help-section retex-group">
+                                        <legend><span class="retex-step">1</span> Ton profil de combattant</legend>
+                                        <dl class="retex-profile">
+                                            <div><dt>Pseudo de guerre</dt><dd id="retex-pseudo">Non renseigné</dd></div>
+                                            <div><dt>Spécialité BM4</dt><dd id="retex-specialty">Non renseignée</dd></div>
+                                        </dl>
+                                        <p class="retex-question">Quelle zone as-tu le plus ciblée ? (plusieurs choix possibles)</p>
+                    <label><input type="checkbox" name="retex-themes" value="1. Organisation et Commandement"> 1. Organisation et Commandement</label>
+                    <label><input type="checkbox" name="retex-themes" value="2. Matériels, Armements et Technologies"> 2. Matériels, Armements et Technologies</label>
+                    <label><input type="checkbox" name="retex-themes" value="3. Lois de Programmation Militaire"> 3. Lois de Programmation Militaire</label>
+                    <label><input type="checkbox" name="retex-themes" value="4. Opérations Extérieures"> 4. Opérations Extérieures</label>
+                    <label><input type="checkbox" name="retex-themes" value="5. Histoire & Traditions"> 5. Histoire &amp; Traditions</label>
+                    <label><input type="checkbox" name="retex-themes" value="6. Implantation des unités"> 6. Implantation des unités</label>
+                </fieldset>
+
+                <fieldset class="help-section retex-group">
+                    <legend><span class="retex-step">2</span> L’interface tactique</legend>
+                    <p class="retex-question">La navigation dans la console est</p>
+                    <label><input type="radio" name="retex-navigation" value="Fluide et réactive, parée pour la haute intensité"> Fluide et réactive, parée pour la haute intensité.</label>
+                    <label><input type="radio" name="retex-navigation" value="Un peu lente, parfois des lags pendant le chargement des questions"> Un peu lente, parfois des lags pendant le chargement des questions.</label>
+                    <p class="retex-question">Le design visuel est</p>
+                    <label><input type="radio" name="retex-design" value="Très propre, ultra-lisible sur le terrain"> Très propre, ultra-lisible sur le terrain.</label>
+                    <label><input type="radio" name="retex-design" value="Moyen, l'affichage mériterait d'être optimisé"> Moyen, l’affichage mériterait d’être optimisé.</label>
+                </fieldset>
+
+                <fieldset class="help-section retex-group">
+                    <legend><span class="retex-step">3</span> La simulation &amp; le combat</legend>
+                    <p class="retex-question">Quel mode de combat t’a le plus servi à progresser ?</p>
+                    <label><input type="radio" name="retex-mode" value="Entraînement par zone"> <strong>Entraînement par zone</strong> (10 à 40 questions avec correction immédiate)</label>
+                    <label><input type="radio" name="retex-mode" value="Simulation de combat"> <strong>Simulation de combat</strong> (50 questions, correction immédiate)</label>
+                    <label><input type="radio" name="retex-mode" value="Combat de haute intensité"> <strong>Combat de haute intensité</strong> (50 questions, sans correction, chronométré)</label>
+                    <p class="retex-question">Le barème d’évaluation (+4 points / -1 point / 0 point), tu en penses quoi ?</p>
+                    <label><input type="radio" name="retex-bareme" value="Parfait, ça force à être précis">                     Parfait, ça force à être précis et à passer la question en cas de doute.</label>
+                                       <label><input type="radio" name="retex-bareme" value="Trop punitif"> Trop punitif, le retrait de point casse un peu le moral sur le bilan.</label>
+                    <p class="retex-question">As-tu déjà utilisé le « Formulaire de Signalement Tactique » pour remonter une anomalie ?</p>
+                    <label><input type="radio" name="retex-signalement" value="Oui, l'outil est super pratique"> Oui, l’outil est super pratique en cours d’exercice.</label>
+                    <label><input type="radio" name="retex-signalement" value="Non, pas besoin / pas remarqué"> Non, je n’en ai pas eu besoin / je ne l’ai pas remarqué.</label>
+                </fieldset>
+
+                <fieldset class="help-section retex-group">
+                    <legend><span class="retex-step">4</span> Note globale &amp; recommandation</legend>
+                    <p class="retex-question">Conseillerais-tu l’application dans une préparation BM4 ?</p>
+                    <label><input type="radio" name="retex-note" value="1 à 3 (Négatif - Repli stratégique immédiat)"> 1 à 3 (Négatif - « Repli stratégique immédiat »)</label>
+                    <label><input type="radio" name="retex-note" value="4 à 6 (Neutre - À tester pour s'entraîner un peu)"> 4 à 6 (Neutre - « À tester pour s’entraîner un peu »)</label>
+                    <label><input type="radio" name="retex-note" value="7 à 8 (Bon - Une très bonne base de révision)"> 7 à 8 (Bon - « Une très bonne base de révision »)</label>
+                    <label><input type="radio" name="retex-note" value="9 à 10 (Excellent - Incontournable pour finir dans le Top 3)"> 9 à 10 (Excellent - « Incontournable pour finir dans le Top 3 »)</label>
+                </fieldset>
+
+                <fieldset class="help-section retex-group">
+                    <legend><span class="retex-step">5</span> Observations terrain</legend>
+                    <label for="retex-comment" class="retex-question">Une idée d’amélioration ? Un bug technique constaté ? Dépose ton compte-rendu ici :</label>
+                    <textarea id="retex-comment" name="retex-comment" rows="5" maxlength="2000"></textarea>
+                </fieldset>
+
+                <p id="retex-status" class="terminal-note" role="status" aria-live="polite"></p>
+                <button id="btn-submit-retex" class="btn-main history-back-btn" type="submit">Envoyer le RETEX</button>
+                <button id="btn-back-from-retex" class="btn-secondary history-back-btn" type="button">Retour au briefing</button>
+            </form>
         </div>
 
         <div id="report-screen" class="screen report-screen">
