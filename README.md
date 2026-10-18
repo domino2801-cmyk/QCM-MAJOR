@@ -190,9 +190,9 @@ Les notifications push de signalement sont réservées aux administrateurs et n�
 
 ## Documentation juridique et conformité
 
-Les mentions légales et la politique de confidentialité sont accessibles depuis le pied de page de l’application. Elles décrivent le fonctionnement observé dans le code : hébergement GitHub Pages, services Supabase, données de compte et d’activité, signalements, classement public, stockage navigateur et notifications push facultatives pour les administrateurs.
+Les mentions légales et la page de confidentialité sont accessibles depuis le pied de page de l’application. Elles décrivent le fonctionnement observé dans le code : hébergement GitHub Pages, services Supabase, données de compte et d’activité, signalements, classement public, stockage navigateur et notifications push facultatives pour les administrateurs.
 
-Les mentions identifient l’éditeur comme domino2801 et indiquent l’adresse de contact fournie. La politique ne prétend pas qu’une purge automatique après un an existe : le code ne prévoit pas de suppression automatique de ce type pour les comptes inactifs, les résultats ou les signalements. L’éditeur doit définir et appliquer ses durées de conservation et vérifier que les bases légales correspondent à sa situation. Les durées appliquées par les prestataires à leurs sauvegardes relèvent de leurs propres règles.
+Les mentions identifient l’éditeur comme domino2801 et indiquent l’adresse de contact fournie. La page de confidentialité ne prétend pas qu’une purge automatique après un an existe : le code ne prévoit pas de suppression automatique de ce type pour les comptes inactifs, les résultats ou les signalements. L’éditeur doit définir et appliquer ses durées de conservation et vérifier que les bases légales correspondent à sa situation. Les durées appliquées par les prestataires à leurs sauvegardes relèvent de leurs propres règles.
 
 Ces textes fournissent une information générale et ne remplacent pas une validation juridique adaptée à l’éditeur et à son activité.
 

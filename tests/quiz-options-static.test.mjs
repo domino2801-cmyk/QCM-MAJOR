@@ -19,11 +19,12 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions", () => {
     assert.match(indexHtml, /app\.js\?v=show-correct-answer-v2-20261017/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=server-grading-20261017/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=gold-question-badges-20261018/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*209,\s*219,\s*0\.48\),\s*rgba\(88,\s*111,\s*124,\s*0\.42\)\)/);
     assert.match(css, /#theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*133,\s*22,\s*0\.74\),\s*rgba\(83,\s*54,\s*10,\s*0\.68\)\)/);
+    assert.match(css, /#theme-screen \.theme-mode-row \.theme-global-btn\.active[\s\S]*?border-color:\s*#e2c36d;[^}]*outline:\s*2px solid rgba\(226,\s*195,\s*109,\s*0\.82\);/);
     assert.match(indexHtml, /id="quiz-timer"[^>]*hidden>[\s\S]*id="quiz-timer-display">60:00/);
     assert.match(css, /\.quiz-timer\.badge\[hidden\]\s*\{\s*display:\s*none;/);
     assert.match(css, /\.quiz-timer\.urgent/);
@@ -48,12 +49,14 @@ test("intensity choices include 40 questions in a four-column row", () => {
     assert.match(appJs, /syncObjectiveButtons\(themeId\)/);
     assert.match(indexHtml, /id="theme-training-btn"[^>]*aria-pressed="false"/);
     assert.match(indexHtml, /id="theme-global-btn"[^>]*aria-pressed="false"/);
+    assert.match(indexHtml, /<div id="theme-screen" class="screen">[\s\S]*?<div class="brand-lockup"><img src="public\/images\/logo2\.png" width="100" alt="Question pour un Major"><\/div>/);
+    assert.doesNotMatch(indexHtml.match(/<div id="theme-screen" class="screen">([\s\S]*?)<p class="subtitle">/)?.[1] || "", /<h1>Question pour un Major<\/h1>/);
     assert.match(appJs, /const syncCampaignModeButtons = activeButton =>/);
     assert.match(appJs, /button\.setAttribute\("aria-pressed", String\(isActive\)\)/);
     assert.match(indexHtml, /class="qty-choice-btn" data-qty="40" aria-pressed="false"><span class="qty-choice-count">40<\/span>/);
-    assert.match(indexHtml, /id="theme-start-guidance"[^>]*>Sélectionnez une zone d’opération ou un combat pour continuer\./);
+    assert.match(indexHtml, /id="theme-start-guidance"[^>]*>Sélectionnez la zone de combat pour continuer\./);
     assert.match(appJs, /setStartGuidance\(hasQuestions \? "" : "Aucune question n’est disponible pour cette zone\."\)/);
-    assert.match(appJs, /setStartGuidance\("Sélectionnez une zone d’opération ou un combat pour continuer\."\)/);
+    assert.match(appJs, /setStartGuidance\("Sélectionnez la zone de combat pour continuer\."\)/);
     assert.match(appJs, /setStartGuidance\(""\);/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.qty-choice-row\s*\{[^}]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\);/);
@@ -67,13 +70,15 @@ test("intensity choices include 40 questions in a four-column row", () => {
     assert.match(css, /\.theme-start-guidance\s*\{[^}]*margin:\s*0;/);
     assert.match(css, /@media \(max-width: 600px\)\s*\{[\s\S]*?#theme-screen \.brand-lockup img\s*\{\s*width:\s*82px;/);
     assert.match(css, /\.theme-mode-row \.theme-global-btn\s*\{\s*min-height:\s*60px;[\s\S]*?font-size:\s*0\.68rem;/);
-    assert.match(css, /\.theme-quantity-field \.qty-choice-btn\.active\s*\{[^}]*border-color:\s*#e2c36d;/);
+    assert.match(css, /\.theme-quantity-field \.qty-choice-btn\.active\s*\{[^}]*background:\s*linear-gradient\(145deg,\s*#e7e6d7,\s*#a9ae96\);[^}]*outline:\s*1px solid rgba\(226, 195, 109, 0\.8\);/);
+    assert.match(css, /\.theme-objective-btn\[data-theme\]\.active\s*\{[^}]*background:\s*linear-gradient\(145deg,\s*#e7e6d7,\s*#a9ae96\);[^}]*outline:\s*1px solid rgba\(226, 195, 109, 0\.8\);/);
     assert.match(css, /\.theme-objective-btn\s*\{[^}]*align-items:\s*center;[\s\S]*?text-align:\s*center;/);
     assert.match(css, /\.theme-objective-btn\s*\{[^}]*min-height:\s*74px;[^}]*padding:\s*7px 12px;/);
+    assert.match(css, /\.theme-objective-new-count\s*\{[^}]*background:\s*linear-gradient\(145deg,\s*#f0d675,\s*#c99a24\);[^}]*color:\s*#111;[^}]*font-size:\s*0\.55rem;[^}]*position:\s*absolute;[^}]*left:\s*2px;[^}]*bottom:\s*2px;/);
     assert.match(css, /\.theme-objective-btn\s*\{\s*min-height:\s*68px;\s*padding:\s*6px 10px;/);
     assert.match(css, /\.theme-objective-btn\[data-theme="1"\]\s*\{[^}]*background:\s*linear-gradient/);
     assert.match(css, /\.theme-objective-btn\[data-theme="6"\]\s*\{[^}]*background:\s*linear-gradient/);
-    assert.match(css, /\.theme-objective-btn\[data-theme\]\.active\s*\{[^}]*border-color:\s*#e2c36d;/);
+    assert.match(css, /\.theme-objective-btn\[data-theme\]\.active\s*\{[^}]*border:\s*2px solid #e2c36d;/);
     assert.doesNotMatch(css, /^\.qty-choice-btn\.active\s*\{/m);
     assert.match(css, /#theme-select:has\(option\[value=""\]:checked\)\s*\{\s*font-size:\s*0\.95rem;/);
 });

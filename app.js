@@ -806,14 +806,38 @@ function updateQuestionRotationStatus(themeId) {
         .filter(question => poolKeys.has(question)));
     const remaining = Math.max(poolKeys.size - usedKeys.size, 0);
 
-    status.classList.remove("hidden");
     if (poolKeys.size === 0) {
+        status.classList.remove("hidden");
         status.innerText = "Aucune question disponible pour ce thème. Les questions doivent être ajoutées dans l’administration.";
         return;
     }
-    status.innerText = remaining === 0
-        ? `Rotation complète : ${poolKeys.size} question(s) déjà utilisées. Un nouveau cycle commencera à la prochaine campagne.`
-        : `${remaining} question(s) inédites disponibles sur ${poolKeys.size}.`;
+    if (remaining === 0) {
+        status.classList.remove("hidden");
+        status.innerText = `Rotation complète : ${poolKeys.size} question(s) déjà utilisées. Un nouveau cycle commencera à la prochaine campagne.`;
+        return;
+    }
+    status.innerText = "";
+    status.classList.add("hidden");
+}
+
+function updateObjectiveQuestionBadges(email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous") {
+    const history = getQuestionHistory();
+    document.querySelectorAll(".theme-objective-btn").forEach(button => {
+        const themeId = button.dataset.theme;
+        const count = button.querySelector(".theme-objective-new-count");
+        if (!count) return;
+
+        const poolKeys = new Set(getQuestionPool(themeId).map(question => normalizeQuestionHistoryKey(question.q)));
+        const usedKeys = new Set((history[email]?.[themeId] || [])
+            .map(normalizeQuestionHistoryKey)
+            .filter(question => poolKeys.has(question)));
+        const remaining = Math.max(poolKeys.size - usedKeys.size, 0);
+        const name = button.querySelector(".theme-objective-name")?.textContent?.trim() || "Zone géographique";
+
+        count.textContent = String(remaining);
+        count.title = `${remaining} question(s) inédite(s)`;
+        button.setAttribute("aria-label", `${name}, ${remaining} question(s) inédite(s)`);
+    });
 }
 
 function setConnectionStatus(message = "") {
@@ -1827,10 +1851,15 @@ async function refreshCandidateHistory(account) {
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     setAuthAudioPlaying(false);
+    updateObjectiveQuestionBadges(email);
+    const welcomeMessage = document.getElementById("theme-welcome-message");
+    if (welcomeMessage) {
+        welcomeMessage.innerText = `Bienvenue ${account.name || "Candidat"} au CENTAC du BM4`;
+    }
     const accountSummary = document.getElementById("account-summary");
     if (accountSummary) {
         accountSummary.innerText =
-            `${account.name || "Candidat"} • ${email} • ${formatSpecialtyLabel(account.specialty)}`;
+            `Filière : ${formatSpecialtyLabel(account.specialty)}`;
     }
     uiController.switchScreen("theme-screen");
     renderGlobalRanking(getResults());
@@ -3577,7 +3606,7 @@ async function initializeAppInteractions() {
             syncCampaignModeButtons(null);
             syncObjectiveButtons(null);
             if (startButton) startButton.disabled = true;
-            setStartGuidance("Sélectionnez une zone d’opération ou un combat pour continuer.");
+            setStartGuidance("Sélectionnez la zone de combat pour continuer.");
             return;
         }
 
@@ -3681,11 +3710,15 @@ async function initializeAppInteractions() {
         const history = getQuestionHistory();
         delete history[email];
         localStorage.setItem(questionHistoryStorageKey, JSON.stringify(history));
+        updateObjectiveQuestionBadges(email);
 
         const status = document.getElementById("question-rotation-status");
         if (selectedTheme) {
             updateQuestionRotationStatus(selectedTheme);
-            if (status) status.innerText = `Historique réinitialisé. ${status.innerText}`;
+            if (status) {
+                status.classList.remove("hidden");
+                status.innerText = "Historique réinitialisé.";
+            }
         } else if (status) {
             status.classList.remove("hidden");
             status.innerText = "Historique réinitialisé. Sélectionnez un thème pour voir les questions disponibles.";
@@ -4260,6 +4293,7 @@ function startQuiz() {
         ...new Set([...excludedQuestions, ...quizEngine.questions.map(question => question.q)])
     ];
     localStorage.setItem(questionHistoryStorageKey, JSON.stringify(history));
+    updateObjectiveQuestionBadges(email);
 
     // Passage à l’écran quiz
     uiController.switchScreen("quiz-screen");

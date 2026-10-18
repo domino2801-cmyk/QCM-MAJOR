@@ -66,6 +66,6 @@ test("theme screen exposes question rotation availability", () => {
     assert.match(html, /id="reset-question-history-btn"/);
     assert.match(js, /updateQuestionRotationStatus/);
     assert.match(js, /Rotation complète/);
-    assert.match(js, /question\(s\) inédites disponibles/);
+    assert.doesNotMatch(js, /question\(s\) inédites disponibles/);
     assert.match(js, /Réinitialiser votre historique de questions/);
 });

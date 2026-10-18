@@ -127,3 +127,68 @@ test("un thème vide affiche une explication au candidat", () => {
     vm.runInContext('updateQuestionRotationStatus("6")', context);
     assert.match(status.innerText, /Aucune question disponible/);
 });
+
+test("masque le message redondant quand des questions inédites restent disponibles", () => {
+    const status = {
+        innerText: "",
+        classList: {
+            add(value) { this.added = value; },
+            remove(value) { this.removed = value; }
+        }
+    };
+    const context = vm.createContext({
+        document: { getElementById: () => status },
+        getQuestionPool: () => [{ q: "Question A" }, { q: "Question B" }],
+        currentAuthenticatedAccount: { email: "candidate@example.com" },
+        currentCandidateEmail: "",
+        getQuestionHistory: () => ({ "candidate@example.com": { "1": ["Question A"] } }),
+        normalizeQuestionHistoryKey: value => String(value).trim().replace(/\s+/g, " ").toLowerCase()
+    });
+    vm.runInContext(app.slice(app.indexOf("function updateQuestionRotationStatus("), app.indexOf("function setConnectionStatus(")), context);
+
+    vm.runInContext('updateQuestionRotationStatus("1")', context);
+
+    assert.equal(status.innerText, "");
+    assert.equal(status.classList.added, "hidden");
+    assert.equal(status.classList.removed, undefined);
+});
+
+test("les zones géographiques affichent le nombre de questions inédites du candidat", () => {
+    const buttons = ["1", "2"].map(themeId => {
+        const count = { textContent: "", title: "" };
+        return {
+            dataset: { theme: themeId },
+            attributes: {},
+            querySelector(selector) {
+                if (selector === ".theme-objective-new-count") return count;
+                if (selector === ".theme-objective-name") return { textContent: `Zone ${themeId}` };
+                return null;
+            },
+            setAttribute(name, value) {
+                this.attributes[name] = value;
+            },
+            count
+        };
+    });
+    const context = vm.createContext({
+        currentAuthenticatedAccount: { email: "candidate@example.com" },
+        currentCandidateEmail: "",
+        document: { querySelectorAll: () => buttons },
+        getQuestionPool: themeId => ({
+            "1": [{ q: " Question A " }, { q: "Question B" }],
+            "2": [{ q: "Question C" }]
+        }[themeId]),
+        getQuestionHistory: () => ({
+            "candidate@example.com": { "1": ["question a", "Question A", "outside pool"] }
+        }),
+        normalizeQuestionHistoryKey: question => String(question).trim().replace(/\s+/g, " ").toLowerCase()
+    });
+    vm.runInContext(app.slice(app.indexOf("function updateQuestionRotationStatus("), app.indexOf("function setConnectionStatus(")), context);
+
+    vm.runInContext("updateObjectiveQuestionBadges()", context);
+
+    assert.equal(buttons[0].count.textContent, "1");
+    assert.equal(buttons[0].count.title, "1 question(s) inédite(s)");
+    assert.equal(buttons[0].attributes["aria-label"], "Zone 1, 1 question(s) inédite(s)");
+    assert.equal(buttons[1].count.textContent, "1");
+});

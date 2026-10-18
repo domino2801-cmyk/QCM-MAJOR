@@ -52,10 +52,15 @@ test("admin renderers target the existing table body ids", () => {
 test("showAuthenticatedApp refreshes the ranking on the connected screen", () => {
     const context = {
         calls: [],
+        accountSummary: { innerText: "" },
+        welcomeMessage: { innerText: "" },
         document: {
             getElementById(id) {
                 if (id === "account-summary") {
-                    return { innerText: "" };
+                    return context.accountSummary;
+                }
+                if (id === "theme-welcome-message") {
+                    return context.welcomeMessage;
                 }
                 return null;
             }
@@ -72,6 +77,9 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
             return [{ id: "r1", name: "A", theme: "all", score: 18 }, { id: "r2", name: "B", theme: "all", score: 17 }, { id: "r3", name: "C", theme: "all", score: 16 }];
         },
         setAuthAudioPlaying() {},
+        updateObjectiveQuestionBadges(email) {
+            context.calls.push(["badges", email]);
+        },
         refreshCandidateHistory(account) {
             context.calls.push(["history", account]);
         },
@@ -86,11 +94,14 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
     const fn = extractNamedFunction("showAuthenticatedApp", context);
     fn("alice@test.com", { name: "Alice", specialty: "GEN" });
 
-    assert.deepEqual(context.calls[0], ["switch", "theme-screen"]);
-    assert.deepEqual(context.calls[1][0], "render");
-    assert.equal(context.calls[1][1].length, 3);
-    assert.equal(context.calls[2][0], "history");
-    assert.equal(context.calls[2][1].email, "alice@test.com");
+    assert.deepEqual(context.calls[0], ["badges", "alice@test.com"]);
+    assert.equal(context.welcomeMessage.innerText, "Bienvenue Alice au CENTAC du BM4");
+    assert.equal(context.accountSummary.innerText, "Filière : GEN");
+    assert.deepEqual(context.calls[1], ["switch", "theme-screen"]);
+    assert.deepEqual(context.calls[2][0], "render");
+    assert.equal(context.calls[2][1].length, 3);
+    assert.deepEqual(context.calls[3][0], "history");
+    assert.equal(context.calls[3][1].email, "alice@test.com");
 });
 
 test("showAdminApp refreshes the ranking before and after admin sync", async () => {

@@ -6,7 +6,7 @@ const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 const pages = [
     ["mentions-legales", "Mentions légales"],
-    ["confidentialite", "Politique de confidentialité"]
+    ["confidentialite", "Confidentialité"]
 ];
 
 test("legal links are in a shared footer after the app screens", () => {
@@ -17,7 +17,7 @@ test("legal links are in a shared footer after the app screens", () => {
     for (const [id, title] of pages) {
         assert.ok(footer[1].includes(`<a href="#${id}">${title}</a>`));
     }
-    assert.match(footer[1], /Politique de confidentialité/);
+    assert.match(footer[1], /Confidentialité/);
 });
 
 test("French legal sections have static anchor targets and return links", () => {
