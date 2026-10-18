@@ -4595,28 +4595,71 @@ function marquerBoutons(selected, correct, correctIndex = null) {
 }
 
 function getRandomMotivationalPhrase(note) {
-    const phrases = {
-        high: [
-            "Le niveau de combat est au rendez-vous. Continuez à tenir la ligne.",
-            "Vous avez montré du sang-froid et de la précision.",
-            "Le terrain est désormais sous votre contrôle."
-        ],
-        medium: [
-            "Une bonne base. Il faut maintenant transformer l’initiative en domination.",
-            "Le profil tactique est présent. Il reste à pousser la précision.",
-            "Le combat est maîtrisé dans l’ensemble, mais l’impact doit être plus net."
-        ],
-        low: [
-            "Le plan de combat doit être repris, mais le potentiel est là.",
-            "Le terrain reste à reconquérir. Reprendre la bonne ligne de tir.",
-            "La prochaine mission exigera plus de précision et de discipline."
-        ]
-    };
+    const bands = [
+        {
+            title: "⚠️ Note inférieure à 8/20 • Mission non validée / Repli tactique",
+            description: "Constat de rupture des lignes, invitant à revoir les bases et à utiliser la revue tactique.",
+            phrases: [
+                ["La ligne de défense a cédé au combat.", " Un retour immédiat aux fondamentaux du BM4 est indispensable."],
+                ["Bilan critique au CENTAC.", " Le plan de combat doit être entièrement repris avant de relancer l'offensive."],
+                ["Cibles manquées trop nombreuses.", " Effectuez un repli stratégique pour étudier la revue tactique."],
+                ["Mission non validée.", " La reconquête du terrain exigera une discipline stricte et une refonte de votre stratégie."],
+                ["L'impact global est insuffisant.", " Sécurisez vos connaissances avant de retourner dans la zone de confrontation."]
+            ]
+        },
+        {
+            title: "🛡️ Note entre 8 et 10/20 • Seuil de tolérance / Ligne de front instable",
+            description: "Le candidat frôle la validation mais la position reste fragile et les erreurs coûtent cher.",
+            phrases: [
+                ["La ligne de front progresse, mais la position reste fragile.", " Forcez la décision au prochain assaut."],
+                ["Le profil tactique est visible, mais l’impact doit être plus net.", " Évitez les tirs précipités."],
+                ["Une base de combat intéressante, mais le bilan de destruction reste trop juste.", " Restez concentré."],
+                ["Vous tenez la ligne de justesse.", " Consolidez vos acquis pour ne pas vous faire déborder."],
+                ["La stratégie est présente, l’exécution reste à parfaire.", " Poussez la précision pour sécuriser la zone."]
+            ]
+        },
+        {
+            title: "🎖️ Note entre 10 et 12/20 • Objectif atteint / Niveau validé",
+            description: "La mission est validée, le niveau réglementaire est là, mais il y a encore une marge de progression.",
+            phrases: [
+                ["Le niveau d'engagement au CENTAC est validé.", " Vos choix tactiques font plier l'adversaire."],
+                ["Objectifs de destruction atteints.", " La position est tenue, maintenez cette intensité."],
+                ["Manœuvre réussie sur l’ensemble de la zone.", " Vous démontrez une maîtrise correcte du référentiel."],
+                ["L'offensive est un succès.", " Votre discipline de tir vous permet de sécuriser le terrain."],
+                ["Mission accomplie.", " Le secteur est sous contrôle, continuez à perfectionner vos trajectoires."]
+            ]
+        },
+        {
+            title: "🚀 Domination du terrain / Combat maîtrisé",
+            description: "Tu domines ton sujet et infliges de lourds dégâts à l'adversaire avec une belle régularité.",
+            phrases: [
+                ["Une démonstration de force sur le terrain.", " Vous transformez l’initiative en domination nette."],
+                ["Manœuvre solide et hautement maîtrisée.", " L'objectif est atteint avec une efficacité remarquable."],
+                ["Le terrain est sous votre contrôle.", " Votre précision tactique ne laisse que peu de répit à l'ennemi."],
+                ["Discipline et efficacité validées.", " Vous imposez votre rythme et dictez le combat dans la zone."],
+                ["Bilan de destruction hautement positif.", " Vos choix stratégiques s'avèrent redoutables."]
+            ]
+        },
+        {
+            title: "👑 Note au-dessus de 15/20 • Excellence tactique / Haute intensité majeure",
+            description: "Félicitations maximales pour les majors d'élite qui affichent un score parfait ou quasi-parfait.",
+            phrases: [
+                ["Excellence tactique démontrée.", " Vous maîtrisez le combat de haute intensité au rang de Major."],
+                ["Cibles détruites avec une précision chirurgicale.", " Le CENTAC salue une manœuvre parfaite."],
+                ["Destruction totale des objectifs.", " Vous avez surclassé la simulation sur tous les thèmes."],
+                ["Sang-froid et rigueur absolue.", " Vous incarnez l'élite de la préparation opérationnelle du BM4."],
+                ["Victoire majeure.", " Votre plan de bataille est un modèle d'école pour le commandement."]
+            ]
+        }
+    ];
 
-    const category = note >= 8 ? "high" : note >= 5 ? "medium" : "low";
-    const pool = phrases[category];
-    const selected = pool[Math.floor(Math.random() * pool.length)];
-    return selected;
+    const band = note < 8 ? bands[0]
+        : note < 10 ? bands[1]
+            : note <= 12 ? bands[2]
+                : note <= 15 ? bands[3]
+                    : bands[4];
+    const phrase = band.phrases[Math.floor(Math.random() * band.phrases.length)];
+    return { title: band.title, description: band.description, emphasis: phrase[0], continuation: phrase[1] };
 }
 
 // =========================================================
@@ -4677,7 +4720,17 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
 
         const motivationElement = document.getElementById("result-motivation");
         if (motivationElement) {
-            motivationElement.textContent = getRandomMotivationalPhrase(note);
+            const feedback = getRandomMotivationalPhrase(note);
+            const title = motivationElement.querySelector(".result-motivation-title");
+            const description = motivationElement.querySelector(".result-motivation-description");
+            const emphasis = motivationElement.querySelector(".result-motivation-emphasis");
+            const continuation = motivationElement.querySelector(".result-motivation-continuation");
+            if (title && description && emphasis && continuation) {
+                title.textContent = feedback.title;
+                description.textContent = feedback.description;
+                emphasis.textContent = feedback.emphasis;
+                continuation.textContent = feedback.continuation;
+            }
         }
 
         const evolutionButton = document.getElementById("btn-evolution-result");
