@@ -91,13 +91,13 @@ test("le filtre administrateur isole le graphique et le thème à travailler de 
     filter.value = "a@test.fr";
     vm.runInContext("renderAdminResults()", h.context);
     assert.match(h.nodes.get("admin-history-summary").innerText, /1 résultat.*Moyenne Campagne Globale : 18\.00/);
-    assert.match(h.nodes.get("admin-history-recommendation").innerText, /Thème 5/);
+    assert.equal(h.nodes.get("admin-history-recommendation").innerText, "Thème à travailler\nHistoire & Traditions");
     assert.equal(h.nodes.get("admin-history-charts").children[0].children[1].children.length, 1);
     assert.equal(h.nodes.get("admin-results-table").children.length, 4);
     filter.value = "b";
     vm.runInContext("renderAdminResults()", h.context);
     assert.match(h.nodes.get("admin-history-summary").innerText, /1 résultat.*Moyenne Campagne Globale : 10\.00/);
-    assert.match(h.nodes.get("admin-history-recommendation").innerText, /Thème 3/);
+    assert.equal(h.nodes.get("admin-history-recommendation").innerText, "Thème à travailler\nLois de Programmation Militaire");
     assert.equal(h.nodes.get("admin-results-table").children.length, 2);
     assert.equal(h.nodes.get("candidate-history-charts").children.length, 0);
 });
@@ -108,7 +108,7 @@ test("la période recalcule les indicateurs sans supprimer des lignes du tableau
     h.nodes.get("admin-history-period").value = "7";
     vm.runInContext("renderAdminResults()", h.context);
     assert.match(h.nodes.get("admin-history-summary").innerText, /1 résultat.*18\.00/);
-    assert.match(h.nodes.get("admin-history-recommendation").innerText, /Thème 1/);
+    assert.equal(h.nodes.get("admin-history-recommendation").innerText, "Thème à travailler\nOrganisation et Commandement");
     assert.equal(h.nodes.get("admin-results-table").children.length, 4);
 });
 
@@ -129,8 +129,8 @@ test("tous les candidats ou une sélection disparue ne conserve pas une recomman
 test("le rendu candidat conserve son filtrage personnel et les mêmes indicateurs", () => {
     const h = harness();
     vm.runInContext('renderCandidateHistory(getResults(), "b")', h.context);
-    assert.match(h.nodes.get("candidate-history-summary").innerText, /1 résultat.*Moyenne Combat haute intensité : 10\.00/);
-    assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 3/);
+    assert.match(h.nodes.get("candidate-history-summary").innerText, /1 résultat.*Moyenne : 10\.00/);
+    assert.equal(h.nodes.get("candidate-history-recommendation").innerText, "Thème à travailler\nLois de Programmation Militaire");
 });
 
 test("le journal sépare le combat intense, la simulation et les six zones", () => {
@@ -178,7 +178,7 @@ test("la migration distingue les modes d'entraînement et réserve le Top 3 au c
 test("le nouveau thème implantation peut devenir le thème à travailler", () => {
     const h = harness();
     vm.runInContext('renderCandidateHistory([{candidateId:"a",theme:"6",score:3}], "a")', h.context);
-    assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 6 • Implantation des unités.*3\.00/);
+    assert.equal(h.nodes.get("candidate-history-recommendation").innerText, "Thème à travailler\nImplantation des unités");
 });
 
 test("la moyenne porte uniquement sur les campagnes globales de la période et conserve les notes négatives", () => {
@@ -194,5 +194,5 @@ test("la moyenne porte uniquement sur les campagnes globales de la période et c
     h.context.candidateHistoryCategory = "theme-1";
     vm.runInContext('renderCandidateHistory(results.filter(r => r.theme !== "all"), "a")', h.context);
     assert.equal(h.nodes.get("candidate-history-summary").innerText, "1 résultat(s) • Moyenne Organisation et Commandement : 20.00 / 20");
-    assert.match(h.nodes.get("candidate-history-recommendation").innerText, /Thème 1/);
+    assert.equal(h.nodes.get("candidate-history-recommendation").innerText, "Thème à travailler\nOrganisation et Commandement");
 });

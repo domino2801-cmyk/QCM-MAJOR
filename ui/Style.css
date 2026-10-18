@@ -3762,6 +3762,7 @@ body {
     margin: 14px 0 0;
     padding-top: 14px;
     text-align: center;
+    white-space: pre-line;
 }
 
 .history-reset-btn {

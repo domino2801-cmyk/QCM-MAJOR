@@ -2879,7 +2879,7 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
         if (selectedScores.length > 0) {
             const average = selectedScores.reduce((total, score) => total + score, 0) / selectedScores.length;
             summary.innerText = isCandidateHistory
-                ? `${selectedHistory.length} résultat(s) • Moyenne ${activeCategory.label} : ${average.toFixed(2)} / 20`
+                ? `${selectedHistory.length} résultat(s) • ${activeCategory.key === "combat" ? "Moyenne" : `Moyenne ${activeCategory.label}`} : ${average.toFixed(2)} / 20`
                 : `${selectedHistory.length} résultat(s) de Campagne Globale • Moyenne Campagne Globale : ${average.toFixed(2)} / 20`;
         } else {
             summary.innerText = isCandidateHistory
@@ -2938,8 +2938,8 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
         .filter(theme => theme.average !== null)
         .sort((first, second) => first.average - second.average);
     recommendation.innerText = themeAverages.length > 0
-        ? `Thème à travailler : ${themeAverages[0].label} (${themeAverages[0].average.toFixed(2)} / 20 de moyenne)`
-        : "Thème à travailler : aucun résultat par thème disponible.";
+        ? `Thème à travailler\n${themeAverages[0].label.replace(/^Thème \d+ • /, "")}`
+        : "Thème à travailler\nAucun résultat par thème disponible.";
 
 }
 
