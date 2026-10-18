@@ -2034,28 +2034,35 @@ function buildRetexPie(slices, total) {
     return svg;
 }
 
+function computeRetexSlices(field, multiple) {
+    const counts = new Map();
+    retexResponses.forEach(row => {
+        const values = multiple ? (Array.isArray(row[field]) ? row[field] : []) : [row[field]];
+        values.filter(Boolean).forEach(value => counts.set(value, (counts.get(value) || 0) + 1));
+    });
+    const slices = [...counts.entries()]
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count);
+    return { slices, answered: slices.reduce((sum, slice) => sum + slice.count, 0) };
+}
+
+function getRetexMetaText() {
+    const total = retexResponses.length;
+    const dates = retexResponses.map(row => Date.parse(row.created_at)).filter(Number.isFinite);
+    const formatter = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+    if (!total) return "Aucun retour RETEX enregistré pour le moment.";
+    return `${total} retour(s) analysé(s) - édité le ${formatter.format(new Date())}`
+        + (dates.length ? ` - période du ${formatter.format(new Date(Math.min(...dates)))} au ${formatter.format(new Date(Math.max(...dates)))}` : "");
+}
+
 function renderAdminRetex() {
     const charts = document.getElementById("admin-retex-charts");
     if (!charts) return;
     charts.replaceChildren();
-    const total = retexResponses.length;
-    const dates = retexResponses.map(row => Date.parse(row.created_at)).filter(Number.isFinite);
-    const formatter = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
-    document.getElementById("admin-retex-meta").textContent = total
-        ? `${total} retour(s) analysé(s) - édité le ${formatter.format(new Date())}`
-            + (dates.length ? ` - période du ${formatter.format(new Date(Math.min(...dates)))} au ${formatter.format(new Date(Math.max(...dates)))}` : "")
-        : "Aucun retour RETEX enregistré pour le moment.";
+    document.getElementById("admin-retex-meta").textContent = getRetexMetaText();
 
     retexQuestions.forEach(({ field, title, multiple }) => {
-        const counts = new Map();
-        retexResponses.forEach(row => {
-            const values = multiple ? (Array.isArray(row[field]) ? row[field] : []) : [row[field]];
-            values.filter(Boolean).forEach(value => counts.set(value, (counts.get(value) || 0) + 1));
-        });
-        const slices = [...counts.entries()]
-            .map(([label, count]) => ({ label, count }))
-            .sort((a, b) => b.count - a.count);
-        const answered = slices.reduce((sum, slice) => sum + slice.count, 0);
+        const { slices, answered } = computeRetexSlices(field, multiple);
         const card = document.createElement("article");
         card.className = "retex-chart-card";
         const heading = document.createElement("h4");
@@ -2111,14 +2118,177 @@ async function refreshAdminRetex() {
     }
 }
 
-function exportAdminRetexPdf() {
-    document.body.classList.add("printing-retex");
-    const cleanup = () => {
-        document.body.classList.remove("printing-retex");
-        window.removeEventListener("afterprint", cleanup);
+const retexReportEmail = "domino2801@gmail.com";
+
+function buildRetexPdf() {
+    const pageWidth = 595;
+    const pageHeight = 842;
+    const margin = 40;
+    const pages = [[]];
+    let y = pageHeight - margin;
+    const ops = () => pages[pages.length - 1];
+    const newPage = () => {
+        pages.push([]);
+        y = pageHeight - margin;
     };
-    window.addEventListener("afterprint", cleanup);
-    window.print();
+    const ensure = height => {
+        if (y - height < margin) newPage();
+    };
+    const toWinAnsi = text => String(text)
+        .replace(/[’‘]/g, "'")
+        .replace(/[–—]/g, "-")
+        .replace(/\u00a0|\u202f/g, " ")
+        .replace(/œ/g, "oe")
+        .replace(/[^\x20-\xff]/g, "?");
+    const escapePdf = text => toWinAnsi(text).replace(/[\\()]/g, "\\$&");
+    const text = (value, x, baseline, { size = 10, bold = false } = {}) => {
+        ops().push(`BT 0 g /${bold ? "F2" : "F1"} ${size} Tf ${x} ${baseline} Td (${escapePdf(value)}) Tj ET`);
+    };
+    const wrap = (value, maxChars) => {
+        const lines = [];
+        let line = "";
+        String(value).split(/\s+/).filter(Boolean).forEach(word => {
+            if (line && (line + " " + word).length > maxChars) {
+                lines.push(line);
+                line = word;
+            } else {
+                line = line ? `${line} ${word}` : word;
+            }
+        });
+        if (line) lines.push(line);
+        return lines.length ? lines : [""];
+    };
+    const rgb = hex => [1, 3, 5].map(i => (parseInt(hex.slice(i, i + 2), 16) / 255).toFixed(3)).join(" ");
+    const pie = (cx, cy, radius, slices, total) => {
+        let angle = Math.PI / 2;
+        slices.forEach((slice, index) => {
+            const sweep = slice.count / total * 2 * Math.PI;
+            const color = rgb(retexPalette[index % retexPalette.length]);
+            const parts = Math.max(1, Math.ceil(sweep / (Math.PI / 2)));
+            const step = sweep / parts;
+            const k = 4 / 3 * Math.tan(step / 4);
+            let path = `${color} rg 1 1 1 RG 0.5 w ${cx} ${cy} m ${(cx + radius * Math.cos(angle)).toFixed(2)} ${(cy + radius * Math.sin(angle)).toFixed(2)} l `;
+            for (let i = 0; i < parts; i++) {
+                const a0 = angle + i * step;
+                const a1 = a0 + step;
+                const p = (a, r) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+                const c1 = [a0, radius * k, a0 + Math.PI / 2];
+                const c2 = [a1, radius * k, a1 - Math.PI / 2];
+                const cp1 = `${(cx + radius * Math.cos(a0) + c1[1] * Math.cos(c1[2])).toFixed(2)} ${(cy + radius * Math.sin(a0) + c1[1] * Math.sin(c1[2])).toFixed(2)}`;
+                const cp2 = `${(cx + radius * Math.cos(a1) + c2[1] * Math.cos(c2[2])).toFixed(2)} ${(cy + radius * Math.sin(a1) + c2[1] * Math.sin(c2[2])).toFixed(2)}`;
+                path += `${cp1} ${cp2} ${p(a1, radius)} c `;
+            }
+            ops().push(`${path}h ${slices.length === 1 ? "f" : "B"}`);
+            angle += sweep;
+        });
+    };
+
+    text("RETEX QCM-MAJOR.fr", margin, y - 16, { size: 18, bold: true });
+    y -= 26;
+    text("Synthèse pour le commandement", margin, y - 10, { size: 12 });
+    y -= 20;
+    wrap(getRetexMetaText(), 95).forEach(line => {
+        text(line, margin, y - 10, { size: 9 });
+        y -= 12;
+    });
+    y -= 10;
+
+    retexQuestions.forEach(({ field, title, multiple }) => {
+        const { slices, answered } = computeRetexSlices(field, multiple);
+        const legend = slices.flatMap((slice, index) => wrap(
+            `${slice.label} : ${slice.count} (${Math.round(slice.count / answered * 100)} %)`, 68
+        ).map((line, lineIndex) => ({ line, index, first: lineIndex === 0 })));
+        const cardHeight = answered ? Math.max(110, legend.length * 12 + 36) : 44;
+        ensure(cardHeight + 10);
+        text(title, margin, y - 12, { size: 11, bold: true });
+        ops().push(`0.6 w 0.7 G ${margin} ${y - 18} m ${pageWidth - margin} ${y - 18} l S`);
+        if (!answered) {
+            text("Aucune réponse.", margin, y - 34, { size: 9 });
+        } else {
+            pie(margin + 45, y - 24 - 45, 45, slices, answered);
+            let lineY = y - 34;
+            legend.forEach(({ line, index, first }) => {
+                if (first) ops().push(`${rgb(retexPalette[index % retexPalette.length])} rg ${margin + 110} ${lineY - 1} 8 8 re f`);
+                text(line, margin + 124, lineY, { size: 9 });
+                lineY -= 12;
+            });
+        }
+        y -= cardHeight + 10;
+    });
+
+    const comments = retexResponses.filter(row => row.comment);
+    if (comments.length) {
+        ensure(40);
+        text("Observations terrain", margin, y - 12, { size: 11, bold: true });
+        ops().push(`0.6 w 0.7 G ${margin} ${y - 18} m ${pageWidth - margin} ${y - 18} l S`);
+        y -= 30;
+        comments.forEach(row => {
+            const lines = wrap(`- ${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""} : ${row.comment}`, 100);
+            lines.forEach(line => {
+                ensure(14);
+                text(line, margin, y - 9, { size: 9 });
+                y -= 12;
+            });
+            y -= 4;
+        });
+    }
+    pages.forEach((page, index) => {
+        page.push(`BT 0 g /F1 8 Tf ${pageWidth - margin - 60} 22 Td (${escapePdf(`Page ${index + 1} / ${pages.length}`)}) Tj ET`);
+    });
+
+    const objects = [];
+    const add = body => objects.push(body) && objects.length;
+    add("<< /Type /Catalog /Pages 2 0 R >>");
+    add(`<< /Type /Pages /Kids [${pages.map((_, i) => `${5 + i * 2} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+    add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+    pages.forEach((page, i) => {
+        const stream = page.join("\n");
+        add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${6 + i * 2} 0 R >>`);
+        add(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+    });
+    let pdf = "%PDF-1.4\n";
+    const offsets = objects.map((body, i) => {
+        const offset = pdf.length;
+        pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+        return offset;
+    });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+        + offsets.map(offset => `${String(offset).padStart(10, "0")} 00000 n \n`).join("")
+        + `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([Uint8Array.from(pdf, char => char.charCodeAt(0) & 0xff)], { type: "application/pdf" });
+}
+
+function downloadAdminRetexPdf() {
+    const url = URL.createObjectURL(buildRetexPdf());
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "RETEX.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+function exportAdminRetexPdf() {
+    if (!retexResponses.length) {
+        setAuthMessage("admin-retex-status", "Aucun retour RETEX à exporter.");
+        return false;
+    }
+    downloadAdminRetexPdf();
+    setAuthMessage("admin-retex-status", "RETEX.pdf téléchargé.");
+    return true;
+}
+
+function emailAdminRetexPdf() {
+    if (!exportAdminRetexPdf()) return;
+    setAuthMessage("admin-retex-status", "RETEX.pdf téléchargé. Joignez-le au message qui vient de s’ouvrir.");
+    const subject = "RETEX QCM-MAJOR.fr - Synthèse";
+    const body = "Bonjour,\n\nVeuillez trouver ci-joint la synthèse RETEX (fichier RETEX.pdf, à joindre depuis vos téléchargements).";
+    setTimeout(() => {
+        window.location.href = `mailto:${retexReportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }, 600);
 }
 
 async function showAdminApp() {
@@ -4162,6 +4332,7 @@ async function initializeAppInteractions() {
         });
     });
     document.getElementById("admin-retex-pdf-btn")?.addEventListener("click", exportAdminRetexPdf);
+    document.getElementById("admin-retex-email-btn")?.addEventListener("click", emailAdminRetexPdf);
 
     const reportToggle = document.getElementById("question-report-toggle");
     const reportForm = document.getElementById("question-report-form");

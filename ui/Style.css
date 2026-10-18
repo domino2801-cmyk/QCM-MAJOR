@@ -3539,42 +3539,6 @@ body {
     }
 }
 
-@media print {
-    body.printing-retex * {
-        visibility: hidden;
-    }
-
-    body.printing-retex {
-        background: #fff;
-    }
-
-    body.printing-retex #admin-retex-report,
-    body.printing-retex #admin-retex-report * {
-        visibility: visible;
-        color: #000;
-    }
-
-    body.printing-retex #admin-retex-report {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: #fff;
-    }
-
-    body.printing-retex .retex-chart-card {
-        border-color: #444;
-    }
-
-    body.printing-retex .retex-charts {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    body.printing-retex .retex-chart-body {
-        flex-direction: row;
-    }
-}
-
 .theme-history-btn {
     display: block;
     margin: 18px auto 0;
