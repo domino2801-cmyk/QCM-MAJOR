@@ -1402,9 +1402,14 @@ h1 {
 }
 
 .result-motivation-title,
-.result-motivation-description,
+.result-motivation-description {
+    display: block;
+}
+
 .result-motivation-phrase {
     display: block;
+    margin-top: 10px;
+    text-align: left;
 }
 
 .result-motivation-title {

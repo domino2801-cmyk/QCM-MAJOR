@@ -37,22 +37,29 @@ test("motivational feedback uses five note bands with the supplied feedback data
     const end = js.indexOf("async function bilanFinal(", start);
     assert.notEqual(start, -1);
     assert.notEqual(end, -1);
-    const context = vm.createContext({ Math: { floor: Math.floor, random: () => 0 } });
+    let randomValue = 0;
+    const context = vm.createContext({ Math: { floor: Math.floor, random: () => randomValue } });
     vm.runInContext(`${js.slice(start, end)}; this.getFeedback = getRandomMotivationalPhrase;`, context);
     const getFeedback = note => context.getFeedback(note);
 
     assert.match(getFeedback(7.99).title, /Mission non validée/);
-    assert.match(getFeedback(8).title, /Note entre 8 et 10\/20.*Seuil de tolérance/);
-    assert.match(getFeedback(9.99).title, /Note entre 8 et 10\/20/);
-    assert.match(getFeedback(10).title, /Note entre 10 et 12\/20.*Objectif atteint/);
-    assert.match(getFeedback(12).title, /Note entre 10 et 12\/20/);
-    assert.equal(getFeedback(12.01).title, "🚀 Domination du terrain / Combat maîtrisé");
-    assert.equal(getFeedback(15).title, "🚀 Domination du terrain / Combat maîtrisé");
-    assert.match(getFeedback(15.01).title, /Note au-dessus de 15\/20.*Excellence tactique/);
+    assert.equal(getFeedback(8).title, "🛡️ Seuil de tolérance");
+    assert.equal(getFeedback(9.99).title, "🛡️ Seuil de tolérance");
+    assert.equal(getFeedback(10).title, "🎖️ Objectif atteint");
+    assert.equal(getFeedback(12).title, "🎖️ Objectif atteint");
+    assert.equal(getFeedback(12.01).title, "🚀 Domination du terrain");
+    assert.equal(getFeedback(15).title, "🚀 Domination du terrain");
+    assert.equal(getFeedback(15.01).title, "👑 Excellence tactique");
     assert.equal(getFeedback(13).description, "Tu domines ton sujet et infliges de lourds dégâts à l'adversaire avec une belle régularité.");
     assert.equal(getFeedback(4).emphasis, "La ligne de défense a cédé au combat.");
     assert.match(getFeedback(4).description, /revue tactique/);
-    assert.equal(getFeedback(16).emphasis, "Excellence tactique démontrée.");
+    const excellenceFeedback = getFeedback(16);
+    assert.equal(excellenceFeedback.emphasis, "Excellence tactique démontrée.");
+    assert.equal("phrases" in excellenceFeedback, false);
+    randomValue = 0.99;
+    assert.equal(getFeedback(16).emphasis, "Victoire majeure.");
+    assert.equal(getFeedback(16).title, "👑 Excellence tactique");
+    assert.equal(getFeedback(13).title, "🚀 Domination du terrain");
 });
 
 test("quiz option locking and marking target #options-grid in app.js", () => {

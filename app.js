@@ -4597,7 +4597,7 @@ function marquerBoutons(selected, correct, correctIndex = null) {
 function getRandomMotivationalPhrase(note) {
     const bands = [
         {
-            title: "⚠️ Note inférieure à 8/20 • Mission non validée / Repli tactique",
+            title: "⚠️ Mission non validée",
             description: "Constat de rupture des lignes, invitant à revoir les bases et à utiliser la revue tactique.",
             phrases: [
                 ["La ligne de défense a cédé au combat.", " Un retour immédiat aux fondamentaux du BM4 est indispensable."],
@@ -4608,7 +4608,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "🛡️ Note entre 8 et 10/20 • Seuil de tolérance / Ligne de front instable",
+            title: "🛡️ Seuil de tolérance",
             description: "Le candidat frôle la validation mais la position reste fragile et les erreurs coûtent cher.",
             phrases: [
                 ["La ligne de front progresse, mais la position reste fragile.", " Forcez la décision au prochain assaut."],
@@ -4619,7 +4619,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "🎖️ Note entre 10 et 12/20 • Objectif atteint / Niveau validé",
+            title: "🎖️ Objectif atteint",
             description: "La mission est validée, le niveau réglementaire est là, mais il y a encore une marge de progression.",
             phrases: [
                 ["Le niveau d'engagement au CENTAC est validé.", " Vos choix tactiques font plier l'adversaire."],
@@ -4630,7 +4630,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "🚀 Domination du terrain / Combat maîtrisé",
+            title: "🚀 Domination du terrain",
             description: "Tu domines ton sujet et infliges de lourds dégâts à l'adversaire avec une belle régularité.",
             phrases: [
                 ["Une démonstration de force sur le terrain.", " Vous transformez l’initiative en domination nette."],
@@ -4641,7 +4641,7 @@ function getRandomMotivationalPhrase(note) {
             ]
         },
         {
-            title: "👑 Note au-dessus de 15/20 • Excellence tactique / Haute intensité majeure",
+            title: "👑 Excellence tactique",
             description: "Félicitations maximales pour les majors d'élite qui affichent un score parfait ou quasi-parfait.",
             phrases: [
                 ["Excellence tactique démontrée.", " Vous maîtrisez le combat de haute intensité au rang de Major."],
@@ -4658,8 +4658,8 @@ function getRandomMotivationalPhrase(note) {
             : note <= 12 ? bands[2]
                 : note <= 15 ? bands[3]
                     : bands[4];
-    const phrase = band.phrases[Math.floor(Math.random() * band.phrases.length)];
-    return { title: band.title, description: band.description, emphasis: phrase[0], continuation: phrase[1] };
+    const [emphasis, continuation] = band.phrases[Math.floor(Math.random() * band.phrases.length)];
+    return { title: band.title, description: band.description, emphasis, continuation };
 }
 
 // =========================================================
