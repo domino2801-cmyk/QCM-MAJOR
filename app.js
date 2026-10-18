@@ -3606,7 +3606,7 @@ async function initializeAppInteractions() {
             syncCampaignModeButtons(null);
             syncObjectiveButtons(null);
             if (startButton) startButton.disabled = true;
-            setStartGuidance("Sélectionnez la zone de combat pour continuer.");
+            setStartGuidance("");
             return;
         }
 
@@ -3645,6 +3645,7 @@ async function initializeAppInteractions() {
         });
     });
     syncQtyChoiceButtons(qtyInput?.value || "20");
+    applySelectedTheme();
 
     const activateGlobalCampaign = (feedbackMode, clickedButton) => {
         quizFeedbackMode = feedbackMode;

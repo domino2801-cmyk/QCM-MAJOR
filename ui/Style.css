@@ -1065,6 +1065,24 @@ h1 {
     box-shadow: 0 12px 24px rgba(255, 183, 3, 0.2), inset 0 1px 0 rgba(255,255,255,0.5);
 }
 
+#start-btn {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.start-button-hint {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+}
+
+.start-button-label {
+    font-size: inherit;
+}
+
 .btn-main::before {
     content: "";
     position: absolute;
@@ -3280,6 +3298,18 @@ body {
     max-width: 680px;
     display: block;
     margin: 0 auto;
+}
+
+#theme-screen > #start-btn {
+    display: flex;
+    gap: 5px;
+    padding: 14px 20px;
+}
+
+#start-btn .start-button-label {
+    font-size: clamp(0.9rem, 3.8vw, 1.08rem);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
 }
 
 .theme-bottom-actions {

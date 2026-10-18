@@ -19,7 +19,7 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions", () => {
     assert.match(indexHtml, /app\.js\?v=show-correct-answer-v2-20261017/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=gold-question-badges-20261018/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=launch-button-layout-20261018/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*209,\s*219,\s*0\.48\),\s*rgba\(88,\s*111,\s*124,\s*0\.42\)\)/);
@@ -54,10 +54,10 @@ test("intensity choices include 40 questions in a four-column row", () => {
     assert.match(appJs, /const syncCampaignModeButtons = activeButton =>/);
     assert.match(appJs, /button\.setAttribute\("aria-pressed", String\(isActive\)\)/);
     assert.match(indexHtml, /class="qty-choice-btn" data-qty="40" aria-pressed="false"><span class="qty-choice-count">40<\/span>/);
-    assert.match(indexHtml, /id="theme-start-guidance"[^>]*>Sélectionnez la zone de combat pour continuer\./);
+    assert.match(indexHtml, /id="theme-start-guidance"[^>]*hidden><\/p>\s*<button id="start-btn"[^>]*><span class="start-button-hint">Sélectionner la zone de combat avant de<\/span><span class="start-button-label">Déclencher l'offensive<\/span><\/button>/);
     assert.match(appJs, /setStartGuidance\(hasQuestions \? "" : "Aucune question n’est disponible pour cette zone\."\)/);
-    assert.match(appJs, /setStartGuidance\("Sélectionnez la zone de combat pour continuer\."\)/);
-    assert.match(appJs, /setStartGuidance\(""\);/);
+    assert.match(appJs, /startGuidance\.textContent = message;\s*startGuidance\.hidden = !message;/);
+    assert.doesNotMatch(appJs, /Sélectionnez la zone de combat (?:pour continuer|avant de)/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.qty-choice-row\s*\{[^}]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\);/);
     assert.match(css, /\.theme-select-row\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\);/);
@@ -68,6 +68,9 @@ test("intensity choices include 40 questions in a four-column row", () => {
     assert.match(indexHtml, /data-qty="40"[^>]*>[\s\S]*qty-choice-level">Offensive/);
     assert.match(css, /\.qty-choice-level\s*\{[^}]*font-size:\s*clamp\(0\.58rem,\s*1\.5vw,\s*0\.68rem\);/);
     assert.match(css, /\.theme-start-guidance\s*\{[^}]*margin:\s*0;/);
+    assert.match(css, /\.start-button-hint\s*\{[^}]*font-size:\s*0\.62rem;/);
+    assert.match(css, /#theme-screen > #start-btn\s*\{[^}]*display:\s*flex;[^}]*padding:\s*14px 20px;/);
+    assert.match(css, /#start-btn \.start-button-label\s*\{[^}]*white-space:\s*nowrap;/);
     assert.match(css, /@media \(max-width: 600px\)\s*\{[\s\S]*?#theme-screen \.brand-lockup img\s*\{\s*width:\s*82px;/);
     assert.match(css, /\.theme-mode-row \.theme-global-btn\s*\{\s*min-height:\s*60px;[\s\S]*?font-size:\s*0\.68rem;/);
     assert.match(css, /\.theme-quantity-field \.qty-choice-btn\.active\s*\{[^}]*background:\s*linear-gradient\(145deg,\s*#e7e6d7,\s*#a9ae96\);[^}]*outline:\s*1px solid rgba\(226, 195, 109, 0\.8\);/);

@@ -64,10 +64,10 @@ export const uiController = {
     // -----------------------------------------------------
     resetThemeSelection() {
         const themeSelect = document.getElementById("theme-select");
-        if (themeSelect) themeSelect.value = "";
+        if (themeSelect) themeSelect.value = "1";
 
         const qtyInput = document.getElementById("qty-theme");
-        if (qtyInput) qtyInput.value = 5;
+        if (qtyInput) qtyInput.value = 10;
 
         const globalBtn = document.getElementById("theme-global-btn");
         if (globalBtn) {
@@ -76,14 +76,25 @@ export const uiController = {
         }
 
         const trainingBtn = document.getElementById("theme-training-btn");
-        [trainingBtn, ...document.querySelectorAll(".theme-objective-btn")]
-            .filter(Boolean)
-            .forEach(button => {
-                button.classList.remove("active");
-                button.setAttribute("aria-pressed", "false");
-            });
+        if (trainingBtn) {
+            trainingBtn.classList.remove("active");
+            trainingBtn.setAttribute("aria-pressed", "false");
+        }
+
+        document.querySelectorAll(".theme-objective-btn").forEach(button => {
+            const isDefault = button.dataset.theme === "1";
+            button.classList.toggle("active", isDefault);
+            button.setAttribute("aria-pressed", String(isDefault));
+        });
+
+        document.querySelectorAll(".qty-choice-btn").forEach(button => {
+            const isDefault = button.dataset.qty === "10";
+            button.classList.toggle("active", isDefault);
+            button.setAttribute("aria-pressed", String(isDefault));
+        });
 
         const startBtn = document.getElementById("start-btn");
-        if (startBtn) startBtn.disabled = true;
+        if (startBtn) startBtn.disabled = false;
+        themeSelect?.dispatchEvent(new Event("change", { bubbles: true }));
     }
 };

@@ -70,6 +70,7 @@ function createStartHarness({ theme, mode, maxQuestions, historyByEmail = {} }) 
         questionHistoryStorageKey: "quiz-history",
         getQuestionHistory: () => history,
         getQuestionPool: themeId => poolByTheme[themeId] || [],
+        updateObjectiveQuestionBadges() {},
         normalizeQuestionHistoryKey: question =>
             String(question || "").trim().replace(/\s+/g, " ").toLowerCase(),
         quizEngine: {

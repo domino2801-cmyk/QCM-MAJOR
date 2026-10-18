@@ -2,13 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import vm from "node:vm";
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(testDirectory, "..");
 const html = readFileSync(`${root}/index.html`, "utf8");
 const js = readFileSync(`${root}/app.js`, "utf8");
+const { uiController } = await import(pathToFileURL(path.join(root, "modules/ui-controller/index.js")).href);
 
 test("login screen keeps a close-app button with fallback content", async () => {
     assert.match(html, /id="close-app"/);
@@ -89,7 +90,7 @@ test("close-app button is hidden on the candidate theme screen", () => {
 test("theme selection presents six accessible objective cards backed by the theme selector", () => {
     assert.match(html, /id="theme-select" class="theme-objective-native-select" aria-hidden="true" tabindex="-1"/);
     assert.match(html, /class="theme-objective-grid" role="group" aria-labelledby="objective-label"/);
-    assert.equal((html.match(/class="theme-objective-btn" data-theme="/g) || []).length, 6);
+    assert.equal((html.match(/class="theme-objective-btn(?: active)?" data-theme="/g) || []).length, 6);
     assert.doesNotMatch(html, /theme-objective-index|>0[1-6]<\/span>/);
     assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="1"/);
     assert.doesNotMatch(html, /class="btn-theme"\s+data-theme="5"/);
@@ -103,14 +104,97 @@ test("BM4 exam-style campaign keeps a dedicated button", () => {
     assert.match(html, /id="theme-training-btn"/);
     assert.match(html, /SIMULATION DE COMBAT/);
     assert.match(html, /id="campaign-mode-label">ZONE HAUTE INTENSITÉ<\/span>/);
-    assert.match(html, /id="qty-theme" value="20"/);
-    assert.match(html, /class="qty-choice-btn" data-qty="10"/);
-    assert.match(html, /class="qty-choice-btn active" data-qty="20"/);
+    assert.match(html, /class="theme-objective-btn active" data-theme="1" aria-pressed="true"><span class="theme-objective-name">Organisation et Commandement/);
+    assert.match(html, /<option value="1" selected>Organisation et Commandement<\/option>/);
+    assert.match(html, /id="qty-theme" value="10"/);
+    assert.match(html, /class="qty-choice-btn active" data-qty="10" aria-pressed="true"/);
+    assert.match(html, /class="qty-choice-btn" data-qty="20" aria-pressed="false"/);
     assert.match(html, /class="qty-choice-btn" data-qty="30"/);
     assert.match(html, />ZONE GÉOGRAPHIQUE BRIGADE</);
     assert.match(html, />Sélection de l'objectif</);
     assert.match(html, />INTENSITÉ DU COMBAT</);
-    assert.match(html, />Déclencher l'offensive</);
+    assert.match(html, /<button id="start-btn"[^>]*><span class="start-button-hint">Sélectionner la zone de combat avant de<\/span><span class="start-button-label">Déclencher l'offensive<\/span><\/button>/);
+});
+
+test("theme defaults select organization and command with 10 questions", () => {
+    assert.match(html, /class="theme-objective-btn active" data-theme="1" aria-pressed="true"/);
+    assert.match(html, /<option value="1" selected>Organisation et Commandement<\/option>/);
+    assert.match(html, /class="qty-choice-btn active" data-qty="10" aria-pressed="true"/);
+    assert.match(html, /id="qty-theme" value="10"/);
+    assert.match(js, /syncQtyChoiceButtons\(qtyInput\?\.value \|\| "20"\);\s*applySelectedTheme\(\);/);
+});
+
+test("resetThemeSelection restores the default zone and intensity", () => {
+    const makeButton = (dataset = {}) => ({
+        dataset,
+        active: false,
+        attributes: {},
+        classList: {
+            remove(name) {
+                if (name === "active") this.owner.active = false;
+            },
+            toggle(name, enabled) {
+                if (name === "active") this.owner.active = enabled;
+            },
+            owner: null
+        },
+        setAttribute(name, value) {
+            this.attributes[name] = value;
+        }
+    });
+    const objectiveButtons = ["1", "2"].map(theme => makeButton({ theme }));
+    const qtyButtons = ["10", "20"].map(qty => makeButton({ qty }));
+    for (const button of [...objectiveButtons, ...qtyButtons]) button.classList.owner = button;
+
+    const themeSelect = {
+        value: "2",
+        dispatchEvent(event) {
+            this.dispatchedEvent = event.type;
+        }
+    };
+    const qtyInput = { value: 20 };
+    const globalButton = makeButton();
+    globalButton.classList.owner = globalButton;
+    const trainingButton = makeButton();
+    trainingButton.classList.owner = trainingButton;
+    const startButton = { disabled: true };
+    const previousDocument = globalThis.document;
+    globalThis.document = {
+        getElementById(id) {
+            return {
+                "theme-select": themeSelect,
+                "qty-theme": qtyInput,
+                "theme-global-btn": globalButton,
+                "theme-training-btn": trainingButton,
+                "start-btn": startButton
+            }[id] || null;
+        },
+        querySelectorAll(selector) {
+            return {
+                ".theme-objective-btn": objectiveButtons,
+                ".qty-choice-btn": qtyButtons
+            }[selector] || [];
+        }
+    };
+
+    try {
+        uiController.resetThemeSelection();
+    } finally {
+        globalThis.document = previousDocument;
+    }
+
+    assert.equal(themeSelect.value, "1");
+    assert.equal(qtyInput.value, 10);
+    assert.equal(objectiveButtons[0].active, true);
+    assert.equal(objectiveButtons[0].attributes["aria-pressed"], "true");
+    assert.equal(objectiveButtons[1].active, false);
+    assert.equal(qtyButtons[0].active, true);
+    assert.equal(qtyButtons[0].attributes["aria-pressed"], "true");
+    assert.equal(qtyButtons[1].active, false);
+    assert.equal(globalButton.attributes["aria-pressed"], "false");
+    assert.equal(trainingButton.attributes["aria-pressed"], "false");
+    assert.equal(startButton.disabled, false);
+    assert.equal(themeSelect.dispatchedEvent, "change");
 });
 
 test("btn-new-mission returns to theme selection and resets the current selection", () => {
