@@ -215,6 +215,10 @@
                     <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
                     <span>Résultats</span>
                 </button>
+                <button class="admin-nav-btn" type="button" data-admin-section="retex">
+                    <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M12 3a9 9 0 1 0 9 9h-9zM15 3.5A9 9 0 0 1 20.5 9H15z"/></svg>
+                    <span>RETEX</span>
+                </button>
             </nav>
             <section id="admin-accounts-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><div class="admin-summary">Nombre de comptes : <strong id="admin-account-count">0</strong></div><button id="refresh-admin-accounts-btn" class="admin-edit-btn" type="button">Actualiser depuis Supabase</button></div>
@@ -255,6 +259,21 @@
                 <p id="admin-question-reports-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Question signalée</th><th>Détail</th><th>Candidat</th><th>Date</th><th>Statut</th><th>Action</th></tr></thead><tbody id="admin-question-reports-table"></tbody></table></div>
                 <div class="admin-pagination"><p id="admin-reports-count" role="status"></p><button id="admin-reports-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
+            </section>
+            <section id="admin-retex-section" class="admin-section admin-panel hidden">
+                <div class="admin-results-header"><h2>Synthèse RETEX</h2><button id="admin-retex-pdf-btn" class="admin-edit-btn" type="button">Exporter en PDF</button></div>
+                <p id="admin-retex-status" class="terminal-note" role="status" aria-live="polite"></p>
+                <div id="admin-retex-report" class="retex-report">
+                    <div class="retex-report-head">
+                        <h3>RETEX QCM-MAJOR.fr - Synthèse pour le commandement</h3>
+                        <p id="admin-retex-meta"></p>
+                    </div>
+                    <div id="admin-retex-charts" class="retex-charts"></div>
+                    <section id="admin-retex-comments-block" class="retex-comments hidden">
+                        <h4>Observations terrain</h4>
+                        <ul id="admin-retex-comments"></ul>
+                    </section>
+                </div>
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><h2>Résultats</h2></div>
@@ -538,7 +557,7 @@
                 <a href="#mentions-legales">Mentions légales</a>
                 <a href="#confidentialite">Confidentialité</a>
             </nav>
-        </footer>
+            <section id="admin-accounts-section" class="admin-section admin-panel hidden">        </footer>
 
         <section id="mentions-legales" class="legal-section" tabindex="-1" aria-labelledby="mentions-legales-title">
             <h2 id="mentions-legales-title">Mentions légales</h2>

@@ -2246,7 +2246,7 @@ h1 {
 
 .admin-nav {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 22px;
 }
@@ -2471,7 +2471,7 @@ h1 {
     }
 
     #admin-screen .admin-nav {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 4px;
         margin: 0;
         padding: 8px 0;
@@ -3350,6 +3350,15 @@ body {
     margin: 0;
 }
 
+.retex-locked,
+.retex-locked:disabled {
+    background: #555;
+    border-color: #666;
+    color: #aaa;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 .retex-group {
     border: 1px solid var(--primary);
     border-radius: 8px;
@@ -3445,6 +3454,125 @@ body {
     width: 100%;
     box-sizing: border-box;
     font: inherit;
+}
+
+.retex-report {
+    margin-top: 12px;
+}
+
+.retex-report-head h3 {
+    margin: 0 0 4px;
+}
+
+.retex-charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.retex-chart-card {
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 12px;
+    break-inside: avoid;
+}
+
+.retex-chart-card h4,
+.retex-comments h4 {
+    margin: 0 0 10px;
+}
+
+.retex-chart-body {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.retex-pie {
+    width: 120px;
+    height: 120px;
+    flex: none;
+}
+
+.retex-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.85rem;
+}
+
+.retex-legend li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.retex-swatch {
+    width: 12px;
+    height: 12px;
+    margin-top: 3px;
+    border-radius: 2px;
+    flex: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+
+.retex-comments {
+    margin-top: 16px;
+}
+
+.retex-comments li {
+    margin: 6px 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+    .retex-charts {
+        grid-template-columns: 1fr;
+    }
+
+    .retex-chart-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media print {
+    body.printing-retex * {
+        visibility: hidden;
+    }
+
+    body.printing-retex {
+        background: #fff;
+    }
+
+    body.printing-retex #admin-retex-report,
+    body.printing-retex #admin-retex-report * {
+        visibility: visible;
+        color: #000;
+    }
+
+    body.printing-retex #admin-retex-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #fff;
+    }
+
+    body.printing-retex .retex-chart-card {
+        border-color: #444;
+    }
+
+    body.printing-retex .retex-charts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.printing-retex .retex-chart-body {
+        flex-direction: row;
+    }
 }
 
 .theme-history-btn {

@@ -167,6 +167,7 @@ test("les actualisations simultanées partagent une seule requête et affichent 
         context[name] = () => { rendered++; };
     }
     context.getResults = () => [];
+    context.refreshAdminRetex = async () => {};
     await refresh();
     assert.equal(rendered, 5);
     assert.equal(messages.at(-1), "");

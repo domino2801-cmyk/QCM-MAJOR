@@ -77,6 +77,7 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
             return [{ id: "r1", name: "A", theme: "all", score: 18 }, { id: "r2", name: "B", theme: "all", score: 17 }, { id: "r3", name: "C", theme: "all", score: 16 }];
         },
         setAuthAudioPlaying() {},
+        refreshRetexLock() {},
         updateObjectiveQuestionBadges(email) {
             context.calls.push(["badges", email]);
         },

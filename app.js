@@ -81,6 +81,7 @@ let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
+let retexSubmitted = false;
 let questionReports = [];
 const adminPageSize = 25;
 const adminListState = {};
@@ -1863,7 +1864,32 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
     }
     uiController.switchScreen("theme-screen");
     renderGlobalRanking(getResults());
+    void refreshRetexLock(account.id);
     return refreshCandidateHistory({ ...account, email });
+}
+
+function setRetexLocked(locked) {
+    const button = document.getElementById("btn-retex-theme");
+    if (!button) return;
+    retexSubmitted = locked;
+    button.disabled = locked;
+    button.classList.toggle("retex-locked", locked);
+    button.title = locked ? "RETEX déjà envoyé" : "";
+}
+
+async function refreshRetexLock(userId) {
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!supabase || !accessToken || !userId) return;
+    try {
+        const rows = await supabaseRestRequest(
+            `/retex_responses?select=id&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+            { accessToken }
+        );
+        if (currentAuthenticatedAccount?.id !== userId) return;
+        setRetexLocked(Array.isArray(rows) && rows.length > 0);
+    } catch (error) {
+        console.warn("Vérification du RETEX impossible.", error);
+    }
 }
 
 async function loadAdminData() {
@@ -1948,6 +1974,153 @@ async function loadAdminData() {
     }
 }
 
+const retexQuestions = [
+    { field: "specialty", title: "Spécialité BM4" },
+    { field: "themes", title: "Zones les plus ciblées", multiple: true },
+    { field: "navigation", title: "Navigation dans la console" },
+    { field: "design", title: "Design visuel" },
+    { field: "best_mode", title: "Mode de combat le plus utile" },
+    { field: "scoring_opinion", title: "Barème d’évaluation" },
+    { field: "used_report_form", title: "Utilisation du signalement tactique" },
+    { field: "recommendation", title: "Recommandation de l’application" }
+];
+const retexPalette = ["#4e6e4e", "#c9a227", "#2f6f9f", "#a23b3b", "#7a5c99", "#3f9c8f", "#d17a22", "#6b6b6b"];
+let retexResponses = [];
+
+async function loadAdminRetex() {
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!supabase || !accessToken || !isAdminSession(getStoredSupabaseSession())) {
+        throw new Error("Une session administrateur est requise.");
+    }
+    const rows = [];
+    for (let offset = 0; ; offset += 500) {
+        const page = await supabaseRestRequest(
+            `/retex_responses?select=*&order=created_at.desc,id.desc&limit=500&offset=${offset}`,
+            { accessToken }
+        );
+        if (!Array.isArray(page)) throw new Error("Réponse RETEX invalide.");
+        rows.push(...page);
+        if (page.length < 500) break;
+    }
+    retexResponses = rows;
+}
+
+function buildRetexPie(slices, total) {
+    const svgNs = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNs, "svg");
+    svg.setAttribute("viewBox", "-1 -1 2 2");
+    svg.setAttribute("class", "retex-pie");
+    svg.setAttribute("role", "img");
+    let angle = -Math.PI / 2;
+    slices.forEach((slice, index) => {
+        const color = retexPalette[index % retexPalette.length];
+        const share = slice.count / total;
+        let shape;
+        if (share >= 0.9999) {
+            shape = document.createElementNS(svgNs, "circle");
+            shape.setAttribute("r", "1");
+        } else {
+            const end = angle + share * 2 * Math.PI;
+            shape = document.createElementNS(svgNs, "path");
+            shape.setAttribute("d",
+                `M0 0 L${Math.cos(angle)} ${Math.sin(angle)} A1 1 0 ${share > 0.5 ? 1 : 0} 1 ${Math.cos(end)} ${Math.sin(end)} Z`);
+            angle = end;
+        }
+        shape.setAttribute("fill", color);
+        shape.setAttribute("stroke", "#fff");
+        shape.setAttribute("stroke-width", "0.02");
+        svg.appendChild(shape);
+    });
+    return svg;
+}
+
+function renderAdminRetex() {
+    const charts = document.getElementById("admin-retex-charts");
+    if (!charts) return;
+    charts.replaceChildren();
+    const total = retexResponses.length;
+    const dates = retexResponses.map(row => Date.parse(row.created_at)).filter(Number.isFinite);
+    const formatter = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+    document.getElementById("admin-retex-meta").textContent = total
+        ? `${total} retour(s) analysé(s) - édité le ${formatter.format(new Date())}`
+            + (dates.length ? ` - période du ${formatter.format(new Date(Math.min(...dates)))} au ${formatter.format(new Date(Math.max(...dates)))}` : "")
+        : "Aucun retour RETEX enregistré pour le moment.";
+
+    retexQuestions.forEach(({ field, title, multiple }) => {
+        const counts = new Map();
+        retexResponses.forEach(row => {
+            const values = multiple ? (Array.isArray(row[field]) ? row[field] : []) : [row[field]];
+            values.filter(Boolean).forEach(value => counts.set(value, (counts.get(value) || 0) + 1));
+        });
+        const slices = [...counts.entries()]
+            .map(([label, count]) => ({ label, count }))
+            .sort((a, b) => b.count - a.count);
+        const answered = slices.reduce((sum, slice) => sum + slice.count, 0);
+        const card = document.createElement("article");
+        card.className = "retex-chart-card";
+        const heading = document.createElement("h4");
+        heading.textContent = title;
+        card.appendChild(heading);
+        if (!answered) {
+            const empty = document.createElement("p");
+            empty.className = "retex-empty";
+            empty.textContent = "Aucune réponse.";
+            card.appendChild(empty);
+        } else {
+            const body = document.createElement("div");
+            body.className = "retex-chart-body";
+            const pie = buildRetexPie(slices, answered);
+            pie.setAttribute("aria-label", title);
+            const legend = document.createElement("ul");
+            legend.className = "retex-legend";
+            slices.forEach((slice, index) => {
+                const item = document.createElement("li");
+                const swatch = document.createElement("span");
+                swatch.className = "retex-swatch";
+                swatch.style.background = retexPalette[index % retexPalette.length];
+                const text = document.createElement("span");
+                text.textContent = `${slice.label} : ${slice.count} (${Math.round(slice.count / answered * 100)} %)`;
+                item.append(swatch, text);
+                legend.appendChild(item);
+            });
+            body.append(pie, legend);
+            card.appendChild(body);
+        }
+        charts.appendChild(card);
+    });
+
+    const comments = retexResponses.filter(row => row.comment);
+    const list = document.getElementById("admin-retex-comments");
+    list.replaceChildren();
+    comments.forEach(row => {
+        const item = document.createElement("li");
+        item.textContent = `${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""} : ${row.comment}`;
+        list.appendChild(item);
+    });
+    document.getElementById("admin-retex-comments-block").classList.toggle("hidden", !comments.length);
+}
+
+async function refreshAdminRetex() {
+    setAuthMessage("admin-retex-status", "Chargement des retours RETEX...");
+    try {
+        await loadAdminRetex();
+        renderAdminRetex();
+        setAuthMessage("admin-retex-status", "");
+    } catch (error) {
+        setAuthMessage("admin-retex-status", `RETEX non chargés : ${error.message}`);
+    }
+}
+
+function exportAdminRetexPdf() {
+    document.body.classList.add("printing-retex");
+    const cleanup = () => {
+        document.body.classList.remove("printing-retex");
+        window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+}
+
 async function showAdminApp() {
     setAuthAudioPlaying(false);
     renderAdminAccounts();
@@ -1993,6 +2166,7 @@ async function refreshAdminData() {
             renderAdminQuestionReports();
             renderGlobalRanking(getResults());
             setAuthMessage("admin-data-status", "");
+            await refreshAdminRetex();
             document.getElementById("admin-refresh-btn").innerText = "Actualiser";
             document.getElementById("admin-refresh-btn").classList.add("admin-state-ready");
         } catch (error) {
@@ -3790,7 +3964,6 @@ async function initializeAppInteractions() {
         document.getElementById("btn-retex-theme")?.focus();
     });
 
-    let retexSubmitted = false;
     document.getElementById("retex-form")?.addEventListener("submit", async event => {
         event.preventDefault();
         if (retexSubmitted) return;
@@ -3835,12 +4008,19 @@ async function initializeAppInteractions() {
                 }
             });
             retexSubmitted = true;
+            setRetexLocked(true);
             setAuthMessage("retex-status", "RETEX transmis à l’administration. Merci pour ton retour.");
             form.querySelectorAll("input, select, textarea").forEach(field => field.disabled = true);
             if (submitButton) submitButton.innerText = "RETEX transmis";
             if (backButton) backButton.innerText = "Retour au briefing";
         } catch (error) {
-            setAuthMessage("retex-status", `Transmission impossible : ${error.message}`);
+            setAuthMessage("retex-status", /duplicate|unique|23505/i.test(error.message)
+                ? "RETEX déjà transmis pour ce compte."
+                : `Transmission impossible : ${error.message}`);
+            if (/duplicate|unique|23505/i.test(error.message)) {
+                setRetexLocked(true);
+                return;
+            }
             if (submitButton) submitButton.disabled = false;
         }
     });
@@ -3978,8 +4158,10 @@ async function initializeAppInteractions() {
             if (!await confirmAdminEditorExit()) return;
             if (!document.getElementById("question-form").classList.contains("hidden")) resetQuestionForm();
             switchAdminSection(button.dataset.adminSection);
+            if (button.dataset.adminSection === "retex") void refreshAdminRetex();
         });
     });
+    document.getElementById("admin-retex-pdf-btn")?.addEventListener("click", exportAdminRetexPdf);
 
     const reportToggle = document.getElementById("question-report-toggle");
     const reportForm = document.getElementById("question-report-form");

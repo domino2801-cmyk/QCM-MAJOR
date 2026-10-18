@@ -16,6 +16,14 @@ create table if not exists public.retex_responses (
 
 create index if not exists retex_responses_created_at_idx on public.retex_responses (created_at desc);
 
+-- Un seul RETEX par compte ; les doublons éventuels les plus récents sont supprimés avant l'index.
+delete from public.retex_responses r
+using public.retex_responses older
+where r.user_id = older.user_id
+  and (older.created_at, older.id) < (r.created_at, r.id);
+
+create unique index if not exists retex_responses_user_id_key on public.retex_responses (user_id);
+
 alter table public.retex_responses enable row level security;
 
 grant select, insert on public.retex_responses to authenticated;
@@ -26,6 +34,13 @@ on public.retex_responses
 for insert
 to authenticated
 with check (user_id = auth.uid());
+
+drop policy if exists "Candidates can read own retex responses" on public.retex_responses;
+create policy "Candidates can read own retex responses"
+on public.retex_responses
+for select
+to authenticated
+using (user_id = auth.uid());
 
 drop policy if exists "Admins can read retex responses" on public.retex_responses;
 create policy "Admins can read retex responses"
