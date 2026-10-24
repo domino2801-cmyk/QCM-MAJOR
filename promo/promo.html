@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Promo QCM-MAJOR.FR</title>
+<style>
+@font-face{font-family:BOO;src:url(black-ops-one.ttf)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1280px;height:720px;overflow:hidden;background:#05080a;font-family:'Segoe UI',Arial,sans-serif;color:#fff}
+#bg{position:absolute;inset:-60px;background:url(shots/bg.jpg) center/cover;filter:brightness(.28) saturate(.7)}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.75) 100%)}
+#bar{position:absolute;left:0;bottom:0;height:6px;background:linear-gradient(90deg,#b8860b,#f6d365)}
+.s{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;padding:0 70px}
+.big{font-family:BOO,Impact,sans-serif;font-size:92px;letter-spacing:2px;line-height:1.05}
+.mid{font-size:52px;font-weight:700;line-height:1.2}
+.sub{font-size:30px;color:#d4d9c8;margin-top:22px;line-height:1.35}
+.gold{color:#f6d365}.red{color:#ff4b52}
+.tag{display:inline-block;background:linear-gradient(135deg,#f6d365,#b8860b);color:#111;padding:8px 30px;border-radius:40px;font-size:28px;font-weight:800;margin-bottom:26px;letter-spacing:3px}
+.shot{border-radius:18px;border:2px solid rgba(246,211,101,.6);box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px rgba(246,211,101,.25);background-repeat:no-repeat}
+.split{display:flex;align-items:center;justify-content:center;gap:60px;width:100%}
+.split .txt{text-align:left;max-width:520px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;width:1120px;margin-top:34px}
+.th{background:rgba(10,16,14,.82);border:2px solid rgba(246,211,101,.5);border-radius:18px;padding:26px 18px;font-size:29px;font-weight:700;opacity:0}
+.th b{display:block;font-family:BOO;font-size:54px;color:#f6d365;margin-bottom:6px}
+.card{background:rgba(10,16,14,.82);border:2px solid rgba(246,211,101,.45);border-radius:20px;padding:22px 34px;font-size:32px;margin:10px;min-width:470px;opacity:0}
+.row{display:flex;flex-wrap:wrap;justify-content:center;max-width:1100px}
+.btn{background:linear-gradient(135deg,#f6d365,#b8860b);color:#111;font-size:50px;font-weight:900;padding:22px 64px;border-radius:70px;margin-top:36px;box-shadow:0 0 60px rgba(246,211,101,.6);letter-spacing:2px}
+</style></head><body>
+<div id="bg"></div><div id="vig"></div>
+
+<div class="s" id="s1"><div class="tag">CANDIDATS</div><div class="big">TU PRÉPARES<br>LE <span class="gold">BM4</span> ?</div></div>
+
+<div class="s" id="s2"><div class="mid">Réviser ne suffit pas.<br><span class="gold">Il faut s'entraîner.</span></div><div class="sub">Des QCM, un score, un classement.<br>Comme au combat.</div></div>
+
+<div class="s" id="s3"><div class="split">
+ <div class="txt"><img src="shots/logo.png" width="110" style="border-radius:10px;margin-bottom:18px"><div class="big" style="font-size:54px">QUESTION<br>POUR UN <span class="gold">MAJOR</span></div><div class="sub">L'entraînement QCM des candidats au BM4.<br><b class="gold">QCM-MAJOR.FR</b></div></div>
+ <div class="shot" id="p3" style="width:520px;height:560px;background-image:url(shots/login.png);background-size:900px auto;background-position:-190px -60px"></div>
+</div></div>
+
+<div class="s" id="s4"><div class="mid">Entraîne-toi sur <span class="gold">6 thèmes</span></div>
+ <div class="grid3">
+  <div class="th"><b>1</b>Organisation &amp; Commandement</div>
+  <div class="th"><b>2</b>Matériels &amp; Technologies</div>
+  <div class="th"><b>3</b>LPM &amp; Budgets</div>
+  <div class="th"><b>4</b>OPEX &amp; Missions intérieures</div>
+  <div class="th"><b>5</b>Histoire &amp; Traditions</div>
+  <div class="th"><b>6</b>Implantation des unités</div>
+ </div></div>
+
+<div class="s" id="s5"><div class="split">
+ <div class="shot" id="p5" style="width:640px;height:230px;background-image:url(shots/login.png);background-size:1000px auto;background-position:-180px -150px"></div>
+ <div class="txt"><div class="mid">Vise le <span class="gold">TOP 3</span></div><div class="sub">Compare-toi aux autres candidats et grimpe sur le podium.</div></div>
+</div></div>
+
+<div class="s" id="s6"><div class="mid">Mesure ta progression</div><div class="row" style="margin-top:30px">
+ <div class="card" id="c1">📊 Historique de tes résultats</div><div class="card" id="c2">🎯 Moyenne de tes campagnes</div><div class="card" id="c3">📚 Thème à travailler repéré</div><div class="card" id="c4">🏆 Note sur 20 à chaque session</div></div></div>
+
+<div class="s" id="s7"><div class="split">
+ <div class="shot" id="p7" style="width:300px;height:600px;border-radius:36px;background-image:url(shots/mobile.png);background-size:300px auto;background-position:0 0"></div>
+ <div class="txt"><div class="mid">Dans ta poche,<br><span class="gold">où que tu sois</span></div><div class="sub">Application installable sur téléphone : révise dans les transports, en permission, en mission.</div></div>
+</div></div>
+
+<div class="s" id="s8"><div class="big" style="font-size:78px">Rejoins l'unité.<br><span class="gold">Réussis ton BM4.</span></div><div class="btn">QCM-MAJOR.FR</div><div class="sub">Crée ton compte et lance ton premier entraînement</div></div>
+
+<div id="bar"></div>
+<script>
+const T=90;
+const sc=[['s1',0,7],['s2',7,16],['s3',16,28],['s4',28,46],['s5',46,58],['s6',58,70],['s7',70,81],['s8',81,90.01]];
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const ease=x=>1-Math.pow(1-x,3);
+const $=id=>document.getElementById(id);
+function stagger(sel,t0,t,step,dy=30){document.querySelectorAll(sel).forEach((c,k)=>{const p=ease(clamp((t-t0-k*step)/0.6));c.style.opacity=p;c.style.transform=`translateY(${(1-p)*dy}px)`})}
+function setTime(t){
+ $('bg').style.transform=`scale(${1.05+0.06*t/T}) translate(${-t*0.6}px,0)`;
+ $('bar').style.width=(t/T*100)+'%';
+ for(const [id,a,b] of sc){
+  const e=$(id);
+  if(t<a||t>=b){e.style.opacity=0;continue}
+  const i=ease(clamp((t-a)/0.8)),o=clamp((b-t)/0.5);
+  e.style.opacity=Math.min(i,o);
+  e.style.transform=`translateY(${(1-i)*50}px) scale(${0.97+0.03*i+0.03*((t-a)/(b-a))})`;
+ }
+ stagger('#s4 .th',28.8,t,0.45);
+ stagger('#s6 .card',58.6,t,0.5);
+}
+setTime(0);
+</script></body></html>
