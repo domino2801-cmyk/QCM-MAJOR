@@ -67,25 +67,25 @@ Captures de l’interface pour illustrer les principaux parcours :
 
 ### Authentification et Top 3 public
 
-![Écran d’authentification et Top 3 public](./docs/screenshots/01-auth-login.png)
+![Écran d’authentification et Top 3 public](./docs/screenshots/connexion-classement-anonymise.png)
 
 ### Sélection de mission / préparation au combat
 
-![Sélection des thèmes et mode d’entraînement](./docs/screenshots/02-theme-selection.png)
+![Sélection des thèmes et mode d’entraînement](./docs/screenshots/accueil-selection-themes-anonymisee.png)
 
 ### Quiz en mode "COMBAT DE HAUTE INTENSITE"
 
-![Parcours de quiz tactique](./docs/screenshots/03-quiz-combat.png)
+![Parcours de quiz tactique](./docs/screenshots/quiz-question-combat.png)
 
 ### Bilan final candidat
 
-![Bilan final et revue tactique](./docs/screenshots/04-result-bilan.png)
+![Bilan final et revue tactique](./docs/screenshots/bilan-campagne-anonymise.png)
 
 ### Gestion des questions et signalements côté admin
 
-![Administration - questions](./docs/screenshots/05-admin-questions.png)
+![Administration - questions](./docs/screenshots/administration-questions.png)
 
-![Administration - signalements](./docs/screenshots/06-admin-signalements.png)
+![Administration - signalements](./docs/screenshots/administration-signalements-anonymisee.png)
 
 ## Stack technique
 
