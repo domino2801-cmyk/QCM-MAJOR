@@ -25,9 +25,14 @@ function requiredSecret(name: string) {
     return value;
 }
 
+const PUSH_HOSTS = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "web.push.apple.com"];
+
 function validEndpoint(endpoint: string) {
     const url = new URL(endpoint);
-    return url.protocol === "https:" && url.hostname === "fcm.googleapis.com"
+    const host = url.hostname;
+    const knownHost = PUSH_HOSTS.includes(host) || host.endsWith(".push.apple.com")
+        || host.endsWith(".push.services.mozilla.com") || host.endsWith(".notify.windows.com");
+    return url.protocol === "https:" && knownHost
         && !url.port && !url.username && !url.password;
 }
 

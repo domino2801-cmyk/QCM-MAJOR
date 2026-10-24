@@ -126,7 +126,7 @@ test("le serveur réserve les abonnements aux admins et authentifie l’envoi", 
     assert.match(edge, /database\.auth\.admin\.getUserById/);
     assert.match(edge, /x-qcm-webhook-secret/);
     assert.match(edge, /error\.statusCode === 404 \|\| error\.statusCode === 410/);
-    assert.match(edge, /url\.hostname === "fcm\.googleapis\.com"/);
+    assert.match(edge, /"fcm\.googleapis\.com"/);
     assert.doesNotMatch(workerSource, /addEventListener\("fetch"/);
 });
 
