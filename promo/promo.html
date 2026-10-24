@@ -63,11 +63,11 @@ body{width:1280px;height:720px;overflow:hidden;background:#05080a;font-family:'S
 
 <div id="bar"></div>
 <script>
-const T=120;
-const GALLERY_START=70,GALLERY_END=104;
+const T=114;
+const GALLERY_START=70,GALLERY_END=94;
 let gallerySlides=[];
 function setGallerySlides(slides){gallerySlides=slides}
-const sc=[['s1',0,7],['s2',7,16],['s3',16,28],['s4',28,46],['s5',46,58],['s6',58,70],['sGallery',GALLERY_START,GALLERY_END],['s7',104,112],['s8',112,120.01]];
+const sc=[['s1',0,7],['s2',7,16],['s3',16,28],['s4',28,46],['s5',46,58],['s6',58,70],['sGallery',GALLERY_START,GALLERY_END],['s7',94,103],['s8',103,114.01]];
 const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
 const ease=x=>1-Math.pow(1-x,3);
 const $=id=>document.getElementById(id);

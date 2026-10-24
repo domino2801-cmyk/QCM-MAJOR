@@ -1,8 +1,8 @@
 import subprocess, pathlib, shutil
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from playwright.sync_api import sync_playwright
 
-FPS, DUR = 24, 120
+FPS, DUR = 24, 114
 root = pathlib.Path(__file__).parent
 screenshots = root.parent / "docs" / "screenshots"
 frames = root / "frames"
@@ -10,10 +10,17 @@ shutil.rmtree(frames, ignore_errors=True)
 frames.mkdir()
 
 def make_gallery_slides():
-    image_paths = sorted(path for path in screenshots.iterdir()
-                         if path.suffix.lower() in {".jpg", ".jpeg", ".png"})
+    frame_ratio = 0.45
+    image_paths = []
+    for path in sorted(screenshots.iterdir()):
+        if path.suffix.lower() not in {".jpg", ".jpeg", ".png"}:
+            continue
+        with Image.open(path) as image:
+            if abs(image.width / image.height - frame_ratio) <= 0.015:
+                image_paths.append(path)
     if not image_paths:
-        raise FileNotFoundError(f"No screenshots found in {screenshots}")
+        raise FileNotFoundError(f"No full-screen mobile screenshots found in {screenshots}")
+    print(f"Including {len(image_paths)} screenshots that fill the gallery frame.")
 
     gallery_dir = frames / "gallery"
     gallery_dir.mkdir()
@@ -32,8 +39,8 @@ def make_gallery_slides():
                   font=regular_font, fill=(210, 217, 200))
 
         for offset, path in enumerate(group):
-            x = 28 + offset * 410
-            draw.rounded_rectangle((x, 94, x + 394, 688), radius=18,
+            x = 92 + offset * 410
+            draw.rounded_rectangle((x, 94, x + 255, 688), radius=18,
                                    fill=(14, 21, 25), outline=(146, 119, 54), width=2)
             with Image.open(path) as original:
                 shot = original.convert("RGB")
@@ -43,14 +50,14 @@ def make_gallery_slides():
                     redact_region(shot, (150, 1060, 720, 1140), "adresse masquee", caption_font)
                 elif path.name in {"connexion-classement-top3.jpg", "connexion-classement-mobile.jpg"}:
                     redact_region(shot, (150, 1375, 720, 1455), "adresse masquee", caption_font)
-                shot.thumbnail((360, 530), Image.Resampling.LANCZOS)
-                image_x = x + (394 - shot.width) // 2
+                shot.thumbnail((233, 520), Image.Resampling.LANCZOS)
+                image_x = x + (255 - shot.width) // 2
                 image_y = 106 + (530 - shot.height) // 2
                 canvas.paste(shot, (image_x, image_y))
             label = path.stem.replace("-", " ")
-            while draw.textbbox((0, 0), label, font=caption_font)[2] > 366 and " " in label:
+            while draw.textbbox((0, 0), label, font=caption_font)[2] > 225 and " " in label:
                 label = label.rsplit(" ", 1)[0]
-            draw.text((x + 14, 650), label.upper(), font=caption_font,
+            draw.text((x + 10, 650), label.upper(), font=caption_font,
                       fill=(230, 229, 214))
 
         slide_path = gallery_dir / f"slide-{start // 3 + 1:02d}.jpg"
@@ -78,7 +85,7 @@ with sync_playwright() as p:
     b.close()
 
 # Musique de l'application + un "bonne réponse" à l'apparition des thèmes et du CTA
-dings = [29, 31, 33, 35, 37, 39, 70, 112]
+dings = [29, 31, 33, 35, 37, 39, 70, 103.5]
 inputs = ["-framerate", str(FPS), "-i", str(frames / "f%05d.jpg"), "-i", str(root / "music.mp3")]
 for _ in dings:
     inputs += ["-i", str(root / "ding.mp3")]
@@ -86,7 +93,8 @@ fc = f"[1:a]volume=0.6,afade=t=in:d=2,afade=t=out:st={DUR - 4}:d=4[m];"
 for k, t in enumerate(dings):
     fc += f"[{k + 2}:a]adelay={int(t * 1000)}|{int(t * 1000)},volume=0.8[d{k}];"
 fc += "[m]" + "".join(f"[d{k}]" for k in range(len(dings))) + f"amix=inputs={len(dings) + 1}:normalize=0,atrim=0:{DUR}[a]"
-subprocess.run(["ffmpeg", "-y", *inputs, "-filter_complex", fc, "-map", "0:v", "-map", "[a]",
+subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *inputs,
+                "-filter_complex", fc, "-map", "0:v", "-map", "[a]",
                 "-t", str(DUR), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20",
                 "-c:a", "aac", "-b:a", "160k", str(root / "qcm-major-promo.mp4")], check=True)
 shutil.rmtree(frames, ignore_errors=True)
