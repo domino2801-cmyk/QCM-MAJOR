@@ -2781,6 +2781,7 @@ function renderAdminResults() {
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
     let selectedCandidate = candidateFilter?.value || "";
+    const selectedTheme = document.getElementById("admin-results-theme-filter")?.value || "";
 
     if (candidateFilter) {
         const candidates = new Map();
@@ -2820,9 +2821,10 @@ function renderAdminResults() {
     const filteredResults = results.filter(result => {
         const candidateKey = String(result.email || result.candidateId || result.name || result.label || "").trim();
         const searchable = `${result.name || ""} ${result.label || ""} ${result.email || ""} ${result.score} ${result.date}`.toLowerCase();
-        return (!selectedCandidate || candidateKey === selectedCandidate) && (!search || searchable.includes(search));
+        return (!selectedCandidate || candidateKey === selectedCandidate)
+            && (!selectedTheme || String(result.theme) === selectedTheme) && (!search || searchable.includes(search));
     });
-    getAdminListPage("results", filteredResults, `${selectedCandidate}:${search}`).forEach(result => {
+    getAdminListPage("results", filteredResults, `${selectedCandidate}:${selectedTheme}:${search}`).forEach(result => {
         const row = document.createElement("tr");
         const candidateCell = document.createElement("td");
         const scoreCell = document.createElement("td");
@@ -4035,6 +4037,7 @@ async function initializeAppInteractions() {
     });
 
     document.getElementById("admin-results-candidate-filter")?.addEventListener("change", renderAdminResults);
+    document.getElementById("admin-results-theme-filter")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-period")?.addEventListener("change", renderAdminResults);
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
