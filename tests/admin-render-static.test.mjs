@@ -12,7 +12,8 @@ const js = readFileSync(`${root}/app.js`, "utf8");
 
 test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="admin-accounts-table"/);
-    assert.match(html, /id="refresh-admin-accounts-btn"/);
+    assert.doesNotMatch(html, /refresh-admin-accounts-btn|Actualiser depuis Supabase/);
+    assert.doesNotMatch(js, /refresh-admin-accounts-btn/);
     assert.match(html, /id="btn-history-theme"/);
     assert.match(html, /id="candidate-history-charts"/);
     assert.match(html, /id="candidate-history-recommendation"/);
