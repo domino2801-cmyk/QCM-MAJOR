@@ -2118,8 +2118,6 @@ async function refreshAdminRetex() {
     }
 }
 
-const retexReportEmail = "domino2801@gmail.com";
-
 function buildRetexPdf() {
     const pageWidth = 595;
     const pageHeight = 842;
@@ -2279,16 +2277,6 @@ function exportAdminRetexPdf() {
     downloadAdminRetexPdf();
     setAuthMessage("admin-retex-status", "RETEX.pdf téléchargé.");
     return true;
-}
-
-function emailAdminRetexPdf() {
-    if (!exportAdminRetexPdf()) return;
-    setAuthMessage("admin-retex-status", "RETEX.pdf téléchargé. Joignez-le au message qui vient de s’ouvrir.");
-    const subject = "RETEX QCM-MAJOR.fr - Synthèse";
-    const body = "Bonjour,\n\nVeuillez trouver ci-joint la synthèse RETEX (fichier RETEX.pdf, à joindre depuis vos téléchargements).";
-    setTimeout(() => {
-        window.location.href = `mailto:${retexReportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    }, 600);
 }
 
 async function showAdminApp() {
@@ -4332,7 +4320,6 @@ async function initializeAppInteractions() {
         });
     });
     document.getElementById("admin-retex-pdf-btn")?.addEventListener("click", exportAdminRetexPdf);
-    document.getElementById("admin-retex-email-btn")?.addEventListener("click", emailAdminRetexPdf);
 
     const reportToggle = document.getElementById("question-report-toggle");
     const reportForm = document.getElementById("question-report-form");

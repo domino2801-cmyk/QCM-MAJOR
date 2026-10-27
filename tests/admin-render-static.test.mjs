@@ -32,6 +32,9 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="admin-questions-table"/);
     assert.match(html, /id="admin-results-table"/);
     assert.match(html, /id="admin-results-candidate-filter"/);
+    assert.match(html, /id="admin-retex-pdf-btn"/);
+    assert.doesNotMatch(html, /admin-retex-email-btn|Envoyer par e-mail/);
+    assert.doesNotMatch(js, /admin-retex-email-btn|emailAdminRetexPdf|retexReportEmail/);
     assert.match(js, /getElementById\("admin-accounts-table"\)/);
     assert.match(js, /getElementById\("admin-questions-table"\)/);
     assert.match(js, /getElementById\("admin-results-table"\)/);
