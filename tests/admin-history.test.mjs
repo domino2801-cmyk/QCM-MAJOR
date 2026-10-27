@@ -102,6 +102,27 @@ test("le filtre administrateur isole le graphique et le thème à travailler de 
     assert.equal(h.nodes.get("candidate-history-charts").children.length, 0);
 });
 
+test("la date du tableau admin correspond à la date de jeu enregistrée", () => {
+    const playedAt = "2024-03-05T14:06:07.000Z";
+    const h = harness([{
+        id: "r1",
+        candidateId: "a",
+        email: "a@test.fr",
+        name: "Alpha",
+        theme: "all",
+        score: 18,
+        date: "27/10/2026 05:00:00",
+        createdAt: playedAt
+    }]);
+
+    vm.runInContext("renderAdminResults()", h.context);
+
+    assert.equal(
+        h.nodes.get("admin-results-table").children[0].children[3].innerText,
+        new Date(playedAt).toLocaleString("fr-FR")
+    );
+});
+
 test("la période recalcule les indicateurs sans supprimer des lignes du tableau", () => {
     const h = harness();
     h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";

@@ -139,7 +139,8 @@ test("remontée Supabase envoie le résultat avec les headers et le payload atte
         correct: 4,
         wrong: 1,
         skipped: 0,
-        total: 5
+        total: 5,
+        created_at: "2026-09-19T10:00:00.000Z"
     }]);
     assert.deepEqual(harness.context.pendingResultSync, { upserts: [], deletes: [] });
     assert.equal(harness.context.getResults()[0].synced, true);
@@ -164,6 +165,8 @@ test("la normalisation distingue la simulation de combat du combat haute intensi
     assert.equal(examResult.feedbackMode, "exam");
     assert.equal(trainingResult.feedbackMode, "training");
     assert.equal(legacyGlobalResult.feedbackMode, "exam");
+    assert.equal(legacyGlobalResult.date, "");
+    assert.equal(legacyGlobalResult.createdAt, "");
 });
 
 test("la synchronisation reste compatible avant l'ajout de la colonne de mode", async () => {
