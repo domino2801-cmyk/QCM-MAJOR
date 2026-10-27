@@ -591,8 +591,8 @@ function normalizeResultRecord(rawResult = {}) {
         wrong: Number(rawResult.wrong || 0),
         skipped: Number(rawResult.skipped || 0),
         total: Number(rawResult.total || 0),
-        date: rawResult.date || new Date().toLocaleString("fr-FR"),
-        createdAt: rawResult.created_at || rawResult.createdAt || new Date().toISOString(),
+        date: rawResult.date || "",
+        createdAt: rawResult.created_at || rawResult.createdAt || "",
         synced: rawResult.synced !== false
     };
 }
@@ -1117,7 +1117,8 @@ function toSupabaseResultPayload(result, candidateColumn = "user_id", includeFee
         correct: result.correct,
         wrong: result.wrong,
         skipped: result.skipped,
-        total: result.total
+        total: result.total,
+        created_at: result.createdAt
     };
 }
 
@@ -2831,7 +2832,9 @@ function renderAdminResults() {
         candidateCell.innerText = result.label || result.name || result.email || "Candidat inconnu";
         scoreCell.innerText = `${result.score.toFixed(2)} / 20`;
         answersCell.innerText = `${result.correct} correcte(s), ${result.wrong} fausse(s), ${result.skipped} passée(s)`;
-        dateCell.innerText = result.date;
+        dateCell.innerText = result.createdAt && Number.isFinite(Date.parse(result.createdAt))
+            ? new Date(result.createdAt).toLocaleString("fr-FR")
+            : result.date || "Date inconnue";
         if (isResultDeletable(result)) {
             const deleteButton = document.createElement("button");
             deleteButton.type = "button";
@@ -5099,6 +5102,7 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         const account = currentAuthenticatedAccount || getAccounts()[email];
         const candidateId = String(account?.id || (email !== "Candidat inconnu" ? email : "candidat-inconnu"));
         const label = getCandidateLabel(account, candidateId);
+        const playedAt = new Date();
         const resultRecord = {
             id: createRecordId(),
             candidateId,
@@ -5112,7 +5116,8 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
             wrong: quizEngine.stats.wrong,
             skipped: quizEngine.stats.skipped,
             total,
-            date: new Date().toLocaleString("fr-FR")
+            date: playedAt.toLocaleString("fr-FR"),
+            createdAt: playedAt.toISOString()
         };
         const storedResults = getResults();
         const fallbackResult = normalizeResultRecord({ ...resultRecord, synced: false });
