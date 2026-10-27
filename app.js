@@ -4437,8 +4437,6 @@ async function initializeAppInteractions() {
         }
     });
 
-    document.getElementById("refresh-admin-accounts-btn")?.addEventListener("click", refreshAdminData);
-
     document.getElementById("question-form").addEventListener("submit", async event => {
         event.preventDefault();
         const themeId = document.getElementById("admin-question-theme").value;
