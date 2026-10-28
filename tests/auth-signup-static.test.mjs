@@ -60,7 +60,7 @@ test("signup flow still stores pending signup and switches to OTP", () => {
     const fields = {
         pseudo: { id: "register-pseudo", name: "pseudo", value: "Caporal", validity: { valid: true } },
         email: { id: "register-email", name: "email", value: "Test@Example.com", validity: { valid: true } },
-        password: { id: "register-password", name: "password", value: "secret6", validity: { valid: true }, minLength: 6 },
+        password: { id: "register-password", name: "password", value: "abc123", validity: { valid: true }, minLength: 6 },
         specialty: { id: "register-specialty", name: "specialty", value: "INF", validity: { valid: true } },
         "register-message": registerMessageField
     };
@@ -112,7 +112,7 @@ test("signup flow still stores pending signup and switches to OTP", () => {
     }).then(() => {
         assert.deepEqual(toPlainJson(signUpPayload), {
             email: "test@example.com",
-            password: "secret6",
+            password: "abc123",
             options: {
                 data: { name: "Caporal", specialty: "INF" }
             }
@@ -173,12 +173,68 @@ test("signup flow stops on invalid field and shows register-message", async () =
     assert.equal(invalidField.focusCalled, true);
 });
 
+test("signup rejects passwords shorter than six characters", async () => {
+    const registerMessageField = { innerText: "" };
+    const fields = {
+        pseudo: { id: "register-pseudo", value: "Caporal", validity: { valid: true } },
+        email: { id: "register-email", value: "test@example.com", validity: { valid: true } },
+        password: {
+            id: "register-password",
+            name: "password",
+            value: "abc12",
+            validity: { valid: true },
+            focusCalled: false,
+            focus() {
+                this.focusCalled = true;
+            }
+        },
+        specialty: { id: "register-specialty", value: "INF", validity: { valid: true } }
+    };
+    const form = {
+        elements: {
+            namedItem: name => fields[name] || null,
+            [Symbol.iterator]: function* () {
+                yield* Object.values(fields);
+            }
+        }
+    };
+    let signUpCalled = false;
+    const submitHandler = extractNamedFunction("handleRegisterSubmit", {
+        ensureSupabaseConfigured: () => true,
+        getFirstInvalidRegisterField: () => null,
+        setAuthMessage: (id, message) => {
+            if (id === "register-message") registerMessageField.innerText = message;
+        },
+        getRequiredFormElement: (_, name) => fields[name] || null,
+        normalizeEmail: email => email,
+        supabase: { auth: { signUp: async () => {
+            signUpCalled = true;
+            return { data: {} };
+        } } }
+    });
+
+    await submitHandler({ preventDefault() {}, currentTarget: form });
+
+    assert.equal(signUpCalled, false);
+    assert.equal(registerMessageField.innerText, "Le code de reconnaissance doit contenir au moins 6 caractères.");
+    assert.equal(fields.password.focusCalled, true);
+});
+
 test("register diagnostics mention Supabase connectivity problems", () => {
     const getFriendlyAuthError = extractNamedFunction("getFriendlyAuthError");
     const message = getFriendlyAuthError(new Error("Failed to fetch"), "Impossible de créer le compte.");
 
     assert.match(message, /Impossible de joindre Supabase/);
     assert.match(js, /initializeRegisterFormValidation\(\)/);
+});
+
+test("Supabase password errors report the server's actual minimum length", () => {
+    const getFriendlyAuthError = extractNamedFunction("getFriendlyAuthError");
+
+    assert.equal(
+        getFriendlyAuthError(new Error("Password should be at least 8 characters"), "Impossible de créer le compte."),
+        "Le code de reconnaissance doit contenir au moins 8 caractères."
+    );
 });
 
 test("register diagnostics cover invalid form inputs and hidden view toggling", () => {

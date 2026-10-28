@@ -3378,8 +3378,9 @@ function getFriendlyAuthError(error, fallbackMessage) {
     if (message.includes("already registered") || message.includes("already been registered")) {
         return "Un compte existe déjà avec cette adresse mail.";
     }
-    if (message.includes("password should be at least")) {
-        return "Le code de reconnaissance doit contenir au moins 6 caractères.";
+    const minimumPasswordLength = message.match(/password should be at least (\d+) characters?/);
+    if (minimumPasswordLength) {
+        return `Le code de reconnaissance doit contenir au moins ${minimumPasswordLength[1]} caractères.`;
     }
     if (message.includes("token has expired") || message.includes("otp expired")) {
         return "Le code ou le lien de vérification a expiré. Demandez une nouvelle procédure.";
@@ -3475,6 +3476,11 @@ async function handleRegisterSubmit(event) {
     const name = pseudoField.value.trim();
     const email = normalizeEmail(emailField.value);
     const password = passwordField.value;
+    if (password.length < 6) {
+        setAuthMessage("register-message", "Le code de reconnaissance doit contenir au moins 6 caractères.");
+        passwordField.focus?.();
+        return;
+    }
     const selectedSpecialty = specialtyField.value.trim();
     const specialtyOtherField = registerForm.elements.namedItem("specialtyOther");
     const specialty = selectedSpecialty === "OTHER"
