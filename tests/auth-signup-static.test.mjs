@@ -237,6 +237,10 @@ test("Supabase password errors report the server's actual minimum length", () =>
     );
 });
 
+test("Supabase Auth errors preserve the server message", () => {
+    assert.match(js, /data\?\.msg \|\| data\?\.message \|\| data\?\.error_description/);
+});
+
 test("register diagnostics cover invalid form inputs and hidden view toggling", () => {
     assert.match(js, /function getRegisterValidationMessage/);
     assert.match(js, /function getFirstInvalidRegisterField/);

@@ -277,7 +277,7 @@ const response = await fetch(`${supabaseUrl}/auth/v1${path}${redirect_to ? (path
     const data = response.status === 204 ? null : await response.json().catch(() => null);
 
     if (!response.ok) {
-        throw new Error(data?.msg || data?.error_description || data?.error || `Supabase Auth HTTP ${response.status}`);
+        throw new Error(data?.msg || data?.message || data?.error_description || data?.error || `Supabase Auth HTTP ${response.status}`);
     }
 
     return data;
