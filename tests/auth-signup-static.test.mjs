@@ -50,7 +50,8 @@ test("register markup keeps required ids and HTML5 constraints", () => {
     assert.match(html, /<label for="login-password">Code de reconnaissance<\/label>/);
     assert.match(html, /<label for="register-password">Code de reconnaissance<\/label>/);
     assert.match(html, /class="password-toggle" type="button" aria-label="Afficher le mot de passe" aria-pressed="false" aria-controls="login-password"/);
-    assert.match(js, /loginPassword\.type = isVisible \? "password" : "text"/);
+    assert.match(html, /id="register-password"[^>]*>\s*<button class="password-toggle" type="button" aria-label="Afficher le mot de passe" aria-pressed="false" aria-controls="register-password"/);
+    assert.match(js, /passwordInput\.type = isVisible \? "password" : "text"/);
     assert.doesNotMatch(html, /Mail personnel du candidat|Top 3 campagne globale|>Mot de passe</);
 });
 

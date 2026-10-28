@@ -3564,13 +3564,15 @@ function initializeAuth() {
     initializeOtpInputs();
     initializeRegisterFormValidation();
 
-    const loginPassword = document.getElementById("login-password");
-    const loginPasswordToggle = document.querySelector('[aria-controls="login-password"]');
-    loginPasswordToggle.addEventListener("click", () => {
-        const isVisible = loginPassword.type === "text";
-        loginPassword.type = isVisible ? "password" : "text";
-        loginPasswordToggle.setAttribute("aria-pressed", String(!isVisible));
-        loginPasswordToggle.setAttribute("aria-label", isVisible ? "Afficher le mot de passe" : "Masquer le mot de passe");
+    document.querySelectorAll(".password-toggle[aria-controls]").forEach(toggle => {
+        const passwordInput = document.getElementById(toggle.getAttribute("aria-controls"));
+        if (!passwordInput) return;
+        toggle.addEventListener("click", () => {
+            const isVisible = passwordInput.type === "text";
+            passwordInput.type = isVisible ? "password" : "text";
+            toggle.setAttribute("aria-pressed", String(!isVisible));
+            toggle.setAttribute("aria-label", isVisible ? "Afficher le mot de passe" : "Masquer le mot de passe");
+        });
     });
 
     document.querySelectorAll(".auth-tab").forEach(tab => {
