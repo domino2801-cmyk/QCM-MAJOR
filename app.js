@@ -1430,11 +1430,13 @@ function decodeJwtClaims(accessToken) {
 function isAdminSession(session) {
     const claims = decodeJwtClaims(session?.access_token);
     const appMetadata = claims?.app_metadata || {};
-    return claims?.role === "admin" || appMetadata.role === "admin" || appMetadata.bm4_admin === true;
+    return claims?.role === "admin" || appMetadata.role === "admin"
+        || [true, "true", "1"].includes(appMetadata.bm4_admin);
 }
 
 function isAdminUser(user, session = getStoredSupabaseSession()) {
-    return isAdminSession(session) || user?.app_metadata?.role === "admin" || user?.app_metadata?.bm4_admin === true;
+    return isAdminSession(session) || user?.app_metadata?.role === "admin"
+        || [true, "true", "1"].includes(user?.app_metadata?.bm4_admin);
 }
 
 function formatSpecialtyLabel(specialty) {
@@ -1988,6 +1990,20 @@ const retexQuestions = [
 const retexPalette = ["#4e6e4e", "#c9a227", "#2f6f9f", "#a23b3b", "#7a5c99", "#3f9c8f", "#d17a22", "#6b6b6b"];
 let retexResponses = [];
 
+function getRetexAnswer(row, field, multiple = false) {
+    const value = row[field];
+    if (multiple) {
+        return (Array.isArray(value) ? value : []).filter(Boolean).join(", ") || "Non renseigné";
+    }
+    return value == null || value === "" ? "Non renseigné" : String(value);
+}
+
+function getRetexResponseDate(row) {
+    const timestamp = Date.parse(row.created_at);
+    if (!Number.isFinite(timestamp)) return "Date inconnue";
+    return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(timestamp));
+}
+
 async function loadAdminRetex() {
     const accessToken = getStoredSupabaseSession()?.access_token;
     if (!supabase || !accessToken || !isAdminSession(getStoredSupabaseSession())) {
@@ -2097,15 +2113,34 @@ function renderAdminRetex() {
         charts.appendChild(card);
     });
 
-    const comments = retexResponses.filter(row => row.comment);
-    const list = document.getElementById("admin-retex-comments");
+    const list = document.getElementById("admin-retex-responses");
     list.replaceChildren();
-    comments.forEach(row => {
-        const item = document.createElement("li");
-        item.textContent = `${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""} : ${row.comment}`;
+    retexResponses.forEach((row, index) => {
+        const item = document.createElement("article");
+        item.className = "retex-response-card";
+        const heading = document.createElement("h5");
+        heading.textContent = `Retour ${index + 1} - ${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""}`;
+        const date = document.createElement("p");
+        date.className = "retex-response-date";
+        date.textContent = `Transmis le ${getRetexResponseDate(row)}`;
+        const answers = document.createElement("dl");
+        answers.className = "retex-response-answers";
+        retexQuestions.forEach(({ field, title, multiple }) => {
+            const term = document.createElement("dt");
+            term.textContent = title;
+            const answer = document.createElement("dd");
+            answer.textContent = getRetexAnswer(row, field, multiple);
+            answers.append(term, answer);
+        });
+        const commentTerm = document.createElement("dt");
+        commentTerm.textContent = "Commentaire libre";
+        const comment = document.createElement("dd");
+        comment.textContent = getRetexAnswer(row, "comment");
+        answers.append(commentTerm, comment);
+        item.append(heading, date, answers);
         list.appendChild(item);
     });
-    document.getElementById("admin-retex-comments-block").classList.toggle("hidden", !comments.length);
+    document.getElementById("admin-retex-responses-block").classList.toggle("hidden", !retexResponses.length);
 }
 
 async function refreshAdminRetex() {
@@ -2147,6 +2182,14 @@ function buildRetexPdf() {
         const lines = [];
         let line = "";
         String(value).split(/\s+/).filter(Boolean).forEach(word => {
+            while (word.length > maxChars) {
+                if (line) {
+                    lines.push(line);
+                    line = "";
+                }
+                lines.push(word.slice(0, maxChars));
+                word = word.slice(maxChars);
+            }
             if (line && (line + " " + word).length > maxChars) {
                 lines.push(line);
                 line = word;
@@ -2215,20 +2258,25 @@ function buildRetexPdf() {
         y -= cardHeight + 10;
     });
 
-    const comments = retexResponses.filter(row => row.comment);
-    if (comments.length) {
+    if (retexResponses.length) {
         ensure(40);
-        text("Observations terrain", margin, y - 12, { size: 11, bold: true });
+        text("Détail de tous les retours", margin, y - 12, { size: 11, bold: true });
         ops().push(`0.6 w 0.7 G ${margin} ${y - 18} m ${pageWidth - margin} ${y - 18} l S`);
         y -= 30;
-        comments.forEach(row => {
-            const lines = wrap(`- ${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""} : ${row.comment}`, 100);
-            lines.forEach(line => {
-                ensure(14);
-                text(line, margin, y - 9, { size: 9 });
-                y -= 12;
+        retexResponses.forEach((row, index) => {
+            ensure(28);
+            text(`Retour ${index + 1} - ${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""} - ${getRetexResponseDate(row)}`, margin, y - 10, { size: 10, bold: true });
+            y -= 18;
+            const answers = retexQuestions.map(({ field, title, multiple }) => [title, getRetexAnswer(row, field, multiple)]);
+            answers.push(["Commentaire libre", getRetexAnswer(row, "comment")]);
+            answers.forEach(([title, answer]) => {
+                wrap(`${title} : ${answer}`, 95).forEach(line => {
+                    ensure(14);
+                    text(line, margin + 8, y - 9, { size: 9 });
+                    y -= 12;
+                });
             });
-            y -= 4;
+            y -= 6;
         });
     }
     pages.forEach((page, index) => {

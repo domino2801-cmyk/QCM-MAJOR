@@ -3479,7 +3479,7 @@ body {
 }
 
 .retex-chart-card h4,
-.retex-comments h4 {
+.retex-responses h4 {
     margin: 0 0 10px;
 }
 
@@ -3519,12 +3519,45 @@ body {
     -webkit-print-color-adjust: exact;
 }
 
-.retex-comments {
+.retex-responses {
     margin-top: 16px;
 }
 
-.retex-comments li {
-    margin: 6px 0;
+.retex-response-list {
+    display: grid;
+    gap: 12px;
+}
+
+.retex-response-card {
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 12px;
+    break-inside: avoid;
+}
+
+.retex-response-card h5 {
+    margin: 0;
+}
+
+.retex-response-date {
+    margin: 4px 0 10px;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.retex-response-answers {
+    display: grid;
+    grid-template-columns: minmax(150px, 0.4fr) minmax(0, 1fr);
+    gap: 6px 12px;
+    margin: 0;
+}
+
+.retex-response-answers dt {
+    font-weight: 700;
+}
+
+.retex-response-answers dd {
+    margin: 0;
     overflow-wrap: anywhere;
 }
 
@@ -3536,6 +3569,15 @@ body {
     .retex-chart-body {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .retex-response-answers {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    .retex-response-answers dd {
+        margin-bottom: 8px;
     }
 }
 
