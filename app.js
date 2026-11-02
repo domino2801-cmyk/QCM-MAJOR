@@ -2258,23 +2258,19 @@ function buildRetexPdf() {
         y -= cardHeight + 10;
     });
 
-    if (retexResponses.length) {
+    const comments = retexResponses
+        .map(row => String(row.comment || "").trim())
+        .filter(Boolean);
+    if (comments.length) {
         ensure(40);
-        text("Détail de tous les retours", margin, y - 12, { size: 11, bold: true });
+        text("Commentaires libres", margin, y - 12, { size: 11, bold: true });
         ops().push(`0.6 w 0.7 G ${margin} ${y - 18} m ${pageWidth - margin} ${y - 18} l S`);
         y -= 30;
-        retexResponses.forEach((row, index) => {
-            ensure(28);
-            text(`Retour ${index + 1} - ${row.pseudo || "Anonyme"}${row.specialty ? ` (${row.specialty})` : ""} - ${getRetexResponseDate(row)}`, margin, y - 10, { size: 10, bold: true });
-            y -= 18;
-            const answers = retexQuestions.map(({ field, title, multiple }) => [title, getRetexAnswer(row, field, multiple)]);
-            answers.push(["Commentaire libre", getRetexAnswer(row, "comment")]);
-            answers.forEach(([title, answer]) => {
-                wrap(`${title} : ${answer}`, 95).forEach(line => {
-                    ensure(14);
-                    text(line, margin + 8, y - 9, { size: 9 });
-                    y -= 12;
-                });
+        comments.forEach(comment => {
+            wrap(comment, 95).forEach(line => {
+                ensure(14);
+                text(line, margin + 8, y - 9, { size: 9 });
+                y -= 12;
             });
             y -= 6;
         });

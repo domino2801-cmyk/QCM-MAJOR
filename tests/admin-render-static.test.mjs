@@ -67,7 +67,7 @@ test("admin sessions accept the same bm4_admin values as the database policy", (
     assert.equal(isAdminSession({ access_token: JSON.stringify({ app_metadata: { bm4_admin: false } }) }), false);
 });
 
-test("RETEX PDF includes every answer for each response", async () => {
+test("RETEX PDF keeps pie charts and includes only free comments after them", async () => {
     const rows = [
         {
             pseudo: "Candidat Alpha",
@@ -110,7 +110,10 @@ test("RETEX PDF includes every answer for each response", async () => {
             { field: "recommendation", title: "Recommandation" }
         ],
         retexResponses: rows,
-        computeRetexSlices: () => ({ slices: [], answered: 0 }),
+        computeRetexSlices: field => ({
+            slices: [{ label: `Graphique ${field}`, count: 2 }],
+            answered: 2
+        }),
         getRetexMetaText: () => "2 retours",
         getRetexAnswer: (row, field, multiple = false) => {
             const value = row[field];
@@ -121,15 +124,21 @@ test("RETEX PDF includes every answer for each response", async () => {
     });
     const pdf = await buildRetexPdf().text();
 
+    for (const value of ["Graphique themes : 2", "Graphique navigation : 2"]) {
+        assert.ok(pdf.includes(value), `PDF is missing the chart legend ${value}`);
+    }
+    assert.match(pdf, / h f/);
+    assert.ok(pdf.includes("Commentaires libres"));
+    assert.ok(pdf.includes("Commentaire alpha"));
+    assert.ok(pdf.includes("Commentaire beta"));
     for (const value of [
         "Candidat Alpha", "Navigation alpha", "Design alpha", "Mode alpha", "Bareme alpha",
-        "Signalement alpha", "Recommandation alpha", "Commentaire alpha",
-        "Candidat Beta", "Navigation beta", "Design beta", "Mode beta", "Bareme beta",
-        "Signalement beta", "Recommandation beta", "Commentaire beta"
+        "Signalement alpha", "Recommandation alpha", "Candidat Beta", "Navigation beta",
+        "Design beta", "Mode beta", "Bareme beta", "Signalement beta", "Recommandation beta",
+        "D.tail de tous les retours"
     ]) {
-        assert.ok(pdf.includes(value), `PDF is missing ${value}`);
+        assert.ok(!pdf.includes(value), `PDF should not include ${value}`);
     }
-    assert.match(pdf, /D.tail de tous les retours/);
 });
 
 test("showAuthenticatedApp refreshes the ranking on the connected screen", () => {
