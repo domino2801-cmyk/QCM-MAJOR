@@ -34,6 +34,9 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="admin-results-table"/);
     assert.match(html, /id="admin-results-candidate-filter"/);
     assert.match(html, /id="admin-retex-pdf-btn"/);
+    assert.match(html, /id="admin-retex-responses"/);
+    assert.match(html, /id="admin-retex-responses-block"/);
+    assert.match(js, /retexResponses\.forEach\(\(row, index\) =>/);
     assert.doesNotMatch(html, /admin-retex-email-btn|Envoyer par e-mail/);
     assert.doesNotMatch(js, /admin-retex-email-btn|emailAdminRetexPdf|retexReportEmail/);
     assert.match(js, /getElementById\("admin-accounts-table"\)/);
@@ -51,6 +54,82 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(js, /Thème à travailler/);
     assert.match(js, /\.filter\(result => result\.theme === "all"\)\s*\.sort/);
     assert.equal((html.match(/COMBAT HAUTE INTENSITE TOP 3/g) || []).length, 2);
+});
+
+test("admin sessions accept the same bm4_admin values as the database policy", () => {
+    const isAdminSession = extractNamedFunction("isAdminSession", {
+        decodeJwtClaims: token => JSON.parse(token)
+    });
+
+    for (const bm4_admin of [true, "true", "1"]) {
+        assert.equal(isAdminSession({ access_token: JSON.stringify({ app_metadata: { bm4_admin } }) }), true);
+    }
+    assert.equal(isAdminSession({ access_token: JSON.stringify({ app_metadata: { bm4_admin: false } }) }), false);
+});
+
+test("RETEX PDF includes every answer for each response", async () => {
+    const rows = [
+        {
+            pseudo: "Candidat Alpha",
+            specialty: "GEN",
+            created_at: "2026-10-20T12:00:00Z",
+            themes: ["Combat", "Budget"],
+            navigation: "Navigation alpha",
+            design: "Design alpha",
+            best_mode: "Mode alpha",
+            scoring_opinion: "Bareme alpha",
+            used_report_form: "Signalement alpha",
+            recommendation: "Recommandation alpha",
+            comment: "Commentaire alpha"
+        },
+        {
+            pseudo: "Candidat Beta",
+            specialty: "INF",
+            created_at: "2026-10-21T12:00:00Z",
+            themes: ["Operation"],
+            navigation: "Navigation beta",
+            design: "Design beta",
+            best_mode: "Mode beta",
+            scoring_opinion: "Bareme beta",
+            used_report_form: "Signalement beta",
+            recommendation: "Recommandation beta",
+            comment: "Commentaire beta"
+        }
+    ];
+    const buildRetexPdf = extractNamedFunction("buildRetexPdf", {
+        Blob,
+        Uint8Array,
+        retexPalette: ["#4e6e4e"],
+        retexQuestions: [
+            { field: "themes", title: "Themes", multiple: true },
+            { field: "navigation", title: "Navigation" },
+            { field: "design", title: "Design" },
+            { field: "best_mode", title: "Mode" },
+            { field: "scoring_opinion", title: "Bareme" },
+            { field: "used_report_form", title: "Signalement" },
+            { field: "recommendation", title: "Recommandation" }
+        ],
+        retexResponses: rows,
+        computeRetexSlices: () => ({ slices: [], answered: 0 }),
+        getRetexMetaText: () => "2 retours",
+        getRetexAnswer: (row, field, multiple = false) => {
+            const value = row[field];
+            if (multiple) return (Array.isArray(value) ? value : []).join(", ") || "Non renseigne";
+            return value == null || value === "" ? "Non renseigne" : String(value);
+        },
+        getRetexResponseDate: row => row.created_at
+    });
+    const pdf = await buildRetexPdf().text();
+
+    for (const value of [
+        "Candidat Alpha", "Navigation alpha", "Design alpha", "Mode alpha", "Bareme alpha",
+        "Signalement alpha", "Recommandation alpha", "Commentaire alpha",
+        "Candidat Beta", "Navigation beta", "Design beta", "Mode beta", "Bareme beta",
+        "Signalement beta", "Recommandation beta", "Commentaire beta"
+    ]) {
+        assert.ok(pdf.includes(value), `PDF is missing ${value}`);
+    }
+    assert.match(pdf, /D.tail de tous les retours/);
 });
 
 test("showAuthenticatedApp refreshes the ranking on the connected screen", () => {
