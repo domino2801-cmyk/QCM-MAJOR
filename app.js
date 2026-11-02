@@ -2270,7 +2270,15 @@ function downloadAdminRetexPdf() {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
-function exportAdminRetexPdf() {
+async function exportAdminRetexPdf() {
+    setAuthMessage("admin-retex-status", "Actualisation des retours RETEX...");
+    try {
+        await loadAdminRetex();
+        renderAdminRetex();
+    } catch (error) {
+        setAuthMessage("admin-retex-status", `Actualisation impossible, export annulé : ${error.message}`);
+        return false;
+    }
     if (!retexResponses.length) {
         setAuthMessage("admin-retex-status", "Aucun retour RETEX à exporter.");
         return false;
