@@ -27,7 +27,7 @@ function extractListener(buttonId) {
     return `${appJs.slice(start, end)});`;
 }
 
-test("la page Aide présente le forum et le journal avec son logo", () => {
+test("la page Aide présente le forum sans le journal de campagne avec son logo", () => {
     assert.match(html, /id="btn-help-theme"[^>]*>Aide<\/button>/);
     assert.match(html, /id="help-screen" class="screen help-screen"/);
     assert.match(html, /id="help-title"[^>]*>Aide<\/h1>/);
@@ -38,7 +38,7 @@ test("la page Aide présente le forum et le journal avec son logo", () => {
     assert.match(html, /Un forum d'échange pour votre préparation/);
     assert.match(html, /https:\/\/tchap\.gouv\.fr\/#\/%23Bm4QCArLJuiyp:agent\.intradef\.tchap\.gouv\.fr/);
     assert.match(html, /ADC "Nom" du "Régiment" spécialité "XXX"/);
-    assert.match(html, /six zones géographiques/);
+    assert.doesNotMatch(html, /id="help-history-title"|Depuis le briefing, ouvrez le journal/);
     assert.match(html, /src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
 
     const logoPath = path.join(root, "public", "images", "renseignements.png");
