@@ -3893,6 +3893,24 @@ body {
     margin: 10px 0 16px;
 }
 
+.help-link-btn {
+    box-sizing: border-box;
+    max-width: 100%;
+    text-align: center;
+    white-space: normal;
+    width: fit-content;
+}
+
+.help-panel {
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+}
+
+.help-screen,
+#help-screen {
+    overflow-x: hidden;
+}
+
 .help-scoring-list,
 .help-guide-list {
     color: #e3e9e3;
