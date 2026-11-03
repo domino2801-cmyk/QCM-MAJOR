@@ -141,6 +141,99 @@ test("RETEX PDF keeps pie charts and includes only free comments after them", as
     }
 });
 
+test("RETEX response cards omit the listed answers while retaining charts and comments", () => {
+    const createNode = () => ({
+        children: [],
+        classList: { toggle() {} },
+        style: {},
+        append(...nodes) {
+            this.children.push(...nodes);
+        },
+        appendChild(node) {
+            this.children.push(node);
+        },
+        replaceChildren(...nodes) {
+            this.children = nodes;
+        },
+        setAttribute() {},
+        textContent: ""
+    });
+    const charts = createNode();
+    const responses = createNode();
+    const meta = createNode();
+    const responsesBlock = createNode();
+    const document = {
+        createElement: createNode,
+        getElementById(id) {
+            return {
+                "admin-retex-charts": charts,
+                "admin-retex-meta": meta,
+                "admin-retex-responses": responses,
+                "admin-retex-responses-block": responsesBlock
+            }[id];
+        }
+    };
+    const questions = [
+        { field: "specialty", title: "Spécialité BM4" },
+        { field: "themes", title: "Zones les plus ciblées", multiple: true },
+        { field: "navigation", title: "Navigation dans la console" },
+        { field: "design", title: "Design visuel" },
+        { field: "best_mode", title: "Mode de combat le plus utile" },
+        { field: "scoring_opinion", title: "Barème d’évaluation" },
+        { field: "used_report_form", title: "Utilisation du signalement tactique" },
+        { field: "recommendation", title: "Recommandation de l’application" }
+    ];
+    const row = {
+        pseudo: "Candidat Alpha",
+        specialty: "GEN",
+        created_at: "2026-10-20T12:00:00Z",
+        themes: ["Réponse thèmes"],
+        navigation: "Réponse navigation",
+        design: "Réponse design",
+        best_mode: "Réponse mode",
+        scoring_opinion: "Réponse barème",
+        used_report_form: "Réponse signalement",
+        recommendation: "Réponse recommandation",
+        comment: "Commentaire conservé"
+    };
+    const renderAdminRetex = extractNamedFunction("renderAdminRetex", {
+        document,
+        retexQuestions: questions,
+        retexResponseQuestions: [questions[0]],
+        retexPalette: ["#4e6e4e"],
+        retexResponses: [row],
+        computeRetexSlices: field => ({
+            slices: [{ label: `Graphique ${field}`, count: 1 }],
+            answered: 1
+        }),
+        buildRetexPie: createNode,
+        getRetexMetaText: () => "1 retour",
+        getRetexAnswer: (response, field) => response[field] || "Non renseigné",
+        getRetexResponseDate: () => "20/10/2026"
+    });
+    const nodeText = node => [
+        node.textContent,
+        ...node.children.map(nodeText)
+    ].join(" ");
+
+    renderAdminRetex();
+
+    const responseText = nodeText(responses);
+    for (const value of [
+        "Zones les plus ciblées", "Navigation dans la console", "Design visuel",
+        "Mode de combat le plus utile", "Barème d’évaluation",
+        "Utilisation du signalement tactique", "Recommandation de l’application",
+        "Réponse thèmes", "Réponse navigation", "Réponse design", "Réponse mode",
+        "Réponse barème", "Réponse signalement", "Réponse recommandation"
+    ]) {
+        assert.ok(!responseText.includes(value), `Response card should not include ${value}`);
+    }
+    assert.ok(responseText.includes("GEN"));
+    assert.ok(responseText.includes("Commentaire conservé"));
+    assert.equal(charts.children.length, questions.length);
+    assert.ok(nodeText(charts).includes("Graphique recommendation"));
+});
+
 test("showAuthenticatedApp refreshes the ranking on the connected screen", () => {
     const context = {
         calls: [],

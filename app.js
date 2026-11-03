@@ -1987,6 +1987,7 @@ const retexQuestions = [
     { field: "used_report_form", title: "Utilisation du signalement tactique" },
     { field: "recommendation", title: "Recommandation de l’application" }
 ];
+const retexResponseQuestions = retexQuestions.filter(({ field }) => field === "specialty");
 const retexPalette = ["#4e6e4e", "#c9a227", "#2f6f9f", "#a23b3b", "#7a5c99", "#3f9c8f", "#d17a22", "#6b6b6b"];
 let retexResponses = [];
 
@@ -2125,7 +2126,7 @@ function renderAdminRetex() {
         date.textContent = `Transmis le ${getRetexResponseDate(row)}`;
         const answers = document.createElement("dl");
         answers.className = "retex-response-answers";
-        retexQuestions.forEach(({ field, title, multiple }) => {
+        retexResponseQuestions.forEach(({ field, title, multiple }) => {
             const term = document.createElement("dt");
             term.textContent = title;
             const answer = document.createElement("dd");
