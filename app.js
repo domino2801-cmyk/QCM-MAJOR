@@ -3448,6 +3448,9 @@ function getFriendlyAuthError(error, fallbackMessage) {
     if (message.includes("email not confirmed")) {
         return "Adresse mail non confirmée. Validez d’abord le code OTP reçu par email.";
     }
+    if (message.includes("pas de compte professionnel")) {
+        return professionalAccountMessage;
+    }
     if (message.includes("already registered") || message.includes("already been registered")) {
         return "Un compte existe déjà avec cette adresse mail.";
     }
@@ -3520,6 +3523,12 @@ function initializeOtpInputs() {
     });
 }
 
+const professionalAccountMessage = "Pas de compte professionnel";
+
+function isProfessionalEmail(email) {
+    return /@([a-z0-9-]+\.)*intradef\.gouv\.fr$/i.test(String(email || "").trim());
+}
+
 async function handleRegisterSubmit(event) {
     event.preventDefault();
     if (!ensureSupabaseConfigured("register-message")) return;
@@ -3549,6 +3558,11 @@ async function handleRegisterSubmit(event) {
     const name = pseudoField.value.trim();
     const email = normalizeEmail(emailField.value);
     const password = passwordField.value;
+    if (isProfessionalEmail(email)) {
+        setAuthMessage("register-message", professionalAccountMessage);
+        emailField.focus?.();
+        return;
+    }
     if (password.length < 6) {
         setAuthMessage("register-message", "Le code de reconnaissance doit contenir au moins 6 caractères.");
         passwordField.focus?.();

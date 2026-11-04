@@ -83,6 +83,7 @@ test("signup flow still stores pending signup and switches to OTP", () => {
         getFriendlyAuthError: (error, fallback) => error?.message || fallback || "Erreur d’authentification",
         getRequiredFormElement: (_, name) => fields[name] || null,
         normalizeEmail: email => email.trim().toLowerCase(),
+        isProfessionalEmail: () => false,
         supabase: {
             auth: {
                 signUp: async payload => {
@@ -152,6 +153,7 @@ test("signup flow stops on invalid field and shows register-message", async () =
             throw new Error("should not read fields when form is invalid");
         },
         normalizeEmail: email => email,
+        isProfessionalEmail: () => false,
         supabase: { auth: { signUp: async () => {
             throw new Error("should not call signUp when form is invalid");
         } } },
@@ -207,6 +209,7 @@ test("signup rejects passwords shorter than six characters", async () => {
         },
         getRequiredFormElement: (_, name) => fields[name] || null,
         normalizeEmail: email => email,
+        isProfessionalEmail: () => false,
         supabase: { auth: { signUp: async () => {
             signUpCalled = true;
             return { data: {} };

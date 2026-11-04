@@ -388,3 +388,12 @@ test("le bouton notification est vert uniquement lorsque l'abonnement est confir
     assert.equal(button.classList.ready, false);
     assert.equal(messages.at(-1), "Indisponible");
 });
+
+test("les adresses @intradef.gouv.fr sont refusées à l'inscription", () => {
+    const context = vm.createContext({});
+    const check = loadFunction("isProfessionalEmail", context);
+    assert.equal(check("agent@intradef.gouv.fr"), true);
+    assert.equal(check("Agent@Sub.INTRADEF.gouv.fr"), true);
+    assert.equal(check("candidat@gmail.com"), false);
+    assert.equal(check("a@intradef.gouv.fr.evil.com"), false);
+});
