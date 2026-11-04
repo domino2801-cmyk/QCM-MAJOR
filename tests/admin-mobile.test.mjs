@@ -90,7 +90,9 @@ test("les comptes et signalements sont paginés sans tronquer les données", asy
         loadResultsFromSupabase: async () => true,
         supabaseRestRequest: async query => {
             queries.push(query);
-            if (query.startsWith("/profiles")) return [{ id: "p", email: "candidate@test", name: "Test" }];
+            if (query.startsWith("/profiles")) return [{
+                id: "p", email: "candidate@test", name: "Test", created_at: "2026-10-25T12:00:00Z"
+            }];
             reports++;
             return Array.from({ length: reports === 1 ? 250 : 1 }, (_, id) => ({
                 id: `${reports}-${id}`, reporter_id: "p"
@@ -102,6 +104,8 @@ test("les comptes et signalements sont paginés sans tronquer les données", asy
     await loadFunction("loadAdminData", context)();
     assert.equal(context.questionReports.length, 251);
     assert.equal(context.questionReports[250].reporter_email, "candidate@test");
+    assert.match(queries[0], /created_at/);
+    assert.equal(context.cachedAccounts["candidate@test"].createdAt, "2026-10-25T12:00:00Z");
     assert.match(queries.at(-1), /offset=250/);
 });
 
@@ -323,6 +327,32 @@ test("retirer du cache demande OUI/NON et ne modifie rien en cas de refus", asyn
     await button.listeners.click();
     assert.equal(accounts["candidate@test"], undefined);
     assert.equal(list.children.length, 0);
+});
+
+test("les comptes candidats sont affichés du plus récent au plus ancien", () => {
+    const accounts = {
+        "old@test": { name: "Ancien", createdAt: "2026-10-01T12:00:00Z" },
+        "new@test": { name: "Récent", createdAt: "2026-10-03T12:00:00Z" },
+        "middle@test": { name: "Intermédiaire", createdAt: "2026-10-02T12:00:00Z" }
+    };
+    const list = element();
+    const context = vm.createContext({
+        getAccounts: () => accounts,
+        currentAuthenticatedAccount: null,
+        document: {
+            getElementById: id => id === "admin-accounts-table" ? list : null,
+            createElement: element
+        },
+        getAdminListPage: (_, items) => items, labelAdminRow: () => {},
+        getSpecialtyTrigram: value => value, formatSpecialtyLabel: value => value,
+        showConfirmOverlay: async () => false
+    });
+
+    loadFunction("renderAdminAccounts", context)();
+
+    assert.deepEqual(list.children.map(row => row.children[1].innerText), [
+        "new@test", "middle@test", "old@test"
+    ]);
 });
 
 test("le combo Statut et ses options conservent un fond sombre", () => {

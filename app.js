@@ -1466,7 +1466,8 @@ function cacheAccount(account) {
         id: account.id || cachedAccounts[account.email]?.id || null,
         email: account.email,
         name: account.name || "",
-        specialty: account.specialty || ""
+        specialty: account.specialty || "",
+        createdAt: account.createdAt || cachedAccounts[account.email]?.createdAt || ""
     };
 }
 
@@ -1902,13 +1903,14 @@ async function loadAdminData() {
 
     const accessToken = getStoredSupabaseSession()?.access_token;
     let profiles;
-    const loadProfiles = async specialtyColumn => {
+    const loadProfiles = async (specialtyColumn, includeCreatedAt = false) => {
         const pageSize = 1000;
         const allProfiles = [];
+        const selectedColumns = `id,email,name,${specialtyColumn}${includeCreatedAt ? ",created_at" : ""}`;
 
         for (let offset = 0; ; offset += pageSize) {
             const page = await supabaseRestRequest(
-                `/profiles?select=id,email,name,${specialtyColumn}&order=id&limit=${pageSize}&offset=${offset}`,
+                `/profiles?select=${selectedColumns}&order=id&limit=${pageSize}&offset=${offset}`,
                 { accessToken }
             );
             if (!Array.isArray(page)) throw new Error("Réponse des comptes invalide.");
@@ -1919,12 +1921,20 @@ async function loadAdminData() {
     };
 
     try {
-        profiles = await loadProfiles("speciality");
+        profiles = await loadProfiles("speciality", true);
     } catch (primaryError) {
         try {
-            profiles = await loadProfiles("specialty");
-        } catch {
-            throw new Error(`Lecture des comptes impossible : ${primaryError.message}`);
+            profiles = await loadProfiles("specialty", true);
+        } catch (createdAtError) {
+            try {
+                profiles = await loadProfiles("speciality");
+            } catch {
+                try {
+                    profiles = await loadProfiles("specialty");
+                } catch {
+                    throw new Error(`Lecture des comptes impossible : ${primaryError.message || createdAtError.message}`);
+                }
+            }
         }
     }
 
@@ -1958,14 +1968,16 @@ async function loadAdminData() {
             id: profile.id,
             email: profile.email,
             name: profile.name,
-            specialty: profile.speciality || profile.specialty
+            specialty: profile.speciality || profile.specialty,
+            createdAt: profile.created_at || ""
         }));
         profiles.forEach(profile => {
             const account = {
                 id: profile.id,
                 email: profile.email,
                 name: profile.name,
-                specialty: profile.speciality || profile.specialty
+                specialty: profile.speciality || profile.specialty,
+                createdAt: profile.created_at || ""
             };
             if (account.email) synchronizedAccounts[normalizeEmail(account.email)] = account;
         });
@@ -2633,10 +2645,18 @@ function renderAdminAccounts() {
     const search = document.getElementById("admin-accounts-search")?.value.trim().toLowerCase() || "";
     list.innerHTML = "";
 
-    const filteredAccounts = Object.entries(accounts).filter(([email, account]) => {
-        const searchable = `${account.name || ""} ${email} ${account.specialty || ""}`.toLowerCase();
-        return !search || searchable.includes(search);
-    });
+    const filteredAccounts = Object.entries(accounts)
+        .filter(([email, account]) => {
+            const searchable = `${account.name || ""} ${email} ${account.specialty || ""}`.toLowerCase();
+            return !search || searchable.includes(search);
+        })
+        .sort(([, first], [, second]) => {
+            const firstCreatedAt = Date.parse(first.createdAt || "");
+            const secondCreatedAt = Date.parse(second.createdAt || "");
+            const firstTimestamp = Number.isFinite(firstCreatedAt) ? firstCreatedAt : -Infinity;
+            const secondTimestamp = Number.isFinite(secondCreatedAt) ? secondCreatedAt : -Infinity;
+            return secondTimestamp - firstTimestamp;
+        });
     getAdminListPage("accounts", filteredAccounts, search).forEach(([email, account]) => {
         const row = document.createElement("tr");
         const nameCell = document.createElement("td");
