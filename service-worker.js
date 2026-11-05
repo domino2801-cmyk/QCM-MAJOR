@@ -13,12 +13,12 @@ self.addEventListener("push", event => {
     } catch {
         pendingCount = null;
     }
-    const badgeUpdate = typeof self.registration.setAppBadge === "function"
+    const badgeUpdate = typeof self.navigator?.setAppBadge === "function"
         ? Number.isSafeInteger(pendingCount)
             ? pendingCount > 0
-                ? self.registration.setAppBadge(pendingCount)
-                : self.registration.clearAppBadge?.()
-            : self.registration.setAppBadge()
+                ? self.navigator.setAppBadge(pendingCount)
+                : self.navigator.clearAppBadge?.()
+            : self.navigator.setAppBadge()
         : Promise.resolve();
     event.waitUntil(Promise.all([
         self.registration.showNotification("QCM-MAJOR — Signalements", {
