@@ -18,6 +18,10 @@ Le frontend est développé en HTML, CSS et JavaScript, sans étape de compilati
 
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
 
+## Classement public
+
+Le Top 3 de la campagne globale affiché sur l’écran de connexion est chargé via la fonction RPC publique `get_public_global_campaign_top3()`, sans accès anonyme direct à la table `quiz_results`.
+
 ## Badge de l’application
 
 Sur un navigateur compatible avec l’API Badging, l’icône de la PWA installée affiche le nombre de signalements non résolus pour les administrateurs. Le compteur est recalculé à l’ouverture des signalements et transmis avec les notifications push ; il est effacé lorsqu’il n’y a plus de signalements en attente ou à la déconnexion. Cette fonction dépend du support du navigateur et de l’installation de l’application sur l’écran d’accueil ou le bureau.

@@ -2360,7 +2360,7 @@ async function showAdminApp() {
     } catch (error) {
         setAuthMessage("admin-question-status", `Lecture du brouillon impossible : ${error.message}`);
     }
-    void refreshAdminPushStatus();
+    void refreshAdminPushStatus(true);
 
     await refreshAdminData();
 }
@@ -2589,19 +2589,29 @@ function getAdminPushOptions() {
     };
 }
 
-async function refreshAdminPushStatus() {
+async function refreshAdminPushStatus(autoEnable = false) {
     const button = document.getElementById("admin-push-enable-btn");
     button.classList.remove("admin-state-ready");
+    button.classList.add("admin-state-error");
     button.dataset.enabled = "false";
     button.setAttribute("aria-pressed", "false");
     try {
         const options = getAdminPushOptions();
-        const enabled = await reportNotificationsEnabled(options);
+        let enabled = await reportNotificationsEnabled(options);
+        if (!enabled && autoEnable && "Notification" in window && Notification.permission !== "denied") {
+            try {
+                await enableReportNotifications(options);
+                enabled = await reportNotificationsEnabled(options);
+            } catch (error) {
+                setAuthMessage("admin-push-status", `Notifications impossibles : ${error.message}`);
+            }
+        }
         button.classList.toggle("admin-state-ready", enabled);
+        button.classList.toggle("admin-state-error", !enabled);
         button.dataset.enabled = String(enabled);
         button.setAttribute("aria-pressed", String(enabled));
         button.title = enabled ? "Désactiver les notifications" : "Activer les notifications";
-        setAuthMessage("admin-push-status", "");
+        if (enabled) setAuthMessage("admin-push-status", "");
     } catch (error) {
         setAuthMessage("admin-push-status", error.message);
     }

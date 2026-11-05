@@ -365,7 +365,8 @@ test("le bouton notification est vert uniquement lorsque l'abonnement est confir
         dataset: {}, setAttribute() {},
         classList: {
             remove() { this.ready = false; },
-            toggle(_, enabled) { this.ready = enabled; }
+            add() {},
+            toggle(name, enabled) { if (name === "admin-state-ready") this.ready = enabled; }
         }
     };
     let enabled = true;

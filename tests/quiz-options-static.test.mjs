@@ -19,7 +19,7 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions", () => {
     assert.match(indexHtml, /app\.js\?v=retex-responses-20261103/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=help-mobile-20261103/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=help-mobile-20261105/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*209,\s*219,\s*0\.48\),\s*rgba\(88,\s*111,\s*124,\s*0\.42\)\)/);

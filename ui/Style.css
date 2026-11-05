@@ -2181,6 +2181,12 @@ h1 {
     color: #effff3;
 }
 
+#admin-screen .admin-toolbar .admin-edit-btn.admin-state-error {
+    background: #7a1d1d;
+    border-color: #d96a6a;
+    color: #fff0f0;
+}
+
 #admin-screen .admin-delete-btn {
     border-radius: 10px;
     background: #46282b;
