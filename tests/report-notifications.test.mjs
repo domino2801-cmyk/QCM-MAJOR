@@ -99,6 +99,8 @@ test("le service worker affiche une notification sans divulguer le signalement",
             showNotification: async (...args) => { notifications.push(args); }
         },
         navigator: {
+        },
+        navigator: {
             setAppBadge: async count => { badges.push(["set", count]); },
             clearAppBadge: async () => { badges.push(["clear"]); }
         },
@@ -131,6 +133,8 @@ test("le service worker efface le badge lorsque tous les signalements sont trait
         registration: {
             scope: "https://qcm-major.fr/",
             showNotification: async () => {}
+        },
+        navigator: {
         },
         navigator: {
             setAppBadge: async count => { badges.push(["set", count]); },
