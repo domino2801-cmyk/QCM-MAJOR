@@ -12,7 +12,8 @@ import { uiController } from "./modules/ui-controller/index.js";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
-    disableReportNotifications
+    disableReportNotifications,
+    testReportNotification
 } from "./modules/report-notifications/index.js";
 
 // =========================================================
@@ -4385,6 +4386,20 @@ async function initializeAppInteractions() {
             } finally {
                 button.disabled = false;
             }
+    });
+
+    document.getElementById("admin-push-test-btn").addEventListener("click", async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        setAuthMessage("admin-push-status", "Envoi de la notification de test…");
+        try {
+            const result = await testReportNotification(getAdminPushOptions());
+            setAuthMessage("admin-push-status", `Notification de test envoyée (${result.sent}). Vérifiez ce téléphone.`);
+        } catch (error) {
+            setAuthMessage("admin-push-status", `Test impossible : ${error.message}`);
+        } finally {
+            button.disabled = false;
+        }
     });
 
     document.getElementById("admin-question-theme").addEventListener("change", () => {

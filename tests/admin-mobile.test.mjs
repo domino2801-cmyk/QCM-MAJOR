@@ -294,6 +294,7 @@ test("les actions sont groupées avant les quatre onglets et les statuts vides n
         const toolbar = html.match(/<div class="admin-toolbar">([\s\S]*?)<\/div>/)[1];
         assert.match(toolbar, /id="admin-refresh-btn"/);
         assert.match(toolbar, />Activer notification<\/button>/);
+        assert.match(toolbar, /id="admin-push-test-btn"[^>]*>Tester la notification<\/button>/);
         assert.ok(html.indexOf('class="admin-toolbar"') < html.indexOf('class="admin-nav"'));
         assert.match(css, /\.admin-toolbar\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
         assert.match(css, /#admin-screen \.admin-toolbar button\s*\{[^}]*width: 100%;[^}]*max-width: none;[^}]*box-sizing: border-box;[^}]*justify-self: stretch;/);
