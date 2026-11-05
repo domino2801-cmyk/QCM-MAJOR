@@ -91,19 +91,23 @@ test("le test push appelle la fonction avec la session administrateur", async ()
 test("le service worker affiche une notification sans divulguer le signalement", async () => {
     const handlers = {};
     const notifications = [];
+    const badges = [];
     const self = {
         addEventListener: (event, handler) => { handlers[event] = handler; },
         registration: {
             scope: "https://qcm-major.fr/",
-            showNotification: async (...args) => { notifications.push(args); }
+            showNotification: async (...args) => { notifications.push(args); },
+            setAppBadge: async count => { badges.push(["set", count]); },
+            clearAppBadge: async () => { badges.push(["clear"]); }
         },
         clients: { matchAll: async () => [], openWindow: async url => url }
     };
     vm.runInNewContext(workerSource, { self, URL });
     let completion;
-    handlers.push({ waitUntil: promise => { completion = promise; } });
+    handlers.push({ data: { json: () => ({ pendingCount: 4 }) }, waitUntil: promise => { completion = promise; } });
     await completion;
     assert.equal(notifications.length, 1);
+    assert.deepEqual(badges, [["set", 4]]);
     assert.match(notifications[0][0], /Signalements/);
     assert.equal(notifications[0][1].renotify, true);
     assert.equal(notifications[0][1].tag, "qcm-question-reports");
@@ -115,6 +119,26 @@ test("le service worker affiche une notification sans divulguer le signalement",
     });
     assert.equal(await completion, "https://qcm-major.fr/?admin-section=question-reports");
     assert.equal(closed, true);
+});
+
+test("le service worker efface le badge lorsque tous les signalements sont traités", async () => {
+    const handlers = {};
+    const badges = [];
+    const self = {
+        addEventListener: (event, handler) => { handlers[event] = handler; },
+        registration: {
+            scope: "https://qcm-major.fr/",
+            showNotification: async () => {},
+            setAppBadge: async count => { badges.push(["set", count]); },
+            clearAppBadge: async () => { badges.push(["clear"]); }
+        },
+        clients: { matchAll: async () => [], openWindow: async url => url }
+    };
+    vm.runInNewContext(workerSource, { self, URL });
+    let completion;
+    handlers.push({ data: { json: () => ({ pendingCount: 0 }) }, waitUntil: promise => { completion = promise; } });
+    await completion;
+    assert.deepEqual(badges, [["clear"]]);
 });
 
 test("le serveur réserve les abonnements aux admins et authentifie l’envoi", () => {
@@ -133,6 +157,7 @@ test("le serveur réserve les abonnements aux admins et authentifie l’envoi", 
 function edgeHarness({ admin = true, report = { id: "report-id", status: "pending" }, sendError = null } = {}) {
     let handler;
     const calls = [];
+    const pushPayloads = [];
     class WebPushError extends Error {
         constructor(statusCode) {
             super("Push service error");
@@ -150,11 +175,15 @@ function edgeHarness({ admin = true, report = { id: "report-id", status: "pendin
             return {
                 select() { return this; },
                 eq() { return this; },
+                neq() { return this; },
                 delete() { deletion = true; return this; },
                 maybeSingle: async () => ({ data: report }),
                 then(resolve) {
                     if (deletion) calls.push("delete-expired");
-                    return Promise.resolve({ data: table === "admin_push_subscriptions" ? subscriptions : report }).then(resolve);
+                    return Promise.resolve({
+                        data: table === "admin_push_subscriptions" ? subscriptions : report,
+                        count: table === "question_reports" ? 4 : null
+                    }).then(resolve);
                 }
             };
         }
@@ -166,8 +195,9 @@ function edgeHarness({ admin = true, report = { id: "report-id", status: "pendin
         webpush: {
             WebPushError,
             setVapidDetails() {},
-            async sendNotification() {
+            async sendNotification(_subscription, payload) {
                 calls.push("send");
+                pushPayloads.push(JSON.parse(payload));
                 if (sendError) throw new WebPushError(sendError);
             }
         },
@@ -175,7 +205,7 @@ function edgeHarness({ admin = true, report = { id: "report-id", status: "pendin
         console: { error: (...args) => { calls.push(["error", ...args]); } }
     };
     vm.runInNewContext(source, context);
-    return { handler, calls };
+    return { handler, calls, pushPayloads };
 }
 
 function webhookRequest() {
@@ -214,6 +244,7 @@ test("le webhook envoie aux abonnements administrateurs et retire les endpoints 
         const result = await h.handler(webhookRequest());
         assert.equal(result.status, 200);
         assert.deepEqual(await result.json(), { sent: expectedSent });
+        if (sendError === null) assert.deepEqual(h.pushPayloads, [{ type: "question-report", pendingCount: 4 }]);
         assert.equal(h.calls.includes("delete-expired"), sendError === 410);
     }
 });

@@ -10,12 +10,17 @@ QCM-MAJOR est une application web de préparation au Brevet militaire de 4e nive
 - Signalement des questions à corriger.
 - Espace d’administration pour gérer les comptes, les questions et les résultats.
 - Interface adaptée aux mobiles et installable comme application PWA.
+- Badge numérique sur l’icône de la PWA installée pour les signalements à traiter, sur les navigateurs compatibles.
 
 ## Fonctionnement
 
 Le frontend est développé en HTML, CSS et JavaScript, sans étape de compilation, et hébergé sur GitHub Pages. Supabase gère l’authentification, les données et la correction des réponses.
 
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
+
+## Badge de l’application
+
+Sur un navigateur compatible avec l’API Badging, l’icône de la PWA installée affiche le nombre de signalements non résolus pour les administrateurs. Le compteur est recalculé à l’ouverture des signalements et transmis avec les notifications push ; il est effacé lorsqu’il n’y a plus de signalements en attente ou à la déconnexion. Cette fonction dépend du support du navigateur et de l’installation de l’application sur l’écran d’accueil ou le bureau.
 
 ## Démarrage local
 

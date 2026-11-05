@@ -58,6 +58,7 @@ test("le rendu des signalements retrouve la bonne réponse dans la banque admin"
 
     const badge = new MockElement();
     const table = new MockElement();
+    const appBadges = [];
     const nodes = new Map([
         ["admin-question-reports-badge", badge],
         ["admin-question-reports-table", table],
@@ -84,6 +85,11 @@ test("le rendu des signalements retrouve la bonne réponse dans la banque admin"
             querySelector: () => null,
             createElement: () => new MockElement()
         },
+        navigator: {
+            setAppBadge: async count => { appBadges.push(count); },
+            clearAppBadge: async () => { appBadges.push("clear"); }
+        },
+        console: { warn() {} },
         getAdminListPage: (_key, items) => items,
         normalizeQuestionAnswers: answers => answers,
         labelAdminRow() {}
@@ -93,6 +99,10 @@ test("le rendu des signalements retrouve la bonne réponse dans la banque admin"
     context.renderAdminQuestionReports();
 
     assert.match(table.children[0].children[0].innerText, /Bonne réponse enregistrée : C/);
+    assert.deepEqual(appBadges, [1]);
+    context.questionReports = [];
+    context.renderAdminQuestionReports();
+    assert.deepEqual(appBadges, [1, "clear"]);
 });
 
 test("le formulaire tactique signale la question, le type d’incident et sa priorité", () => {
@@ -254,6 +264,8 @@ test("l’onglet Signalements affiche le nombre de signalements à traiter", () 
     assert.match(html, /id="admin-question-reports-badge" class="admin-nav-badge hidden"/);
     assert.match(app, /const pendingCount = questionReports\.filter\(report => report\.status !== "resolved"\)\.length/);
     assert.match(app, /badge\.classList\.toggle\("hidden", pendingCount === 0\)/);
+    assert.match(app, /navigator\.setAppBadge\(pendingCount\)/);
+    assert.match(app, /navigator\.clearAppBadge/);
     assert.match(app, /Signalements, \$\{pendingCount\} à traiter/);
     assert.match(app, /badge\.innerText = pendingCount > 99 \? "99\+" : String\(pendingCount\)/);
 });

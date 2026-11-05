@@ -80,6 +80,12 @@ Deno.serve(async request => {
             if (!report || report.status === "resolved") return response({ sent: 0 });
         }
 
+        const { count: pendingCount, error: countError } = await database.from("question_reports")
+            .select("id", { count: "exact", head: true })
+            .neq("status", "resolved");
+        if (countError) throw countError;
+        if (!Number.isSafeInteger(pendingCount)) throw new Error("Could not count pending question reports");
+
         let query = database.from("admin_push_subscriptions").select("user_id,endpoint,p256dh,auth");
         if (testUserId) query = query.eq("user_id", testUserId);
         const { data: subscriptions, error } = await query;
@@ -101,7 +107,7 @@ Deno.serve(async request => {
                 await webpush.sendNotification({
                     endpoint: subscription.endpoint,
                     keys: { p256dh: subscription.p256dh, auth: subscription.auth }
-                }, JSON.stringify({ type: "question-report" }), { TTL: 3600, urgency: "normal" });
+                }, JSON.stringify({ type: "question-report", pendingCount }), { TTL: 3600, urgency: "normal" });
                 sent += 1;
             } catch (error) {
                 if (error instanceof webpush.WebPushError && (error.statusCode === 404 || error.statusCode === 410)) {
