@@ -4352,9 +4352,6 @@ async function initializeAppInteractions() {
         if (!await confirmAdminEditorExit()) return;
         if (supabase) {
             try {
-                if ("serviceWorker" in navigator && "PushManager" in window) {
-                    await disableReportNotifications(getAdminPushOptions());
-                }
                 await supabase.auth.signOut();
             } catch (error) {
                 window.alert(`Déconnexion administrateur impossible : ${error.message}`);
