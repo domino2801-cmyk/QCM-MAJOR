@@ -2927,6 +2927,12 @@ function renderAdminResults() {
 function renderAdminQuestionReports() {
     const badge = document.getElementById("admin-question-reports-badge");
     const pendingCount = questionReports.filter(report => report.status !== "resolved").length;
+    if (typeof navigator !== "undefined" && typeof navigator.setAppBadge === "function") {
+        const badgeUpdate = pendingCount > 0
+            ? navigator.setAppBadge(pendingCount)
+            : navigator.clearAppBadge?.();
+        badgeUpdate?.catch(error => console.warn("Mise à jour du badge de l’application impossible.", error));
+    }
     if (badge) {
         badge.innerText = pendingCount > 99 ? "99+" : String(pendingCount);
         badge.classList.toggle("hidden", pendingCount === 0);
@@ -4347,6 +4353,9 @@ async function initializeAppInteractions() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
+        if (typeof navigator.setAppBadge === "function") {
+            navigator.clearAppBadge?.()?.catch(error => console.warn("Effacement du badge de l’application impossible.", error));
+        }
         resetQuestionForm();
         clearAdminQuestionDraft();
         uiController.switchScreen("auth-screen");
