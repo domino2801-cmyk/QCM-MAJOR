@@ -102,7 +102,13 @@ Deno.serve(async request => {
             const { data: account, error: accountError } = await database.auth.admin.getUserById(subscription.user_id);
             if (accountError) throw accountError;
             if (!account.user || !isAdmin(account.user.app_metadata)) continue;
-            if (!validEndpoint(subscription.endpoint)) throw new Error("Unsupported push endpoint");
+            if (!validEndpoint(subscription.endpoint)) {
+                const { error: deleteError } = await database.from("admin_push_subscriptions")
+                    .delete().eq("user_id", subscription.user_id).eq("endpoint", subscription.endpoint);
+                if (deleteError) throw deleteError;
+                console.error("Unsupported push endpoint removed");
+                continue;
+            }
             try {
                 await webpush.sendNotification({
                     endpoint: subscription.endpoint,

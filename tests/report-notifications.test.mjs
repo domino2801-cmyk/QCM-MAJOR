@@ -162,7 +162,7 @@ test("le serveur réserve les abonnements aux admins et authentifie l’envoi", 
     assert.doesNotMatch(workerSource, /addEventListener\("fetch"/);
 });
 
-function edgeHarness({ admin = true, report = { id: "report-id", status: "pending" }, sendError = null } = {}) {
+function edgeHarness({ admin = true, report = { id: "report-id", status: "pending" }, sendError = null, extraEndpoints = [] } = {}) {
     let handler;
     const calls = [];
     const pushPayloads = [];
@@ -172,7 +172,10 @@ function edgeHarness({ admin = true, report = { id: "report-id", status: "pendin
             this.statusCode = statusCode;
         }
     }
-    const subscriptions = [{ user_id: "admin-id", endpoint: "https://fcm.googleapis.com/push", p256dh: "key", auth: "auth" }];
+    const subscriptions = [
+        ...extraEndpoints.map(endpoint => ({ user_id: "admin-id", endpoint, p256dh: "key", auth: "auth" })),
+        { user_id: "admin-id", endpoint: "https://fcm.googleapis.com/push", p256dh: "key", auth: "auth" }
+    ];
     const database = {
         auth: {
             getUser: async () => ({ data: { user: { id: "admin-id", app_metadata: { role: admin ? "admin" : "candidate" } } } }),
@@ -255,6 +258,14 @@ test("le webhook envoie aux abonnements administrateurs et retire les endpoints 
         if (sendError === null) assert.deepEqual(h.pushPayloads, [{ type: "question-report", pendingCount: 4 }]);
         assert.equal(h.calls.includes("delete-expired"), sendError === 410);
     }
+});
+
+test("un endpoint non autorisé est supprimé sans bloquer les autres abonnements", async () => {
+    const h = edgeHarness({ extraEndpoints: ["https://example.com/push"] });
+    const result = await h.handler(webhookRequest());
+    assert.equal(result.status, 200);
+    assert.deepEqual(await result.json(), { sent: 1 });
+    assert.equal(h.calls.includes("delete-expired"), true);
 });
 
 test("un échec de livraison est retourné comme erreur, pas comme succès", async () => {
