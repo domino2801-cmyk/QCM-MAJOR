@@ -32,6 +32,7 @@ test("la page Aide présente le forum sans le journal de campagne avec son logo"
     assert.match(html, /id="help-screen" class="screen help-screen"/);
     assert.match(html, /id="help-title"[^>]*>Aide<\/h1>/);
     assert.match(html, /id="help-logo" src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
+    assert.match(html, /id="help-doctrine-link"[^>]*>ACCÉDER À L'ARMOIRE NUMÉRIQUE DE CAMPAGNE<\/a>/);
     assert.doesNotMatch(html, /GUIDE DE MISSION/);
     assert.doesNotMatch(html, /help-scoring-title|help-modes-title|points nets ÷/);
     assert.match(html, /<h2 id="help-forum-title">FORUM<\/h2>/);

@@ -9,6 +9,7 @@ import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.j
 import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-bank/theme-concordance.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
+import { setupDoctrineAccess } from "./modules/doctrine-access/index.js";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
@@ -4330,6 +4331,22 @@ async function initializeAppInteractions() {
     document.getElementById("btn-help-theme")?.addEventListener("click", () => {
         uiController.switchScreen("help-screen");
         document.getElementById("help-title")?.focus();
+    });
+
+    setupDoctrineAccess({
+        link: document.getElementById("help-doctrine-link"),
+        status: document.getElementById("help-doctrine-status"),
+        getSession: async () => {
+            const accountId = currentAuthenticatedAccount?.id;
+            if (!supabase || !accountId) return null;
+            const { data } = await supabase.auth.getSession();
+            let session = data?.session;
+            if (session?.refresh_token && session.expires_at <= Date.now() / 1000 + 60) {
+                session = (await supabase.auth.refreshSession(session.refresh_token)).data?.session;
+            }
+            return currentAuthenticatedAccount?.id === accountId && session?.user?.id === accountId
+                ? session : null;
+        }
     });
 
     document.getElementById("btn-back-from-help")?.addEventListener("click", () => {

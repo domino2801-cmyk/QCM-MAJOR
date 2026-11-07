@@ -18,6 +18,8 @@ Le frontend est développé en HTML, CSS et JavaScript, sans étape de compilati
 
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
 
+Depuis la page Aide, le lien vers l'Armoire numérique de campagne ouvre un nouvel onglet et transmet temporairement le jeton d'accès de la session connectée, sans transmettre le mot de passe ni le jeton de rafraîchissement. Conservez QCM-MAJOR ouvert pour renouveler l'accès ; si la connexion automatique échoue, utilisez le formulaire de connexion de l'armoire.
+
 ## Classement public
 
 Le Top 3 de la campagne globale affiché sur l’écran de connexion est chargé via la fonction RPC publique `get_public_global_campaign_top3()`, sans accès anonyme direct à la table `quiz_results`.
