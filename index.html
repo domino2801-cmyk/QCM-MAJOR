@@ -284,7 +284,24 @@
                 <select id="admin-results-theme-filter" class="admin-search" aria-label="Filtrer les résultats par thème"><option value="">Tous les thèmes</option><option value="all">Campagne Globale</option><option value="1">Thème 1 • Organisation et Commandement</option><option value="2">Thème 2 • Matériels, Armements et Technologies</option><option value="3">Thème 3 • Lois de Programmation Militaire</option><option value="4">Thème 4 • Opérations Extérieures</option><option value="5">Thème 5 • Histoire &amp; Traditions</option><option value="6">Thème 6 • Implantation des unités</option></select>
                 <p id="admin-history-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <section id="admin-history-panel" class="global-evolution candidate-history-panel hidden" aria-labelledby="admin-history-title">
-                    <h2 id="admin-history-title">Historique du candidat sélectionné</h2>
+                    <h2 id="admin-history-title">Journal de campagne du candidat sélectionné</h2>
+                    <p class="terminal-note">Choisissez un candidat dans le filtre pour consulter ses résultats de campagne et par thème, son évolution dans le temps et son thème à travailler.</p>
+                    <section class="admin-theme-acquisition" aria-labelledby="admin-theme-acquisition-title">
+                        <h3 id="admin-theme-acquisition-title">Acquis par thème</h3>
+                        <label class="global-evolution-filter" for="admin-history-milestone">Jalon du planning</label>
+                        <select id="admin-history-milestone" class="global-evolution-period">
+                            <option value="2027-01" data-threshold="60">Janvier — objectif &gt; 60 %</option>
+                            <option value="2027-02" data-threshold="60">Février — objectif &gt; 60 %</option>
+                            <option value="2027-03" data-threshold="70">Mars — objectif &gt; 70 %</option>
+                            <option value="2027-04" data-threshold="70">Avril — objectif &gt; 70 %</option>
+                            <option value="2027-05" data-threshold="80">Mai — objectif &gt; 80 %</option>
+                            <option value="2027-06" data-threshold="80">Juin — objectif &gt; 80 %</option>
+                            <option value="2027-07" data-threshold="85">Juillet — objectif &gt; 85 %</option>
+                            <option value="2027-08" data-threshold="90">Août — objectif &gt; 90 %</option>
+                        </select>
+                        <p id="admin-theme-acquisition-note" class="terminal-note admin-theme-acquisition-note">La moyenne est calculée sur les séries de chaque thème jusqu’à la fin du jalon. Le pourcentage correspond aux réponses justes sur le total des questions.</p>
+                        <div id="admin-theme-acquisition"></div>
+                    </section>
                     <label class="global-evolution-filter" for="admin-history-period">Période</label>
                     <select id="admin-history-period" class="global-evolution-period"><option value="0">Tout l’historique</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="90">90 derniers jours</option></select>
                     <div id="admin-history-summary" class="global-evolution-summary"></div>

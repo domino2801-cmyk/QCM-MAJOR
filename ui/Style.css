@@ -3599,6 +3599,52 @@ body {
     margin-top: 18px;
 }
 
+.admin-theme-acquisition {
+    margin: 18px 0;
+    padding: 14px;
+    border: 1px solid rgba(159, 170, 132, 0.35);
+    border-radius: 8px;
+}
+
+.admin-theme-acquisition h3 {
+    color: var(--accent);
+    font-size: 1rem;
+    margin: 0 0 10px;
+}
+
+.admin-theme-acquisition .global-evolution-filter {
+    margin-top: 10px;
+}
+
+.admin-theme-acquisition .global-evolution-period {
+    margin-bottom: 10px;
+}
+
+.admin-theme-acquisition-note {
+    font-size: 0.78rem;
+}
+
+.admin-theme-acquisition-summary {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.admin-theme-acquisition-table {
+    font-size: 0.8rem;
+}
+
+.admin-theme-acquisition-status {
+    font-weight: 800;
+}
+
+.admin-theme-acquisition-status.is-acquired {
+    color: #76d69a;
+}
+
+.admin-theme-acquisition-status.is-not-acquired {
+    color: #ff9a8b;
+}
+
 #history-screen {
     max-width: 760px;
     margin: 0 auto;
@@ -3952,6 +3998,14 @@ body {
 .candidate-history-charts {
     display: grid;
     gap: 14px;
+}
+
+#admin-history-charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#admin-history-charts .candidate-history-chart-section:first-child {
+    grid-column: 1 / -1;
 }
 
 .candidate-history-modes {

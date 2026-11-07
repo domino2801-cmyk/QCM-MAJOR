@@ -2858,6 +2858,96 @@ async function deleteAdminResult(resultId) {
     }
 }
 
+function getDefaultAdminMilestone(date = new Date()) {
+    if (date.getFullYear() < 2027) return "2027-01";
+    if (date.getFullYear() > 2027) return "2027-08";
+    return `2027-${String(Math.min(date.getMonth() + 1, 8)).padStart(2, "0")}`;
+}
+
+function renderAdminThemeAcquisition(results, milestoneValue) {
+    const container = document.getElementById("admin-theme-acquisition");
+    if (!container) return;
+
+    const themes = [
+        ["1", "Organisation et Commandement"],
+        ["2", "Matériels, Armements et Technologies"],
+        ["3", "Lois de Programmation Militaire"],
+        ["4", "Opérations Extérieures"],
+        ["5", "Histoire & Traditions"],
+        ["6", "Implantation des unités"]
+    ];
+    const milestones = [
+        { value: "2027-01", label: "janvier", threshold: 60, month: 1 },
+        { value: "2027-02", label: "février", threshold: 60, month: 2 },
+        { value: "2027-03", label: "mars", threshold: 70, month: 3 },
+        { value: "2027-04", label: "avril", threshold: 70, month: 4 },
+        { value: "2027-05", label: "mai", threshold: 80, month: 5 },
+        { value: "2027-06", label: "juin", threshold: 80, month: 6 },
+        { value: "2027-07", label: "juillet", threshold: 85, month: 7 },
+        { value: "2027-08", label: "août", threshold: 90, month: 8 }
+    ];
+    const milestone = milestones.find(item => item.value === milestoneValue) || milestones[0];
+    const cutoff = new Date(2027, milestone.month, 1).getTime();
+    const table = document.createElement("table");
+    const head = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    const body = document.createElement("tbody");
+    const summary = document.createElement("p");
+    const acquiredCount = { value: 0 };
+
+    table.className = "admin-table admin-theme-acquisition-table";
+    summary.className = "admin-theme-acquisition-summary";
+    ["Thème", "Moyenne des bonnes réponses", "Seuil requis", "État"].forEach(label => {
+        const cell = document.createElement("th");
+        cell.innerText = label;
+        headerRow.appendChild(cell);
+    });
+    head.appendChild(headerRow);
+    table.append(head, body);
+
+    themes.forEach(([themeId, label]) => {
+        const attempts = results.filter(result => {
+            if (String(result.theme) !== themeId) return false;
+            const timestamp = Date.parse(result.createdAt || "");
+            if (!Number.isFinite(timestamp) || timestamp >= cutoff) return false;
+            const correct = Number(result.correct);
+            const total = Number(result.total) || Number(result.correct) + Number(result.wrong) + Number(result.skipped);
+            return Number.isFinite(correct) && Number.isFinite(total) && total > 0;
+        });
+        const percentages = attempts.map(result => {
+            const correct = Number(result.correct);
+            const total = Number(result.total) || Number(result.correct) + Number(result.wrong) + Number(result.skipped);
+            return correct / total * 100;
+        });
+        const average = percentages.length
+            ? percentages.reduce((total, percentage) => total + percentage, 0) / percentages.length
+            : null;
+        const acquired = average !== null && average > milestone.threshold;
+        if (acquired) acquiredCount.value += 1;
+
+        const row = document.createElement("tr");
+        const values = [
+            label,
+            average === null ? "—" : `${average.toFixed(1)} %`,
+            `> ${milestone.threshold} %`,
+            acquired ? "ACQUIS" : average === null ? "NON ACQUIS — aucun résultat" : "NON ACQUIS"
+        ];
+        values.forEach((value, index) => {
+            const cell = document.createElement("td");
+            cell.innerText = value;
+            cell.setAttribute("data-label", ["Thème", "Moyenne des bonnes réponses", "Seuil requis", "État"][index]);
+            if (index === 3) {
+                cell.className = `admin-theme-acquisition-status ${acquired ? "is-acquired" : "is-not-acquired"}`;
+            }
+            row.appendChild(cell);
+        });
+        body.appendChild(row);
+    });
+
+    summary.innerText = `${acquiredCount.value} thème(s) acquis sur ${themes.length} au jalon ${milestone.label}.`;
+    container.replaceChildren(summary, table);
+}
+
 function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const results = getResults();
@@ -2886,19 +2976,26 @@ function renderAdminResults() {
 
     const historyPanel = document.getElementById("admin-history-panel");
     const historyStatus = document.getElementById("admin-history-status");
+    const milestoneSelect = document.getElementById("admin-history-milestone");
+    if (milestoneSelect && !milestoneSelect.dataset.initialized) {
+        milestoneSelect.value = getDefaultAdminMilestone();
+        milestoneSelect.dataset.initialized = "true";
+    }
     historyPanel?.classList.toggle("hidden", !selectedCandidate);
     if (historyStatus) {
         historyStatus.innerText = "";
     }
-    renderCandidateHistory(
-        selectedCandidate ? results.filter(result =>
+    const candidateResults = selectedCandidate ? results.filter(result =>
             String(result.email || result.candidateId || result.name || result.label || "").trim() === selectedCandidate
-        ) : [],
+        ) : [];
+    renderCandidateHistory(
+        candidateResults,
         "",
         "",
         Number(document.getElementById("admin-history-period")?.value || 0),
         { prefix: "admin-history", filterCandidate: false }
     );
+    renderAdminThemeAcquisition(candidateResults, milestoneSelect?.value || getDefaultAdminMilestone());
 
     list.innerHTML = "";
 
@@ -3350,6 +3447,23 @@ function renderCandidateHistory(results, candidateId, candidateEmail = "", perio
     appendBars(globalChart, selectedHistory);
     globalSection.append(globalTitle, globalChart);
     charts.appendChild(globalSection);
+
+    if (!isCandidateHistory) {
+        themeLabels.slice(1).forEach(([themeId, label]) => {
+            const themeResults = history.filter(result => String(result.theme) === themeId);
+            const themeSection = document.createElement("section");
+            const themeTitle = document.createElement("h3");
+            const themeChart = document.createElement("div");
+            themeSection.className = "candidate-history-chart-section";
+            themeTitle.innerText = label;
+            themeChart.className = "global-evolution-chart";
+            themeChart.setAttribute("role", "img");
+            themeChart.setAttribute("aria-label", `Histogramme des notes — ${label}`);
+            appendBars(themeChart, themeResults);
+            themeSection.append(themeTitle, themeChart);
+            charts.appendChild(themeSection);
+        });
+    }
 
     const themeAverages = themeLabels.slice(1)
         .map(([themeId, label]) => {
@@ -4149,6 +4263,7 @@ async function initializeAppInteractions() {
     document.getElementById("admin-results-candidate-filter")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-results-theme-filter")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-period")?.addEventListener("change", renderAdminResults);
+    document.getElementById("admin-history-milestone")?.addEventListener("change", renderAdminResults);
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";

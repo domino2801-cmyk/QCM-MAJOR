@@ -16,6 +16,9 @@ const history = app.slice(app.indexOf("function renderCandidateHistory("), app.i
 test("les filtres de l'historique et leurs options utilisent un fond gris et un texte clair", () => {
     assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) \{\s*background: #343b43;\s*color: #e2e6eb;\s*color-scheme: dark;/);
     assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) option \{\s*background: #343b43;\s*color: #e2e6eb;/);
+    assert.match(html, /id="admin-history-milestone"/);
+    assert.match(html, /Août — objectif &gt; 90 %/);
+    assert.match(html, /admin-theme-acquisition/);
 });
 
 test("la suppression d'un résultat reste réservée au compte domino2801@gmail.com", () => {
@@ -51,7 +54,10 @@ function element() {
         },
         append(...children) { this.children.push(...children); },
         appendChild(child) { this.children.push(child); },
-        setAttribute() {},
+        replaceChildren(...children) { this.children = children; },
+        attributes: {},
+        setAttribute(name, value) { this.attributes[name] = value; },
+        getAttribute(name) { return this.attributes[name] || null; },
         addEventListener() {}
     };
 }
@@ -60,6 +66,7 @@ function harness(customResults) {
     const nodes = new Map([
         "admin-results-table", "admin-results-candidate-filter", "admin-results-search",
         "admin-history-panel", "admin-history-status", "admin-history-period",
+        "admin-history-milestone", "admin-theme-acquisition",
         "admin-history-charts", "admin-history-summary", "admin-history-recommendation",
         "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation",
         "candidate-history-modes"
@@ -92,6 +99,7 @@ test("le filtre administrateur isole le graphique et le thème à travailler de 
     vm.runInContext("renderAdminResults()", h.context);
     assert.match(h.nodes.get("admin-history-summary").innerText, /1 résultat.*Moyenne Campagne Globale : 18\.00/);
     assert.equal(h.nodes.get("admin-history-recommendation").innerText, "Thème à travailler\nHistoire & Traditions");
+    assert.equal(h.nodes.get("admin-history-charts").children.length, 7);
     assert.equal(h.nodes.get("admin-history-charts").children[0].children[1].children.length, 1);
     assert.equal(h.nodes.get("admin-results-table").children.length, 4);
     filter.value = "b";
@@ -121,6 +129,66 @@ test("la date du tableau admin correspond à la date de jeu enregistrée", () =>
         h.nodes.get("admin-results-table").children[0].children[3].innerText,
         new Date(playedAt).toLocaleString("fr-FR")
     );
+});
+
+test("le journal administrateur affiche l’histogramme de campagne et celui de chacun des six thèmes", () => {
+    const h = harness([
+        { candidateId: "a", email: "a@test.fr", theme: "all", score: 18, createdAt: new Date().toISOString() },
+        ...["1", "2", "3", "4", "5", "6"].map((theme, index) => ({
+            candidateId: "a",
+            email: "a@test.fr",
+            theme,
+            score: 8 + index * 2,
+            createdAt: new Date().toISOString()
+        }))
+    ]);
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+
+    const sections = h.nodes.get("admin-history-charts").children;
+    assert.equal(sections.length, 7);
+    assert.equal(sections[0].children[0].innerText, "Campagne Globale");
+    assert.deepEqual(
+        sections.slice(1).map(section => section.children[0].innerText),
+        [
+            "Thème 1 • Organisation et Commandement",
+            "Thème 2 • Matériels, Armements et Technologies",
+            "Thème 3 • Lois de Programmation Militaire",
+            "Thème 4 • Opérations Extérieures",
+            "Thème 5 • Histoire & Traditions",
+            "Thème 6 • Implantation des unités"
+        ]
+    );
+    assert.equal(sections[6].children[1].getAttribute("aria-label"), "Histogramme des notes — Thème 6 • Implantation des unités");
+});
+
+test("les acquis par thème suivent le seuil strict du jalon et le taux de bonnes réponses moyen", () => {
+    const h = harness([
+        { candidateId: "a", email: "a@test.fr", theme: "1", correct: 13, wrong: 7, total: 20, score: 11, date: "", createdAt: "2027-01-05T00:00:00Z" },
+        { candidateId: "a", email: "a@test.fr", theme: "1", correct: 14, wrong: 6, total: 20, score: 12, date: "", createdAt: "2027-01-12T00:00:00Z" },
+        { candidateId: "a", email: "a@test.fr", theme: "2", correct: 12, wrong: 8, total: 20, score: 10, date: "", createdAt: "2027-01-18T00:00:00Z" },
+        { candidateId: "a", email: "a@test.fr", theme: "3", correct: 20, wrong: 0, total: 20, score: 20, date: "", createdAt: "2027-02-01T00:00:00Z" }
+    ]);
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    h.nodes.get("admin-history-milestone").value = "2027-01";
+    vm.runInContext("renderAdminResults()", h.context);
+
+    const acquisition = h.nodes.get("admin-theme-acquisition");
+    const table = acquisition.children[1];
+    const rows = table.children[1].children;
+    assert.equal(rows.length, 6);
+    assert.equal(rows[0].children[1].innerText, "67.5 %");
+    assert.equal(rows[0].children[3].innerText, "ACQUIS");
+    assert.equal(rows[1].children[1].innerText, "60.0 %");
+    assert.equal(rows[1].children[3].innerText, "NON ACQUIS");
+    assert.equal(rows[2].children[1].innerText, "—");
+    assert.match(rows[2].children[3].innerText, /NON ACQUIS — aucun résultat/);
+    assert.equal(acquisition.children[0].innerText, "1 thème(s) acquis sur 6 au jalon janvier.");
+
+    h.nodes.get("admin-history-milestone").value = "2027-02";
+    vm.runInContext("renderAdminResults()", h.context);
+    assert.equal(rows[2].children[1].innerText, "—");
+    assert.equal(h.nodes.get("admin-theme-acquisition").children[1].children[1].children[2].children[1].innerText, "100.0 %");
 });
 
 test("la période recalcule les indicateurs sans supprimer des lignes du tableau", () => {
