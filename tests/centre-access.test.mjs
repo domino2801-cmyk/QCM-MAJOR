@@ -16,11 +16,14 @@ function listener(id) {
     return app.slice(start, end + "\n    });".length);
 }
 
-test("le centre propose les deux espaces et une déconnexion", () => {
+test("le centre propose les espaces Armoire, QCM et forum, avec une déconnexion", () => {
     assert.match(html, /id="centre-screen" class="screen centre-screen"/);
     assert.match(html, /id="centre-doctrine-link"[^>]*href="https:\/\/domino2801-cmyk\.github\.io\/DOCTRINE\/index\.html"/);
     assert.match(html, /id="centre-doctrine-link"[\s\S]*?armoire-logo\.png[\s\S]*?Armoire numérique de campagne/);
     assert.match(html, /id="centre-quiz-btn"[\s\S]*?logo2\.png[\s\S]*?Question pour un Major/);
+    assert.match(html, /id="centre-forum-link"[^>]*href="https:\/\/tchap\.gouv\.fr\/#\/%23Bm4QCArLJuiyp:agent\.intradef\.tchap\.gouv\.fr"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/);
+    assert.match(html, /id="centre-forum-link"[\s\S]*?tchap-logo\.png[\s\S]*?FORUM[\s\S]*?Un forum d'échange pour les candidats BM4/);
+    assert.match(html, /id="centre-forum-link"[\s\S]*?ADC "Nom" du "Régiment" spécialité "XXX"/);
     assert.match(html, /id="centre-logout-btn"/);
     assert.match(app, /getElementById\("centre-logout-btn"\)\.addEventListener\("click", logoutCandidate\)/);
     assert.match(app, /link: document\.getElementById\("centre-doctrine-link"\),\s*status: document\.getElementById\("centre-doctrine-status"\)/);

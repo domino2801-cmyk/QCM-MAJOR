@@ -18,7 +18,7 @@ Le frontend est développé en HTML, CSS et JavaScript, sans étape de compilati
 
 À l’ouverture sans session active, la question « Est-ce votre première visite ? » propose « Non » pour rallier l’unité (connexion) et « Oui » pour s’engager (création de compte). Les onglets restent accessibles ensuite pour changer de formulaire.
 
-Après connexion, le centre propose deux accès : « Question pour un Major » ouvre les zones QCM et « Armoire numérique de campagne » ouvre l'armoire et ses modules dans un nouvel onglet. Le bouton « Choix des espaces » permet de revenir à ce choix depuis les QCM.
+Après connexion, le centre propose trois accès : « Question pour un Major » ouvre les zones QCM, « Armoire numérique de campagne » ouvre l'armoire et ses modules dans un nouvel onglet, et « FORUM » ouvre le forum BM4 sur Tchap. Lors du premier accès au forum, présentez-vous ainsi : ADC "Nom" du "Régiment" spécialité "XXX". Le bouton « Choix des espaces » permet de revenir à ce choix depuis les QCM.
 
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
 
