@@ -4513,11 +4513,6 @@ async function initializeAppInteractions() {
         event.currentTarget.setAttribute("aria-expanded", "true");
     });
 
-    document.getElementById("btn-help-theme")?.addEventListener("click", () => {
-        uiController.switchScreen("help-screen");
-        document.getElementById("help-title")?.focus();
-    });
-
     document.getElementById("centre-quiz-btn")?.addEventListener("click", () => {
         uiController.switchScreen("theme-screen");
         document.getElementById("theme-welcome-message")?.focus();
@@ -4544,18 +4539,8 @@ async function initializeAppInteractions() {
     };
     setupDoctrineAccess({
         ...doctrineAccess,
-        link: document.getElementById("help-doctrine-link"),
-        status: document.getElementById("help-doctrine-status")
-    });
-    setupDoctrineAccess({
-        ...doctrineAccess,
         link: document.getElementById("centre-doctrine-link"),
         status: document.getElementById("centre-doctrine-status")
-    });
-
-    document.getElementById("btn-back-from-help")?.addEventListener("click", () => {
-        uiController.switchScreen("theme-screen");
-        document.getElementById("btn-help-theme")?.focus();
     });
 
     document.getElementById("btn-retex-theme")?.addEventListener("click", () => {

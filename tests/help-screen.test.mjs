@@ -1,100 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
-import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const html = readFileSync(path.join(root, "index.html"), "utf8");
-const appJs = readFileSync(path.join(root, "app.js"), "utf8");
 const css = readFileSync(path.join(root, "ui", "Style.css"), "utf8");
 
-function extractListener(buttonId) {
-    const marker = `document.getElementById("${buttonId}")?.addEventListener("click", () => {`;
-    const start = appJs.indexOf(marker);
-    assert.notEqual(start, -1, `Unable to find ${buttonId} listener`);
-    const bodyStart = start + marker.length;
-    let depth = 1;
-    let end = bodyStart;
+const appJs = readFileSync(path.join(root, "app.js"), "utf8");
 
-    while (end < appJs.length && depth > 0) {
-        if (appJs[end] === "{") depth += 1;
-        if (appJs[end] === "}") depth -= 1;
-        end += 1;
-    }
-
-    return `${appJs.slice(start, end)});`;
-}
-
-test("la page Aide présente le forum sans le journal de campagne avec son logo", () => {
-    assert.match(html, /id="btn-help-theme"[^>]*>Aide<\/button>/);
-    assert.match(html, /id="help-screen" class="screen help-screen"/);
-    assert.match(html, /id="help-title"[^>]*>Aide<\/h1>/);
-    assert.match(html, /id="help-logo" src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
-    assert.match(html, /id="help-doctrine-link"[^>]*><img src="public\/images\/armoire-logo\.png"[^>]*alt=""[^>]*><span>ACCÉDER À L'ARMOIRE NUMÉRIQUE DE CAMPAGNE<\/span><img src="public\/images\/armoire-logo\.png"[^>]*alt=""[^>]*><\/a>/);
-    assert.doesNotMatch(html, /GUIDE DE MISSION/);
-    assert.doesNotMatch(html, /help-scoring-title|help-modes-title|points nets ÷/);
-    assert.match(html, /<h2 id="help-forum-title">FORUM<\/h2>/);
-    assert.match(html, /Un forum d'échange pour votre préparation/);
-    assert.match(html, /<a[^>]*help-branded-link[^>]*href="https:\/\/tchap\.gouv\.fr\/#\/room\/#Bm4QCArLJuiyp:agent\.intradef\.tchap\.gouv\.fr"[^>]*><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><span>Accès au TCHAP BM4<\/span><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><\/a>/);
-    assert.match(html, /ADC "Nom" du "Régiment" spécialité "XXX"/);
-    assert.doesNotMatch(html, /id="help-history-title"|Depuis le briefing, ouvrez le journal/);
-    assert.match(html, /src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
-
-    const logoPath = path.join(root, "public", "images", "renseignements.png");
-    assert.equal(existsSync(logoPath), true);
-    assert.deepEqual(Array.from(readFileSync(logoPath).subarray(0, 8)), [
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
-    ]);
-    for (const name of ["tchap-logo.png", "armoire-logo.png"]) {
-        assert.deepEqual(Array.from(readFileSync(path.join(root, "public", "images", name)).subarray(0, 8)), [
-            0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
-        ]);
-    }
-});
-
-test("les commandes Aide et retour naviguent entre briefing et aide avec le focus", () => {
-    const transitions = [];
-    const focused = [];
-    const listeners = new Map();
-    const context = {
-        uiController: {
-            switchScreen(screen) {
-                transitions.push(screen);
-            }
-        },
-        document: {
-            getElementById(id) {
-                return {
-                    addEventListener(_event, handler) {
-                        listeners.set(id, handler);
-                    },
-                    focus() {
-                        focused.push(id);
-                    }
-                };
-            }
-        }
-    };
-
-    vm.runInNewContext(
-        `${extractListener("btn-help-theme")}\n${extractListener("btn-back-from-help")}`,
-        context
-    );
-
-    listeners.get("btn-help-theme")();
-    listeners.get("btn-back-from-help")();
-    assert.deepEqual(transitions, ["help-screen", "theme-screen"]);
-    assert.deepEqual(focused, ["help-title", "btn-help-theme"]);
-});
-
-test("l’écran d’aide et son accès restent adaptés aux petits écrans", () => {
-    assert.match(css, /body:has\(#help-screen\.active\) \.close-app/);
-    assert.match(css, /\.help-screen\s*\{[^}]*max-width:\s*760px/s);
-    assert.match(css, /\.help-branding\s*\{[^}]*flex-direction:\s*column/s);
-    assert.match(css, /\.help-logo\s*\{[^}]*object-fit:\s*contain/s);
-    assert.match(css, /\.help-panel\s*\{[^}]*padding:\s*16px 12px/s);
-    assert.match(css, /\.help-branded-link\s*\{[^}]*display:\s*flex/s);
-    assert.match(css, /\.help-branded-link img\s*\{[^}]*width:\s*36px/s);
+test("la page Aide et son accès sont supprimés sans retirer les accès du centre", () => {
+    assert.doesNotMatch(html, /btn-help-theme|help-screen|help-doctrine-link|btn-back-from-help/);
+    assert.doesNotMatch(appJs, /btn-help-theme|help-screen|help-doctrine-link|btn-back-from-help/);
+    assert.doesNotMatch(css, /#help-screen|\.help-screen|help-branded-link/);
+    assert.match(html, /id="centre-doctrine-link"/);
+    assert.match(appJs, /link: document\.getElementById\("centre-doctrine-link"\)/);
+    assert.match(html, /id="retex-screen" class="screen"/);
 });
