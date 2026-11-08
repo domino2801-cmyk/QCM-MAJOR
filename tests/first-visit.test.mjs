@@ -38,8 +38,8 @@ function fixture() {
 }
 
 for (const [button, view, field] of [
-    ["first-visit-yes-btn", "login", "login-email"],
-    ["first-visit-no-btn", "register", "register-pseudo"]
+    ["first-visit-no-btn", "login", "login-email"],
+    ["first-visit-yes-btn", "register", "register-pseudo"]
 ]) {
     test(`${button} opens ${view} and restores interaction`, () => {
         const { doc, elements, container, show, getView } = fixture();
@@ -91,6 +91,6 @@ test("startup shows the prompt only after session restoration and outside recove
     const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
     assert.match(app, /await restoreSupabaseSession\(\);[\s\S]*?hideStartupLoading\(\);\s*if \(!isRecoveryModeFromUrl\(\)\) showFirstVisitPrompt\(\);/);
     assert.match(html, /id="first-visit-overlay"[^>]*role="dialog"[^>]*aria-modal="true"/);
-    assert.match(html, /id="first-visit-no-btn"[^>]*><span>NON<\/span><small>S’engager<\/small>/);
-    assert.match(html, /id="first-visit-yes-btn"[^>]*><span>OUI<\/span><small>Rallier l’unité<\/small>/);
+    assert.match(html, /id="first-visit-no-btn"[^>]*><span>NON<\/span><small>Rallier l’unité<\/small>/);
+    assert.match(html, /id="first-visit-yes-btn"[^>]*><span>OUI<\/span><small>S’engager<\/small>/);
 });

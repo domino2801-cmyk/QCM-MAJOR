@@ -11,8 +11,8 @@ export function initializeFirstVisitPrompt({ document: doc = document, showAuthV
         doc.getElementById(view === "login" ? "login-email" : "register-pseudo").focus();
     }
 
-    noButton.addEventListener("click", () => chooseView("register"));
-    yesButton.addEventListener("click", () => chooseView("login"));
+    noButton.addEventListener("click", () => chooseView("login"));
+    yesButton.addEventListener("click", () => chooseView("register"));
     overlay.addEventListener("keydown", event => {
         if (event.key !== "Tab") return;
         if (event.shiftKey && doc.activeElement === noButton) {

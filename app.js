@@ -8,7 +8,7 @@ import { scoring } from "./modules/quiz-engine/scoring.js";
 import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.js";
 import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-bank/theme-concordance.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
-import { initializeFirstVisitPrompt } from "./modules/first-visit/index.js?v=first-visit-20261108";
+import { initializeFirstVisitPrompt } from "./modules/first-visit/index.js?v=first-visit-routes-20261108";
 import { uiController } from "./modules/ui-controller/index.js";
 import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=return-console-20261108";
 import {
