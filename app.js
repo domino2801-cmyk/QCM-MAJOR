@@ -341,6 +341,9 @@ async function chargerProgression(userId) {
         method: "POST", accessToken, prefer: "resolution=ignore-duplicates",
         body: [{ user_id: userId }]
     });
+    await supabaseRestRequest("/rpc/reconcile_user_progress_from_results", {
+        method: "POST", accessToken, body: {}
+    });
     const rows = await supabaseRestRequest(`/user_progress?user_id=eq.${encodeURIComponent(userId)}&select=max_unlocked_questions`, { accessToken });
     if (!Array.isArray(rows) || rows.length !== 1 || ![10, 20, 30, 40, 50].includes(rows[0].max_unlocked_questions)) {
         throw new Error("Progression introuvable ou invalide.");

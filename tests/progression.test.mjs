@@ -7,7 +7,7 @@ const source = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const code = source.slice(source.indexOf("function afficherProgression("), source.indexOf("async function submitQuestionReport("));
 
 function fixture() {
-    const buttons = [10, 20, 30, 40].map(qty => ({
+    const buttons = [10, 20, 30, 40, 50].map(qty => ({
         dataset: { qty: String(qty) }, classList: { toggle() {} }
     }));
     const campaign = [0, 1].map(() => ({ classList: { toggle() {} } }));
@@ -69,4 +69,24 @@ test("la progression est chargée par compte et les erreurs sont propagées", as
     await assert.rejects(f.context.verifierProgression(24, 10, "bob"), /invalide/);
     f.context.supabaseRestRequest = async () => { throw new Error("réseau"); };
     await assert.rejects(f.context.verifierProgression(24, 10, "alice"), /réseau/);
+});
+
+test("les résultats historiques sont réconciliés avant le chargement du palier", async () => {
+    const f = fixture();
+    const calls = [];
+    f.context.supabaseRestRequest = async (path, options = {}) => {
+        calls.push(path);
+        if (path === "/rpc/reconcile_user_progress_from_results") {
+            return { max_unlocked_questions: 50 };
+        }
+        if (options.method === "POST") return null;
+        return [{ max_unlocked_questions: 50 }];
+    };
+
+    await f.context.chargerProgression("alice");
+
+    assert.ok(calls.indexOf("/rpc/reconcile_user_progress_from_results") < calls.findIndex(path => path.includes("select=max_unlocked_questions")));
+    assert.equal(f.context.progressionMaximum, 50);
+    f.buttons.forEach(button => assert.equal(button.disabled, false));
+    f.campaign.forEach(button => assert.equal(button.disabled, false));
 });
