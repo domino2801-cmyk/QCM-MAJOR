@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=first-visit-20261108">
+    <link rel="stylesheet" href="ui/Style.css?v=centre-access-20261108">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -187,6 +187,25 @@
             </div>
         </div>
 
+        <div id="centre-screen" class="screen centre-screen" aria-labelledby="centre-title">
+            <h1 id="centre-title" tabindex="-1">Centre d'entraînement au combat du BM4</h1>
+            <p class="subtitle">Choisissez votre espace de préparation</p>
+            <div class="centre-access-grid">
+                <a id="centre-doctrine-link" class="centre-access-card" href="https://domino2801-cmyk.github.io/DOCTRINE/index.html" target="_blank" rel="noopener noreferrer">
+                    <img src="public/images/armoire-logo.png" width="100" height="100" alt="">
+                    <span>Armoire numérique de campagne</span>
+                    <small>Accéder à tous les modules</small>
+                </a>
+                <button id="centre-quiz-btn" class="centre-access-card" type="button">
+                    <img src="public/images/logo2.png" width="100" height="100" alt="">
+                    <span>Question pour un Major</span>
+                    <small>Accéder aux zones QCM</small>
+                </button>
+            </div>
+            <p id="centre-doctrine-status" class="terminal-note" role="status" aria-live="polite"></p>
+            <button id="centre-logout-btn" class="btn-secondary" type="button">Déconnexion</button>
+        </div>
+
         <div id="admin-screen" class="screen">
             <div class="account-bar"><span>Session administrateur</span><button id="admin-logout-btn" type="button">Déconnexion</button></div>
             <h1>Interface administrateur</h1>
@@ -316,7 +335,7 @@
 
         <div id="theme-screen" class="screen">
             <div class="brand-lockup"><img src="public/images/logo2.png" width="100" alt="Question pour un Major"></div>
-                <p id="theme-welcome-message" class="subtitle">Bienvenue au CENTAC du BM4</p>
+                <p id="theme-welcome-message" class="subtitle" tabindex="-1">Bienvenue au CENTAC du BM4</p>
                 <p id="account-summary" class="account-summary-under"> </p>
                 <p id="connection-status" class="connection-status" aria-live="polite"></p>
                 <div class="theme-selector-panel">
@@ -366,6 +385,7 @@
             <p id="theme-start-guidance" class="theme-start-guidance" role="status" aria-live="polite" hidden></p>
             <button id="start-btn" class="btn-main" disabled><span class="start-button-hint">Sélectionner la zone de combat avant de</span><span class="start-button-label">Déclencher l'offensive</span></button>
             <div class="theme-bottom-actions">
+                <button id="btn-centre-theme" class="btn-secondary" type="button">Choix des espaces</button>
                 <button id="btn-history-theme" class="btn-secondary" type="button" aria-expanded="false" aria-controls="candidate-history-panel">Journal de campagne</button>
                 <button id="logout-btn" class="btn-secondary" type="button">Quitter la zone</button>
                 <button id="btn-help-theme" class="btn-secondary" type="button">Aide</button>
@@ -637,6 +657,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=first-visit-routes-20261108"></script>
+    <script type="module" src="app.js?v=centre-access-20261108"></script>
 </body>
 </html>

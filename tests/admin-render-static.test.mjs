@@ -283,7 +283,7 @@ test("showAuthenticatedApp refreshes the ranking on the connected screen", () =>
     assert.deepEqual(context.calls[0], ["badges", "alice@test.com"]);
     assert.equal(context.welcomeMessage.innerText, "Bienvenue Alice au CENTAC du BM4");
     assert.equal(context.accountSummary.innerText, "Filière : GEN");
-    assert.deepEqual(context.calls[1], ["switch", "theme-screen"]);
+    assert.deepEqual(context.calls[1], ["switch", "centre-screen"]);
     assert.deepEqual(context.calls[2][0], "render");
     assert.equal(context.calls[2][1].length, 3);
     assert.deepEqual(context.calls[3][0], "history");

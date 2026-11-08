@@ -1,0 +1,50 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
+
+const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
+
+function listener(id) {
+    const marker = `document.getElementById("${id}")?.addEventListener("click", () => {`;
+    const start = app.indexOf(marker);
+    assert.notEqual(start, -1);
+    const end = app.indexOf("\n    });", start);
+    assert.notEqual(end, -1);
+    return app.slice(start, end + "\n    });".length);
+}
+
+test("le centre propose les deux espaces et une déconnexion", () => {
+    assert.match(html, /id="centre-screen" class="screen centre-screen"/);
+    assert.match(html, /id="centre-doctrine-link"[^>]*href="https:\/\/domino2801-cmyk\.github\.io\/DOCTRINE\/index\.html"/);
+    assert.match(html, /id="centre-doctrine-link"[\s\S]*?armoire-logo\.png[\s\S]*?Armoire numérique de campagne/);
+    assert.match(html, /id="centre-quiz-btn"[\s\S]*?logo2\.png[\s\S]*?Question pour un Major/);
+    assert.match(html, /id="centre-logout-btn"/);
+    assert.match(app, /getElementById\("centre-logout-btn"\)\.addEventListener\("click", logoutCandidate\)/);
+    assert.match(app, /link: document\.getElementById\("centre-doctrine-link"\),\s*status: document\.getElementById\("centre-doctrine-status"\)/);
+    assert.match(css, /@media \(max-width: 500px\)\s*\{\s*\.centre-access-grid\s*\{\s*grid-template-columns: 1fr/);
+});
+
+test("le choix QCM ouvre les zones et permet de revenir au centre", () => {
+    const handlers = new Map();
+    const transitions = [];
+    const focused = [];
+    const context = {
+        document: {
+            getElementById(id) {
+                return {
+                    addEventListener(_type, handler) { handlers.set(id, handler); },
+                    focus() { focused.push(id); }
+                };
+            }
+        },
+        uiController: { switchScreen: id => transitions.push(id) }
+    };
+    vm.runInNewContext(`${listener("centre-quiz-btn")}\n${listener("btn-centre-theme")}`, context);
+    handlers.get("centre-quiz-btn")();
+    handlers.get("btn-centre-theme")();
+    assert.deepEqual(transitions, ["theme-screen", "centre-screen"]);
+    assert.deepEqual(focused, ["theme-welcome-message", "centre-title"]);
+});

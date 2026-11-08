@@ -186,6 +186,7 @@ body {
     color: #fff;
 }
 
+body:has(#centre-screen.active) .close-app,
 body:has(#theme-screen.active) .close-app,
 body:has(#history-screen.active) .close-app,
 body:has(#retex-screen.active) .close-app,
@@ -4162,6 +4163,7 @@ body {
     background: linear-gradient(155deg, rgba(20, 29, 21, 0.84), rgba(10, 16, 12, 0.88));
 }
 
+.container:has(#centre-screen.active),
 .container:has(#theme-screen.active),
 .container:has(#quiz-screen.active),
 .container:has(#result-screen.active),
@@ -4171,6 +4173,66 @@ body {
 .container:has(#report-screen.active),
 .container:has(#admin-screen.active) {
     background: linear-gradient(155deg, rgba(20, 29, 21, 0.94), rgba(10, 16, 12, 0.97));
+}
+
+.centre-screen {
+    text-align: center;
+}
+
+.centre-access-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.centre-access-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 24px 16px;
+    border: 1px solid rgba(190, 199, 151, 0.48);
+    border-radius: 16px;
+    background: rgba(27, 36, 27, 0.9);
+    color: var(--text);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.centre-access-card:hover,
+.centre-access-card:focus-visible {
+    border-color: #e2c36d;
+    outline: 2px solid #e2c36d;
+    outline-offset: 2px;
+}
+
+.centre-access-card img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.centre-access-card span {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.centre-access-card small {
+    color: #d3ddc1;
+}
+
+@media (max-width: 500px) {
+    .centre-access-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .centre-access-card {
+        padding: 16px;
+    }
 }
 
 #auth-screen .terminal-shell {

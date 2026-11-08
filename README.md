@@ -18,11 +18,13 @@ Le frontend est développé en HTML, CSS et JavaScript, sans étape de compilati
 
 À l’ouverture sans session active, la question « Est-ce votre première visite ? » propose « Non » pour rallier l’unité (connexion) et « Oui » pour s’engager (création de compte). Les onglets restent accessibles ensuite pour changer de formulaire.
 
+Après connexion, le centre propose deux accès : « Question pour un Major » ouvre les zones QCM et « Armoire numérique de campagne » ouvre l'armoire et ses modules dans un nouvel onglet. Le bouton « Choix des espaces » permet de revenir à ce choix depuis les QCM.
+
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
 
 Le blocage et le déblocage des comptes candidats utilisent la migration `supabase/migrations/20261108152100_add_admin_account_blocking.sql`. Appliquez-la au projet Supabase avant de déployer cette fonctionnalité ; seuls les administrateurs peuvent modifier le statut d’un compte.
 
-Depuis la page Aide, le lien vers l'Armoire numérique de campagne ouvre un nouvel onglet et transmet temporairement le jeton d'accès de la session connectée, sans transmettre le mot de passe ni le jeton de rafraîchissement. Conservez QCM-MAJOR ouvert pour renouveler l'accès ; si la connexion automatique échoue, utilisez le formulaire de connexion de l'armoire.
+Depuis le centre ou la page Aide, le lien vers l'Armoire numérique de campagne ouvre un nouvel onglet et transmet temporairement le jeton d'accès de la session connectée, sans transmettre le mot de passe ni le jeton de rafraîchissement. Conservez QCM-MAJOR ouvert pour renouveler l'accès ; si la connexion automatique échoue, utilisez le formulaire de connexion de l'armoire.
 
 Depuis le module 5 de l'Armoire ouverte par ce lien, le retour vers QCM-MAJOR réutilise cet onglet et affiche la console si la même session candidate est active. Une partie en cours reste affichée et n'est pas interrompue.
 

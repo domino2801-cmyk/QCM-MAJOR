@@ -1920,7 +1920,8 @@ function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
         accountSummary.innerText =
             `Filière : ${formatSpecialtyLabel(account.specialty)}`;
     }
-    uiController.switchScreen("theme-screen");
+    uiController.switchScreen("centre-screen");
+    document.getElementById("centre-title")?.focus();
     renderGlobalRanking(getResults());
     void refreshRetexLock(account.id);
     return refreshCandidateHistory({ ...account, email });
@@ -4517,9 +4518,17 @@ async function initializeAppInteractions() {
         document.getElementById("help-title")?.focus();
     });
 
-    setupDoctrineAccess({
-        link: document.getElementById("help-doctrine-link"),
-        status: document.getElementById("help-doctrine-status"),
+    document.getElementById("centre-quiz-btn")?.addEventListener("click", () => {
+        uiController.switchScreen("theme-screen");
+        document.getElementById("theme-welcome-message")?.focus();
+    });
+
+    document.getElementById("btn-centre-theme")?.addEventListener("click", () => {
+        uiController.switchScreen("centre-screen");
+        document.getElementById("centre-title")?.focus();
+    });
+
+    const doctrineAccess = {
         getSession: async () => {
             const accountId = currentAuthenticatedAccount?.id;
             if (!supabase || !accountId) return null;
@@ -4532,6 +4541,16 @@ async function initializeAppInteractions() {
                 ? session : null;
         },
         returnToConsole: returnToDoctrineConsole
+    };
+    setupDoctrineAccess({
+        ...doctrineAccess,
+        link: document.getElementById("help-doctrine-link"),
+        status: document.getElementById("help-doctrine-status")
+    });
+    setupDoctrineAccess({
+        ...doctrineAccess,
+        link: document.getElementById("centre-doctrine-link"),
+        status: document.getElementById("centre-doctrine-status")
     });
 
     document.getElementById("btn-back-from-help")?.addEventListener("click", () => {
@@ -4649,7 +4668,7 @@ async function initializeAppInteractions() {
         renderGlobalEvolution(getResults(), candidateId, currentCandidateEmail || account?.email || "", Number(event.currentTarget.value || 0));
     });
 
-    document.getElementById("logout-btn").addEventListener("click", async () => {
+    const logoutCandidate = async () => {
         if (supabase) {
             try {
                 await supabase.auth.signOut();
@@ -4664,7 +4683,9 @@ async function initializeAppInteractions() {
         uiController.switchScreen("auth-screen");
         document.getElementById("login-form").reset();
         showAuthView("login");
-    });
+    };
+    document.getElementById("logout-btn").addEventListener("click", logoutCandidate);
+    document.getElementById("centre-logout-btn").addEventListener("click", logoutCandidate);
 
     document.getElementById("admin-logout-btn").addEventListener("click", async () => {
         if (!await confirmAdminEditorExit()) return;
