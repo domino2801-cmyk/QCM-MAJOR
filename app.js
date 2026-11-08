@@ -355,7 +355,7 @@ async function chargerProgression(userId) {
 }
 
 async function verifierProgression(scoreObtenu, nbQuestions, userId) {
-    const seuils = { 10: 24, 20: 56, 30: 96, 40: 136 };
+    const seuils = { 10: 24, 20: 52, 30: 84, 40: 120 };
     if (![10, 20, 30, 40, 50].includes(nbQuestions) || !Number.isInteger(scoreObtenu) ||
         scoreObtenu < -nbQuestions || scoreObtenu > nbQuestions * 4 ||
         !userId || currentAuthenticatedAccount?.id !== userId) {

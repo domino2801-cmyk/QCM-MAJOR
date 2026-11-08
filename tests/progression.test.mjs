@@ -6,6 +6,7 @@ import vm from "node:vm";
 const source = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const code = source.slice(source.indexOf("function afficherProgression("), source.indexOf("async function submitQuestionReport("));
 const backfill = readFileSync(new URL("../supabase/migrations/20261108193000_reconcile_all_candidate_progress.sql", import.meta.url), "utf8");
+const thresholdsMigration = readFileSync(new URL("../supabase/migrations/20261108200000_update_progress_thresholds.sql", import.meta.url), "utf8");
 
 function fixture() {
     const buttons = [10, 20, 30, 40, 50].map(qty => ({
@@ -27,7 +28,7 @@ function fixture() {
             calls.push({ path, options });
             if (path.startsWith("/rpc/")) {
                 const { question_count, points } = options.body;
-                const threshold = { 10: 24, 20: 56, 30: 96, 40: 136 }[question_count];
+                const threshold = { 10: 24, 20: 52, 30: 84, 40: 120 }[question_count];
                 return { max_unlocked_questions: threshold && points >= threshold ? question_count + 10 : question_count };
             }
             if (options.method === "POST") return null;
@@ -50,7 +51,7 @@ test("les choix et les deux modes haute intensité suivent le palier", () => {
 
 test("les seuils exacts et les points manquants sont calculés en score brut", async () => {
     const f = fixture();
-    for (const [questions, threshold] of [[10, 24], [20, 56], [30, 96], [40, 136]]) {
+    for (const [questions, threshold] of [[10, 24], [20, 52], [30, 84], [40, 120]]) {
         const missed = await f.context.verifierProgression(threshold - 1, questions, "alice");
         assert.equal(missed.succes, false);
         assert.match(missed.message, /1 point/);
@@ -60,6 +61,18 @@ test("les seuils exacts et les points manquants sont calculés en score brut", a
         assert.equal(f.storage.get("max_unlocked_questions:alice"), String(questions + 10));
     }
     assert.equal(f.calls.length, 8);
+});
+
+test("les nouveaux seuils correspondent aux notes sur 20 et s'appliquent aux anciens résultats", () => {
+    for (const [questions, points, note] of [[10, 24, 12], [20, 52, 13], [30, 84, 14], [40, 120, 15]]) {
+        assert.equal(points / (questions * 4) * 20, note);
+        assert.match(thresholdsMigration, new RegExp(`greatest\\(high_score_${questions}, score_${questions}\\) >= ${points}`));
+        assert.match(thresholdsMigration, new RegExp(`when ${questions} then ${points}`));
+    }
+    assert.match(thresholdsMigration, /max_unlocked_questions = greatest\(\s*max_unlocked_questions/);
+    assert.match(thresholdsMigration, /or completed_50 then 50/);
+    assert.match(thresholdsMigration, /from public\.user_progress p where p\.user_id = u\.id/);
+    assert.match(thresholdsMigration, /perform public\.reconcile_user_progress_from_results\(\)/);
 });
 
 test("la progression est chargée par compte et les erreurs sont propagées", async () => {
