@@ -186,6 +186,7 @@ function element() {
         append(...children) { this.children.push(...children); },
         appendChild(child) { this.children.push(child); },
         prepend(child) { this.children.unshift(child); },
+        setAttribute() {},
         addEventListener(name, handler) { this.listeners[name] = handler; }
     };
 }
@@ -214,6 +215,47 @@ test("un refus de suppression distante laisse la question dans la banque locale"
     await actions.children[1].listeners.click();
     assert.equal(context.questionsBank["0"].questions.length, 1);
     assert.match(messages.at(-1), /Suppression impossible.*Refus serveur/);
+});
+
+test("un refus de changement de thème distant conserve la question dans son thème", async () => {
+    const question = { id: "preserved", q: "Question", r: ["A", "B", "C", "D"], correct: 0 };
+    const messages = [];
+    const context = vm.createContext({
+        questionsBank: { "0": { questions: [question] }, "1": { questions: [] } },
+        supabase: {}, questionSourceReady: true,
+        syncQuestionMutation: async () => { throw new Error("Refus serveur"); },
+        setAdminOperationPending: () => {},
+        saveCurrentThemeQuestions: () => { throw new Error("Ne doit pas sauvegarder"); },
+        renderAdminQuestions: () => {},
+        setAuthMessage: (_, message) => messages.push(message)
+    });
+    const move = loadFunction("moveAdminQuestionToTheme", context);
+    await move(question, "0", "1", { disabled: false });
+    assert.deepEqual(context.questionsBank["0"].questions, [question]);
+    assert.deepEqual(context.questionsBank["1"].questions, []);
+    assert.match(messages.at(-1), /Changement de thème impossible.*Refus serveur/);
+});
+
+test("changer le thème déplace la question et sauvegarde les deux thèmes", async () => {
+    const question = { id: "moved", q: "Question", r: ["A", "B", "C", "D"], correct: 0 };
+    const savedThemes = [];
+    const context = vm.createContext({
+        questionsBank: { "0": { questions: [question] }, "1": { questions: [] } },
+        supabase: {}, questionSourceReady: true,
+        syncQuestionMutation: async payload => {
+            assert.deepEqual({ ...payload }, { action: "move", id: "moved", themeId: "1" });
+            return { updated: true };
+        },
+        setAdminOperationPending: () => {},
+        saveCurrentThemeQuestions: themeId => savedThemes.push(themeId),
+        renderAdminQuestions: () => {},
+        setAuthMessage: () => {}
+    });
+    const move = loadFunction("moveAdminQuestionToTheme", context);
+    await move(question, "0", "1", { disabled: false });
+    assert.deepEqual(context.questionsBank["0"].questions, []);
+    assert.deepEqual(context.questionsBank["1"].questions, [question]);
+    assert.deepEqual(savedThemes, ["0", "1"]);
 });
 
 test("les filtres de signalements séparent À traiter, Traités et Tous", () => {

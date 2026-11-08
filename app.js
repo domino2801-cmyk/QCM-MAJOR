@@ -960,6 +960,20 @@ async function syncQuestionMutation(payload) {
         return { updated: true };
     }
 
+    if (payload.action === "move") {
+        if (!payload.id) throw new Error("Identifiant Supabase de la question introuvable.");
+        const updatedRows = await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
+            method: "PATCH",
+            accessToken,
+            prefer: "return=representation",
+            body: { theme_id: payload.themeId }
+        });
+        if (!Array.isArray(updatedRows) || updatedRows.length !== 1) {
+            throw new Error("Supabase n’a déplacé aucune question. Vérifiez son identifiant et vos droits administrateur.");
+        }
+        return { updated: true };
+    }
+
     if (payload.action === "delete") {
             await supabaseRestRequest(`/question_bank?id=eq.${encodeURIComponent(payload.id)}`, {
                 method: "DELETE",
@@ -2754,6 +2768,8 @@ function renderAdminQuestions() {
         const actionCell = document.createElement("td");
         const editButton = document.createElement("button");
         const deleteButton = document.createElement("button");
+        const moveThemeSelect = document.createElement("select");
+        const moveThemeButton = document.createElement("button");
         const answers = normalizeQuestionAnswers(question.r);
 
         questionCell.innerText = question.q;
@@ -2806,15 +2822,73 @@ function renderAdminQuestions() {
             }
         });
 
+        moveThemeSelect.className = "admin-search";
+        moveThemeSelect.setAttribute("aria-label", `Nouveau thème pour : ${question.q}`);
+        Array.from(themeField.options || []).forEach(option => {
+            const themeOption = document.createElement("option");
+            themeOption.value = option.value;
+            themeOption.textContent = option.textContent;
+            themeOption.selected = option.value === themeId;
+            moveThemeSelect.appendChild(themeOption);
+        });
+        moveThemeButton.type = "button";
+        moveThemeButton.className = "admin-edit-btn";
+        moveThemeButton.innerText = "Changer le thème";
+        moveThemeButton.addEventListener("click", () => moveAdminQuestionToTheme(
+            question,
+            themeId,
+            moveThemeSelect.value,
+            moveThemeButton
+        ));
+
         const actions = document.createElement("details");
         const actionSummary = document.createElement("summary");
         actionSummary.innerText = "Autres actions";
-        actions.append(actionSummary, deleteButton);
+        actions.append(actionSummary, deleteButton, moveThemeSelect, moveThemeButton);
         actionCell.append(editButton, actions);
         row.append(questionCell, answersCell, correctCell, actionCell);
         labelAdminRow(row, ["Question", "Réponses", "Bonne réponse", "Actions"]);
         list.appendChild(row);
     });
+}
+
+async function moveAdminQuestionToTheme(question, sourceThemeId, targetThemeId, button) {
+    if (sourceThemeId === targetThemeId) {
+        setAuthMessage("admin-question-status", "La question est déjà dans ce thème.");
+        return;
+    }
+    if (!questionsBank[sourceThemeId] || !questionsBank[targetThemeId]) {
+        setAuthMessage("admin-question-status", "Changement impossible : thème introuvable.");
+        return;
+    }
+
+    button.disabled = true;
+    setAdminOperationPending(true);
+    try {
+        if (supabase) {
+            if (!questionSourceReady) throw new Error("Actualisez la banque avant de changer le thème d’une question.");
+            const result = await syncQuestionMutation({
+                action: "move",
+                id: question.id,
+                themeId: targetThemeId
+            });
+            if (!result?.updated) throw new Error("Le changement de thème n’a pas été confirmé.");
+        }
+        const sourceQuestions = questionsBank[sourceThemeId].questions;
+        const currentIndex = sourceQuestions.indexOf(question);
+        if (currentIndex < 0) throw new Error("La question n’existe plus dans son thème d’origine.");
+        sourceQuestions.splice(currentIndex, 1);
+        questionsBank[targetThemeId].questions.push(question);
+        saveCurrentThemeQuestions(sourceThemeId);
+        saveCurrentThemeQuestions(targetThemeId);
+        renderAdminQuestions();
+        setAuthMessage("admin-question-status", "Thème de la question modifié.");
+    } catch (error) {
+        setAuthMessage("admin-question-status", `Changement de thème impossible : ${error.message}`);
+    } finally {
+        setAdminOperationPending(false);
+        button.disabled = false;
+    }
 }
 
 function editQuestion(themeId, index) {
