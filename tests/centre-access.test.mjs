@@ -27,7 +27,9 @@ test("le centre propose les espaces Armoire, QCM et forum, avec une déconnexion
     assert.match(html, /id="centre-logout-btn"/);
     assert.match(app, /getElementById\("centre-logout-btn"\)\.addEventListener\("click", logoutCandidate\)/);
     assert.match(app, /link: document\.getElementById\("centre-doctrine-link"\),\s*status: document\.getElementById\("centre-doctrine-status"\)/);
-    assert.match(css, /@media \(max-width: 500px\)\s*\{\s*\.centre-access-grid\s*\{\s*grid-template-columns: 1fr/);
+    assert.match(css, /\.centre-access-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    assert.match(css, /\.centre-access-card\s*\{[^}]*justify-content:\s*flex-start/);
+    assert.match(css, /@media \(max-width: 700px\)\s*\{\s*\.centre-access-grid\s*\{\s*grid-template-columns: 1fr/);
 });
 
 test("le choix QCM ouvre les zones et permet de revenir au centre", () => {

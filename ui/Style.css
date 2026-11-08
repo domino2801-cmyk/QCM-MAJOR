@@ -4181,7 +4181,7 @@ body {
 
 .centre-access-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin: 24px 0;
 }
@@ -4190,7 +4190,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 12px;
     min-width: 0;
     padding: 24px 16px;
@@ -4199,6 +4199,7 @@ body {
     background: rgba(27, 36, 27, 0.9);
     color: var(--text);
     font: inherit;
+    text-align: center;
     text-decoration: none;
     cursor: pointer;
 }
@@ -4225,7 +4226,7 @@ body {
     color: #d3ddc1;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 700px) {
     .centre-access-grid {
         grid-template-columns: 1fr;
     }
