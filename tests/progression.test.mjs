@@ -5,6 +5,7 @@ import vm from "node:vm";
 
 const source = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const code = source.slice(source.indexOf("function afficherProgression("), source.indexOf("async function submitQuestionReport("));
+const backfill = readFileSync(new URL("../supabase/migrations/20261108193000_reconcile_all_candidate_progress.sql", import.meta.url), "utf8");
 
 function fixture() {
     const buttons = [10, 20, 30, 40, 50].map(qty => ({
@@ -89,4 +90,15 @@ test("les résultats historiques sont réconciliés avant le chargement du palie
     assert.equal(f.context.progressionMaximum, 50);
     f.buttons.forEach(button => assert.equal(button.disabled, false));
     f.campaign.forEach(button => assert.equal(button.disabled, false));
+});
+
+test("la migration globale réconcilie chaque compte ayant des résultats avec son propre identifiant", () => {
+    assert.match(backfill, /from auth\.users u[\s\S]*from public\.quiz_results r/);
+    assert.match(backfill, /coalesce\(to_jsonb\(r\) ->> 'user_id', to_jsonb\(r\) ->> 'candidate_id'\) = u\.id::text/);
+    assert.match(backfill, /set_config\('request\.jwt\.claim\.sub', candidate\.id::text, true\)/);
+    assert.match(backfill, /json_build_object\('sub', candidate\.id, 'role', 'authenticated'\)/);
+    assert.match(backfill, /perform public\.reconcile_user_progress_from_results\(\)/);
+    assert.match(backfill, /set_config\('request\.jwt\.claim\.sub', coalesce\(previous_sub, ''\), true\)/);
+    assert.match(backfill, /set_config\('request\.jwt\.claims', coalesce\(previous_claims, ''\), true\)/);
+    assert.match(backfill, /^begin;[\s\S]*commit;\s*$/);
 });
