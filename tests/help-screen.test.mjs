@@ -32,12 +32,13 @@ test("la page Aide présente le forum sans le journal de campagne avec son logo"
     assert.match(html, /id="help-screen" class="screen help-screen"/);
     assert.match(html, /id="help-title"[^>]*>Aide<\/h1>/);
     assert.match(html, /id="help-logo" src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
-    assert.match(html, /id="help-doctrine-link"[^>]*>ACCÉDER À L'ARMOIRE NUMÉRIQUE DE CAMPAGNE<\/a>/);
+    assert.match(html, /id="help-doctrine-link"[^>]*><img src="public\/images\/armoire-logo\.png"[^>]*alt=""[^>]*><span>ACCÉDER À L'ARMOIRE NUMÉRIQUE DE CAMPAGNE<\/span><img src="public\/images\/armoire-logo\.png"[^>]*alt=""[^>]*><\/a>/);
     assert.doesNotMatch(html, /GUIDE DE MISSION/);
     assert.doesNotMatch(html, /help-scoring-title|help-modes-title|points nets ÷/);
     assert.match(html, /<h2 id="help-forum-title">FORUM<\/h2>/);
     assert.match(html, /Un forum d'échange pour votre préparation/);
     assert.match(html, /https:\/\/tchap\.gouv\.fr\/#\/%23Bm4QCArLJuiyp:agent\.intradef\.tchap\.gouv\.fr/);
+    assert.match(html, /<a[^>]*help-branded-link[^>]*href="https:\/\/tchap\.gouv\.fr\/[^"]*"[^>]*><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><span>Accès au TCHAP BM4<\/span><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><\/a>/);
     assert.match(html, /ADC "Nom" du "Régiment" spécialité "XXX"/);
     assert.doesNotMatch(html, /id="help-history-title"|Depuis le briefing, ouvrez le journal/);
     assert.match(html, /src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
@@ -47,6 +48,11 @@ test("la page Aide présente le forum sans le journal de campagne avec son logo"
     assert.deepEqual(Array.from(readFileSync(logoPath).subarray(0, 8)), [
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
     ]);
+    for (const name of ["tchap-logo.png", "armoire-logo.png"]) {
+        assert.deepEqual(Array.from(readFileSync(path.join(root, "public", "images", name)).subarray(0, 8)), [
+            0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
+        ]);
+    }
 });
 
 test("les commandes Aide et retour naviguent entre briefing et aide avec le focus", () => {
@@ -90,4 +96,6 @@ test("l’écran d’aide et son accès restent adaptés aux petits écrans", ()
     assert.match(css, /\.help-branding\s*\{[^}]*flex-direction:\s*column/s);
     assert.match(css, /\.help-logo\s*\{[^}]*object-fit:\s*contain/s);
     assert.match(css, /\.help-panel\s*\{[^}]*padding:\s*16px 12px/s);
+    assert.match(css, /\.help-branded-link\s*\{[^}]*display:\s*flex/s);
+    assert.match(css, /\.help-branded-link img\s*\{[^}]*width:\s*36px/s);
 });

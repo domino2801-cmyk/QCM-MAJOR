@@ -3953,6 +3953,24 @@ body {
     width: fit-content;
 }
 
+.help-branded-link {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 12px 16px;
+}
+
+.help-branded-link img {
+    flex: 0 0 36px;
+    height: 36px;
+    width: 36px;
+}
+
+.help-branded-link span {
+    min-width: 0;
+}
+
 .help-panel {
     box-sizing: border-box;
     overflow-wrap: anywhere;
