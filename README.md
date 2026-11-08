@@ -16,6 +16,8 @@ QCM-MAJOR est une application web de préparation au Brevet militaire de 4e nive
 
 Le frontend est développé en HTML, CSS et JavaScript, sans étape de compilation, et hébergé sur GitHub Pages. Supabase gère l’authentification, les données et la correction des réponses.
 
+À l’ouverture sans session active, la question « Est-ce votre première visite ? » propose « Oui » pour rallier l’unité (connexion) et « Non » pour s’engager (création de compte). Les onglets restent accessibles ensuite pour changer de formulaire.
+
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
 
 Le blocage et le déblocage des comptes candidats utilisent la migration `supabase/migrations/20261108152100_add_admin_account_blocking.sql`. Appliquez-la au projet Supabase avant de déployer cette fonctionnalité ; seuls les administrateurs peuvent modifier le statut d’un compte.

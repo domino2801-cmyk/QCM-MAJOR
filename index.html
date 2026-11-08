@@ -22,7 +22,7 @@
     <meta name="supabase-url" content="https://beodiemzrunqjkvylffn.supabase.co">
     <meta name="supabase-anon-key" content="sb_publishable_bymJkPCdh1kgzP1EldO5hg_XVuPrz_R">
     <meta name="supabase-profiles-rls" content="verified">
-    <link rel="stylesheet" href="ui/Style.css?v=admin-account-blocking-20261108">
+    <link rel="stylesheet" href="ui/Style.css?v=first-visit-20261108">
 </head>
 <body>
     <div id="startup-loading" class="startup-loading" role="status" aria-live="polite" aria-label="Écran de démarrage de l’application"></div>
@@ -613,6 +613,20 @@
         </section>
     </div>
 
+    <div id="first-visit-overlay" class="confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="first-visit-title" aria-describedby="first-visit-message">
+        <div class="confirm-box first-visit-box">
+            <div class="first-visit-emblem" aria-hidden="true">
+                <img src="public/images/logo2.png" alt="">
+            </div>
+            <span class="first-visit-eyebrow">CENTRE D’ENTRAÎNEMENT BM4</span>
+            <h2 id="first-visit-title">Est-ce votre première visite ?</h2>
+            <p id="first-visit-message">Choisissez votre accès pour rejoindre le centre d’entraînement.</p>
+            <div class="confirm-actions">
+                <button id="first-visit-no-btn" class="btn-main" type="button"><span>NON</span><small>S’engager</small></button>
+                <button id="first-visit-yes-btn" class="btn-main" type="button"><span>OUI</span><small>Rallier l’unité</small></button>
+            </div>
+        </div>
+    </div>
     <div id="confirm-overlay" class="confirm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="confirm-box">
             <h2 id="confirm-title">Abandonner le combat ?</h2>
@@ -623,6 +637,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="app.js?v=admin-account-blocking-20261108"></script>
+    <script type="module" src="app.js?v=first-visit-20261108"></script>
 </body>
 </html>

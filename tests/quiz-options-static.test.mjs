@@ -18,12 +18,12 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=admin-account-blocking-20261108/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=admin-account-blocking-20261108/);
+    assert.match(indexHtml, /app\.js\?v=first-visit-20261108/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=first-visit-20261108/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /#auth-screen \.terminal-shell\s*\{[^}]*border-radius:\s*16px;/);
     assert.match(css, /#auth-screen \.auth-form input:focus-visible[\s\S]*?box-shadow:\s*0 0 0 3px/);
-    assert.match(css, /\.confirm-actions #confirm-cancel-btn\s*\{[^}]*background:\s*rgba\(116, 131, 95, 0\.16\);/);
+    assert.match(css, /\.confirm-actions :is\(#confirm-cancel-btn, #first-visit-no-btn\)\s*\{[^}]*background:\s*rgba\(116, 131, 95, 0\.16\);/);
     assert.match(css, /\.btn-main:not\(\.auth-preparation-btn\):not\(:disabled\)\s*\{\s*animation:\s*none;/);
     assert.match(css, /#quiz-screen \.quiz-timer\.badge\s*\{[^}]*border-color:\s*rgba\(223, 202, 135, 0\.58\);/);
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
