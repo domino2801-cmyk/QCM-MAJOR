@@ -26,6 +26,8 @@ La progression des paliers commence à 10 questions. Un score brut (+4 par bonne
 
 Le blocage et le déblocage des comptes candidats utilisent la migration `supabase/migrations/20261108152100_add_admin_account_blocking.sql`. Appliquez-la au projet Supabase avant de déployer cette fonctionnalité ; seuls les administrateurs peuvent modifier le statut d’un compte.
 
+Le journal administrateur affiche l'intensité débloquée du candidat sélectionné, y compris pour les comptes sans résultat. Appliquez `supabase/migrations/20261108195000_admin_candidate_progress.sql` pour autoriser cette lecture aux seuls administrateurs.
+
 Depuis le centre, le lien vers l'Armoire numérique de campagne ouvre un nouvel onglet et transmet temporairement le jeton d'accès de la session connectée, sans transmettre le mot de passe ni le jeton de rafraîchissement. Conservez QCM-MAJOR ouvert pour renouveler l'accès ; si la connexion automatique échoue, utilisez le formulaire de connexion de l'armoire.
 
 Depuis le module 5 de l'Armoire ouverte par ce lien, le retour vers QCM-MAJOR réutilise cet onglet et affiche la console si la même session candidate est active. Une partie en cours reste affichée et n'est pas interrompue.

@@ -18,7 +18,7 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=progression-history-20261108/);
+    assert.match(indexHtml, /app\.js\?v=admin-progression-20261108/);
     assert.match(indexHtml, /ui\/Style\.css\?v=progression-20261108/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /#auth-screen \.terminal-shell\s*\{[^}]*border-radius:\s*16px;/);

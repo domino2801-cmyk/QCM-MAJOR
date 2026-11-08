@@ -3073,6 +3073,35 @@ function editQuestion(themeId, index) {
 }
 
 const deletableResultEmail = "domino2801@gmail.com";
+let adminProgressRequestId = 0;
+
+async function renderAdminProgression(candidateId) {
+    const status = document.getElementById("admin-history-progression");
+    const requestId = ++adminProgressRequestId;
+    if (!status) return;
+    if (!candidateId) {
+        status.innerText = "Intensité débloquée indisponible : compte candidat introuvable.";
+        return;
+    }
+
+    status.innerText = "Chargement de l’intensité débloquée…";
+    try {
+        const accessToken = getStoredSupabaseSession()?.access_token;
+        if (!accessToken) throw new Error("Session administrateur indisponible.");
+        const maximum = await supabaseRestRequest("/rpc/get_admin_candidate_progress", {
+            method: "POST",
+            accessToken,
+            body: { p_user_id: candidateId }
+        });
+        if (![10, 20, 30, 40, 50].includes(maximum)) throw new Error("Palier invalide.");
+        if (requestId !== adminProgressRequestId || getStoredSupabaseSession()?.access_token !== accessToken) return;
+        status.innerText = `Intensité débloquée : ${maximum} questions`;
+    } catch (error) {
+        if (requestId !== adminProgressRequestId) return;
+        console.warn("Chargement de la progression du candidat impossible.", error);
+        status.innerText = "Intensité débloquée indisponible. Actualisez les données administrateur.";
+    }
+}
 
 function isResultDeletable(result) {
     return String(result?.email || "").trim().toLowerCase() === deletableResultEmail;
@@ -3199,6 +3228,11 @@ function renderAdminResults() {
 
     if (candidateFilter) {
         const candidates = new Map();
+        Object.values(getAccounts()).forEach(account => {
+            const value = String(account.email || account.id || "").trim();
+            if (!value) return;
+            candidates.set(value, `${account.name || account.email || value}${account.email && account.name ? ` • ${account.email}` : ""}`);
+        });
         results.forEach(result => {
             const value = String(result.email || result.candidateId || result.name || result.label || "").trim();
             if (!value) return;
@@ -3228,6 +3262,18 @@ function renderAdminResults() {
     const candidateResults = selectedCandidate ? results.filter(result =>
             String(result.email || result.candidateId || result.name || result.label || "").trim() === selectedCandidate
         ) : [];
+    if (selectedCandidate) {
+        const account = Object.values(getAccounts()).find(entry =>
+            entry.email === selectedCandidate || String(entry.id || "") === selectedCandidate
+        );
+        const ids = [...new Set(candidateResults.map(result => result.candidateId).filter(id => id && id !== "candidat-inconnu"))];
+        const candidateId = account?.id || (ids.length === 1 ? ids[0] : null);
+        void renderAdminProgression(candidateId);
+    } else {
+        adminProgressRequestId++;
+        const progression = document.getElementById("admin-history-progression");
+        if (progression) progression.innerText = "";
+    }
     renderCandidateHistory(
         candidateResults,
         "",

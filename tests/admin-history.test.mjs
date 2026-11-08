@@ -65,7 +65,7 @@ function element() {
 function harness(customResults) {
     const nodes = new Map([
         "admin-results-table", "admin-results-candidate-filter", "admin-results-search",
-        "admin-history-panel", "admin-history-status", "admin-history-period",
+        "admin-history-panel", "admin-history-status", "admin-history-period", "admin-history-progression",
         "admin-history-milestone", "admin-theme-acquisition",
         "admin-history-charts", "admin-history-summary", "admin-history-recommendation",
         "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation",
@@ -86,11 +86,74 @@ function harness(customResults) {
         labelAdminRow: () => {},
         document: { getElementById: id => nodes.get(id), createElement: element },
         getResults: () => results,
+        getAccounts: () => ({}),
+        getStoredSupabaseSession: () => ({ access_token: "admin-token" }),
+        supabaseRestRequest: async () => 10,
+        console,
         Option: function (label, value) { this.label = label; this.value = value; }
     });
     vm.runInContext(history + admin, context);
     return { nodes, context };
 }
+
+test("le journal affiche le palier enregistré et propose les candidats sans résultat", async () => {
+    const h = harness();
+    h.context.getAccounts = () => ({
+        "c@test.fr": { id: "c", email: "c@test.fr", name: "Charlie" }
+    });
+    const calls = [];
+    h.context.supabaseRestRequest = async (path, options) => {
+        calls.push({ path, id: options.body.p_user_id });
+        return options.body.p_user_id === "a" ? 50 : 10;
+    };
+
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 50 questions");
+    assert.ok(h.nodes.get("admin-results-candidate-filter").children.some(option => option.value === "c@test.fr"));
+
+    h.nodes.get("admin-results-candidate-filter").value = "c@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 10 questions");
+    assert.deepEqual(calls.map(call => call.id), ["a", "c"]);
+    assert.ok(calls.every(call => call.path === "/rpc/get_admin_candidate_progress"));
+});
+
+test("un changement de candidat ignore une réponse de progression arrivée en retard", async () => {
+    const h = harness();
+    let finishFirst;
+    h.context.supabaseRestRequest = (_, options) => options.body.p_user_id === "a"
+        ? new Promise(resolve => { finishFirst = resolve; })
+        : Promise.resolve(20);
+
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    h.nodes.get("admin-results-candidate-filter").value = "b";
+    vm.runInContext("renderAdminResults()", h.context);
+    await new Promise(resolve => setImmediate(resolve));
+    finishFirst(50);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 20 questions");
+});
+
+test("les erreurs de lecture de progression sont visibles", async () => {
+    const h = harness();
+    h.context.console = { warn() {} };
+    h.context.supabaseRestRequest = async () => { throw new Error("réseau"); };
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.match(h.nodes.get("admin-history-progression").innerText, /indisponible/);
+});
+
+test("la lecture du palier est réservée aux administrateurs", () => {
+    const migration = readFileSync(new URL("../supabase/migrations/20261108195000_admin_candidate_progress.sql", import.meta.url), "utf8");
+    assert.match(migration, /security definer[\s\S]*Administrator access required/);
+    assert.match(migration, /auth\.jwt\(\) -> 'app_metadata'/);
+    assert.match(migration, /revoke all on function public\.get_admin_candidate_progress\(uuid\) from public, anon/);
+});
 
 test("le filtre administrateur isole le graphique et le thème à travailler de chaque candidat", () => {
     const h = harness();
