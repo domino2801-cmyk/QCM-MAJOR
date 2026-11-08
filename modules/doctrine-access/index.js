@@ -1,7 +1,7 @@
 const DOCTRINE_ORIGIN = "https://domino2801-cmyk.github.io";
 const DOCTRINE_URL = `${DOCTRINE_ORIGIN}/DOCTRINE/index.html?from=qcm-major`;
 
-export function setupDoctrineAccess({ link, status, getSession }) {
+export function setupDoctrineAccess({ link, status, getSession, returnToConsole }) {
     if (!link) return;
     const windows = new Set();
     let sessionRequest = null;
@@ -19,8 +19,26 @@ export function setupDoctrineAccess({ link, status, getSession }) {
     });
 
     window.addEventListener("message", async event => {
-        if (event.origin !== DOCTRINE_ORIGIN || !windows.has(event.source) ||
-            event.data?.type !== "doctrine-session-request" || typeof event.data.id !== "string") return;
+        if (event.origin !== DOCTRINE_ORIGIN || !windows.has(event.source)) return;
+        if (event.data?.type === "doctrine-return-to-qcm") {
+            if (typeof event.data.id !== "string" || typeof event.data.user_id !== "string" || !event.data.user_id) return;
+            try {
+                const session = await getSession();
+                if (!session?.access_token || session.user?.id !== event.data.user_id) {
+                    if (status) status.textContent = "La session QCM-MAJOR ne correspond plus à celle de l’Armoire. Reconnectez-vous si nécessaire.";
+                    event.source.postMessage({ type: "doctrine-return-response", id: event.data.id, ok: false }, DOCTRINE_ORIGIN);
+                    return;
+                }
+                const ok = returnToConsole?.(event.data.user_id) === true;
+                event.source.postMessage({ type: "doctrine-return-response", id: event.data.id, ok }, DOCTRINE_ORIGIN);
+            } catch (error) {
+                console.warn("Retour depuis l’Armoire impossible.", error);
+                if (status) status.textContent = "Impossible de vérifier la session QCM-MAJOR. Réessayez.";
+                event.source.postMessage({ type: "doctrine-return-response", id: event.data.id, ok: false }, DOCTRINE_ORIGIN);
+            }
+            return;
+        }
+        if (event.data?.type !== "doctrine-session-request" || typeof event.data.id !== "string") return;
         try {
             sessionRequest ||= Promise.resolve().then(getSession).finally(() => { sessionRequest = null; });
             const session = await sessionRequest;

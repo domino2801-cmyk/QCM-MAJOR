@@ -9,7 +9,7 @@ import { questionsBank, getAllQuestions } from "./modules/questions-bank/index.j
 import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-bank/theme-concordance.js";
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { uiController } from "./modules/ui-controller/index.js";
-import { setupDoctrineAccess } from "./modules/doctrine-access/index.js";
+import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=return-console-20261108";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
@@ -4079,6 +4079,14 @@ async function initializeApp() {
     }
 }
 
+function returnToDoctrineConsole(userId) {
+    if (currentAuthenticatedAccount?.id !== userId || !currentCandidateEmail) return false;
+    if (document.getElementById("quiz-screen")?.classList.contains("active") ||
+        document.getElementById("report-screen")?.classList.contains("active")) return true;
+    uiController.switchScreen("theme-screen");
+    return true;
+}
+
 async function initializeAppInteractions() {
     navigator.serviceWorker?.addEventListener("message", async event => {
         if (event.data?.type !== "open-question-reports" || !isAdminSession(getStoredSupabaseSession())) return;
@@ -4346,7 +4354,8 @@ async function initializeAppInteractions() {
             }
             return currentAuthenticatedAccount?.id === accountId && session?.user?.id === accountId
                 ? session : null;
-        }
+        },
+        returnToConsole: returnToDoctrineConsole
     });
 
     document.getElementById("btn-back-from-help")?.addEventListener("click", () => {
