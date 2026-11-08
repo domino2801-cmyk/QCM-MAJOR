@@ -37,8 +37,7 @@ test("la page Aide présente le forum sans le journal de campagne avec son logo"
     assert.doesNotMatch(html, /help-scoring-title|help-modes-title|points nets ÷/);
     assert.match(html, /<h2 id="help-forum-title">FORUM<\/h2>/);
     assert.match(html, /Un forum d'échange pour votre préparation/);
-    assert.match(html, /https:\/\/tchap\.gouv\.fr\/#\/%23Bm4QCArLJuiyp:agent\.intradef\.tchap\.gouv\.fr/);
-    assert.match(html, /<a[^>]*help-branded-link[^>]*href="https:\/\/tchap\.gouv\.fr\/[^"]*"[^>]*><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><span>Accès au TCHAP BM4<\/span><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><\/a>/);
+    assert.match(html, /<a[^>]*help-branded-link[^>]*href="https:\/\/tchap\.gouv\.fr\/#\/room\/#Bm4QCArLJuiyp:agent\.intradef\.tchap\.gouv\.fr"[^>]*><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><span>Accès au TCHAP BM4<\/span><img src="public\/images\/tchap-logo\.png"[^>]*alt=""[^>]*><\/a>/);
     assert.match(html, /ADC "Nom" du "Régiment" spécialité "XXX"/);
     assert.doesNotMatch(html, /id="help-history-title"|Depuis le briefing, ouvrez le journal/);
     assert.match(html, /src="public\/images\/renseignements\.png"[^>]*alt="Insigne Renseignements"/);
