@@ -121,6 +121,51 @@ test("le journal affiche le palier enregistré et propose les candidats sans ré
     assert.ok(calls.every(call => call.path === "/rpc/get_admin_candidate_progress"));
 });
 
+test("les résultats avec ou sans e-mail sont regroupés par identifiant de compte", async () => {
+    const now = new Date().toISOString();
+    const h = harness([
+        { candidateId: "a", email: "", name: "Alpha", theme: "all", score: 18, createdAt: now },
+        { candidateId: "a", email: "A@TEST.FR", name: "Alpha", theme: "1", score: 12, createdAt: now },
+        { candidateId: "b", email: "", name: "Bravo", theme: "all", score: 10, createdAt: now }
+    ]);
+    h.context.getAccounts = () => ({
+        a: { id: "a", email: "a@test.fr", name: "Alpha" },
+        b: { id: "b", email: "b@test.fr", name: "Bravo" }
+    });
+    const calls = [];
+    h.context.supabaseRestRequest = async (_, options) => {
+        calls.push(options.body.p_user_id);
+        return 50;
+    };
+
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    await new Promise(resolve => setImmediate(resolve));
+    const options = h.nodes.get("admin-results-candidate-filter").children;
+    assert.deepEqual(options.map(option => option.value), ["", "a@test.fr", "b@test.fr"]);
+    assert.equal(h.nodes.get("admin-results-table").children.length, 2);
+    assert.match(h.nodes.get("admin-history-summary").innerText, /1 résultat.*18\.00/);
+    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 50 questions");
+    assert.deepEqual(calls, ["a"]);
+
+    h.nodes.get("admin-results-candidate-filter").value = "b@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.nodes.get("admin-results-table").children.length, 1);
+    assert.deepEqual(calls, ["a", "b"]);
+});
+
+test("un e-mail partagé ne fusionne pas deux identifiants distincts", () => {
+    const h = harness([
+        { candidateId: "b", email: "a@test.fr", name: "Bravo", theme: "all", score: 10, createdAt: new Date().toISOString() }
+    ]);
+    h.context.getAccounts = () => ({ a: { id: "a", email: "a@test.fr", name: "Alpha" } });
+    h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
+    vm.runInContext("renderAdminResults()", h.context);
+    assert.equal(h.nodes.get("admin-results-table").children.length, 0);
+    assert.ok(h.nodes.get("admin-results-candidate-filter").children.some(option => option.value === "b"));
+});
+
 test("un changement de candidat ignore une réponse de progression arrivée en retard", async () => {
     const h = harness();
     let finishFirst;

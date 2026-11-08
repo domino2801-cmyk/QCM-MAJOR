@@ -3225,25 +3225,64 @@ function renderAdminResults() {
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
     let selectedCandidate = candidateFilter?.value || "";
     const selectedTheme = document.getElementById("admin-results-theme-filter")?.value || "";
+    const accounts = Object.values(getAccounts());
+    const candidates = new Map();
+    const keysById = new Map();
+    const keysByEmail = new Map();
+    const idsByKey = new Map();
+    const emailKey = value => String(value || "").trim().toLowerCase();
 
-    if (candidateFilter) {
-        const candidates = new Map();
-        Object.values(getAccounts()).forEach(account => {
-            const value = String(account.email || account.id || "").trim();
-            if (!value) return;
-            candidates.set(value, `${account.name || account.email || value}${account.email && account.name ? ` • ${account.email}` : ""}`);
-        });
-        results.forEach(result => {
-            const value = String(result.email || result.candidateId || result.name || result.label || "").trim();
-            if (!value) return;
+    accounts.forEach(account => {
+        const value = String(account.email || account.id || "").trim();
+        if (!value) return;
+        const id = String(account.id || "").trim();
+        const email = emailKey(account.email);
+        candidates.set(value, { account, label: `${account.name || account.email || value}${account.email && account.name ? ` • ${account.email}` : ""}` });
+        if (id) {
+            keysById.set(id, value);
+            idsByKey.set(value, id);
+        }
+        if (email) keysByEmail.set(email, value);
+    });
+    results.forEach(result => {
+        const id = String(result.candidateId || "").trim();
+        const email = emailKey(result.email);
+        if (id && id !== "candidat-inconnu" && !keysById.has(id)) {
+            const emailCandidate = email && keysByEmail.get(email);
+            const value = emailCandidate && idsByKey.has(emailCandidate) && idsByKey.get(emailCandidate) !== id
+                ? id
+                : emailCandidate || String(result.email || id).trim();
+            const uniqueValue = idsByKey.has(value) && idsByKey.get(value) !== id ? id : value;
+            keysById.set(id, uniqueValue);
+            idsByKey.set(uniqueValue, id);
+            if (email && !keysByEmail.has(email)) keysByEmail.set(email, uniqueValue);
+        }
+    });
+    const resultCandidateKey = result => {
+        const id = String(result.candidateId || "").trim();
+        const email = emailKey(result.email);
+        return (id && id !== "candidat-inconnu" && keysById.get(id))
+            || (email && keysByEmail.get(email))
+            || String(result.email || (id !== "candidat-inconnu" && id) || result.name || result.label || "").trim();
+    };
+    results.forEach(result => {
+        const value = resultCandidateKey(result);
+        if (!value) return;
+        if (result.email && !keysByEmail.has(emailKey(result.email))) keysByEmail.set(emailKey(result.email), value);
+        if (!candidates.has(value)) {
             const label = result.name || result.label || result.email || value;
-            candidates.set(value, `${label}${result.email && result.name ? ` • ${result.email}` : ""}`);
-        });
+            candidates.set(value, { label: `${label}${result.email && result.name ? ` • ${result.email}` : ""}` });
+        }
+    });
+    if (candidateFilter) {
+        selectedCandidate = keysById.get(selectedCandidate)
+            || keysByEmail.get(emailKey(selectedCandidate))
+            || selectedCandidate;
         candidateFilter.innerHTML = "";
         candidateFilter.appendChild(new Option("Tous les candidats", ""));
         [...candidates.entries()]
-            .sort((first, second) => first[1].localeCompare(second[1], "fr"))
-            .forEach(([value, label]) => candidateFilter.appendChild(new Option(label, value)));
+            .sort((first, second) => first[1].label.localeCompare(second[1].label, "fr"))
+            .forEach(([value, candidate]) => candidateFilter.appendChild(new Option(candidate.label, value)));
         candidateFilter.value = candidates.has(selectedCandidate) ? selectedCandidate : "";
         selectedCandidate = candidateFilter.value;
     }
@@ -3260,12 +3299,10 @@ function renderAdminResults() {
         historyStatus.innerText = "";
     }
     const candidateResults = selectedCandidate ? results.filter(result =>
-            String(result.email || result.candidateId || result.name || result.label || "").trim() === selectedCandidate
+            resultCandidateKey(result) === selectedCandidate
         ) : [];
     if (selectedCandidate) {
-        const account = Object.values(getAccounts()).find(entry =>
-            entry.email === selectedCandidate || String(entry.id || "") === selectedCandidate
-        );
+        const account = candidates.get(selectedCandidate)?.account;
         const ids = [...new Set(candidateResults.map(result => result.candidateId).filter(id => id && id !== "candidat-inconnu"))];
         const candidateId = account?.id || (ids.length === 1 ? ids[0] : null);
         void renderAdminProgression(candidateId);
@@ -3286,7 +3323,7 @@ function renderAdminResults() {
     list.innerHTML = "";
 
     const filteredResults = results.filter(result => {
-        const candidateKey = String(result.email || result.candidateId || result.name || result.label || "").trim();
+        const candidateKey = resultCandidateKey(result);
         const searchable = `${result.name || ""} ${result.label || ""} ${result.email || ""} ${result.score} ${result.date}`.toLowerCase();
         return (!selectedCandidate || candidateKey === selectedCandidate)
             && (!selectedTheme || String(result.theme) === selectedTheme) && (!search || searchable.includes(search));
