@@ -22,6 +22,8 @@ Après connexion, le centre propose trois accès : « Question pour un Major » 
 
 Les quiz nécessitent une connexion Internet : le jeu hors ligne n’est pas disponible.
 
+La progression des paliers commence à 10 questions, y compris pour les comptes existants. Un score brut (+4 par bonne réponse, −1 par mauvaise réponse) de 24, 56, 96 ou 136 débloque respectivement les paliers 20, 30, 40 et 50. Les deux modes de 50 questions sont verrouillés jusqu'au déblocage. Les meilleurs scores et le palier sont stockés dans `user_progress` ; appliquez `supabase/migrations/20261108180000_add_user_progress.sql` avant de déployer le site. Les politiques RLS isolent les comptes, mais ces valeurs restent modifiables par leur propriétaire et ne constituent pas une protection contre la triche.
+
 Le blocage et le déblocage des comptes candidats utilisent la migration `supabase/migrations/20261108152100_add_admin_account_blocking.sql`. Appliquez-la au projet Supabase avant de déployer cette fonctionnalité ; seuls les administrateurs peuvent modifier le statut d’un compte.
 
 Depuis le centre, le lien vers l'Armoire numérique de campagne ouvre un nouvel onglet et transmet temporairement le jeton d'accès de la session connectée, sans transmettre le mot de passe ni le jeton de rafraîchissement. Conservez QCM-MAJOR ouvert pour renouveler l'accès ; si la connexion automatique échoue, utilisez le formulaire de connexion de l'armoire.

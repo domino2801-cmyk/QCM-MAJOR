@@ -79,6 +79,7 @@ const supabase = supabaseUrl && supabaseAnonKey
 let editingQuestionIndex = null;
 let authAudioRetry = null;
 let currentAuthenticatedAccount = null;
+let progressionMaximum = 10;
 let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let authUiReady = false;
@@ -313,6 +314,69 @@ async function supabaseRestRequest(path, { method = "GET", body, accessToken, pr
     }
 
     return data;
+}
+
+function afficherProgression(maximum) {
+    progressionMaximum = [10, 20, 30, 40, 50].includes(maximum) ? maximum : 10;
+    document.querySelectorAll(".qty-choice-btn").forEach(button => {
+        const locked = Number(button.dataset.qty) > progressionMaximum;
+        button.disabled = locked;
+        button.title = locked ? "🔒 Palier verrouillé" : "";
+        button.classList.toggle("progression-verrouillee", locked);
+    });
+    ["theme-training-btn", "theme-global-btn"].forEach(id => {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.disabled = progressionMaximum < 50;
+        button.title = button.disabled ? "🔒 Palier 50 verrouillé" : "";
+        button.classList.toggle("progression-verrouillee", button.disabled);
+    });
+}
+
+async function chargerProgression(userId) {
+    afficherProgression(10);
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!accessToken || !userId) throw new Error("Session candidat indisponible.");
+    await supabaseRestRequest("/user_progress?on_conflict=user_id", {
+        method: "POST", accessToken, prefer: "resolution=ignore-duplicates",
+        body: [{ user_id: userId }]
+    });
+    const rows = await supabaseRestRequest(`/user_progress?user_id=eq.${encodeURIComponent(userId)}&select=max_unlocked_questions`, { accessToken });
+    if (!Array.isArray(rows) || rows.length !== 1 || ![10, 20, 30, 40, 50].includes(rows[0].max_unlocked_questions)) {
+        throw new Error("Progression introuvable ou invalide.");
+    }
+    if (currentAuthenticatedAccount?.id !== userId) return;
+    afficherProgression(rows[0].max_unlocked_questions);
+    try { localStorage.setItem(`max_unlocked_questions:${userId}`, String(progressionMaximum)); }
+    catch (error) { console.warn("Stockage local de la progression indisponible.", error); }
+}
+
+async function verifierProgression(scoreObtenu, nbQuestions, userId) {
+    const seuils = { 10: 24, 20: 56, 30: 96, 40: 136 };
+    if (![10, 20, 30, 40, 50].includes(nbQuestions) || !Number.isInteger(scoreObtenu) ||
+        scoreObtenu < -nbQuestions || scoreObtenu > nbQuestions * 4 ||
+        !userId || currentAuthenticatedAccount?.id !== userId) {
+        throw new Error("Résultat ou session invalide.");
+    }
+    const accessToken = getStoredSupabaseSession()?.access_token;
+    if (!accessToken) throw new Error("Session candidat indisponible.");
+    const progress = await supabaseRestRequest("/rpc/record_user_progress", {
+        method: "POST", accessToken, body: { question_count: nbQuestions, points: scoreObtenu }
+    });
+    const value = Array.isArray(progress) ? progress[0] : progress;
+    if (!value || ![10, 20, 30, 40, 50].includes(value.max_unlocked_questions)) {
+        throw new Error("Réponse de progression invalide.");
+    }
+    if (currentAuthenticatedAccount?.id !== userId) throw new Error("La session a changé.");
+    afficherProgression(value.max_unlocked_questions);
+    try { localStorage.setItem(`max_unlocked_questions:${userId}`, String(progressionMaximum)); }
+    catch (error) { console.warn("Stockage local de la progression indisponible.", error); }
+    if (nbQuestions === 50) return { succes: true, message: "Combat terminé.", prochaineEtape: 50 };
+    if (scoreObtenu < seuils[nbQuestions]) {
+        const manquants = seuils[nbQuestions] - scoreObtenu;
+        return { succes: false, message: `Repli stratégique : ${manquants} point(s) manquant(s).`, prochaineEtape: nbQuestions };
+    }
+    return { succes: true, message: "Objectif atteint ! Engagement débloqué.", prochaineEtape: nbQuestions + 10 };
 }
 
 async function submitQuestionReport(question, answers, themeId, details) {
@@ -1909,6 +1973,15 @@ async function refreshCandidateHistory(account) {
 }
 
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
+    const progressionStatus = document.getElementById("progression-status");
+    if (progressionStatus) progressionStatus.textContent = "";
+    if (typeof chargerProgression === "function") void chargerProgression(account.id).catch(error => {
+        console.warn("Chargement de la progression impossible.", error);
+        const status = document.getElementById("progression-status");
+        if (status && currentAuthenticatedAccount?.id === account.id) {
+            status.textContent = "Progression indisponible. Reconnectez-vous pour réessayer.";
+        }
+    });
     setAuthAudioPlaying(false);
     updateObjectiveQuestionBadges(email);
     const welcomeMessage = document.getElementById("theme-welcome-message");
@@ -4265,6 +4338,9 @@ function returnToDoctrineConsole(userId) {
 }
 
 async function initializeAppInteractions() {
+    document.getElementById("result-motivation")?.insertAdjacentHTML(
+        "afterend", '<p id="result-progression" role="status"></p>'
+    );
     navigator.serviceWorker?.addEventListener("message", async event => {
         if (event.data?.type !== "open-question-reports" || !isAdminSession(getStoredSupabaseSession())) return;
         switchAdminSection("question-reports");
@@ -4416,6 +4492,10 @@ async function initializeAppInteractions() {
     // =========================================================
 
     startButton?.addEventListener("click", () => {
+        if (maxQuestions > progressionMaximum) {
+            setStartGuidance("Ce palier est verrouillé.");
+            return;
+        }
         const pool = getQuestionPool(selectedTheme);
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
         const history = getQuestionHistory();
@@ -5579,6 +5659,18 @@ async function bilanFinal(quizRunId = typeof currentQuizRunId === "number" ? cur
         setResultText(["stat-correct"], quizEngine.stats.correct);
         setResultText(["stat-wrong"], quizEngine.stats.wrong);
         setResultText(["stat-skipped"], quizEngine.stats.skipped);
+        const progressionStatus = document.getElementById("result-progression");
+        if (progressionStatus) progressionStatus.textContent = "";
+        if ([10, 20, 30, 40, 50].includes(total) && typeof verifierProgression === "function") {
+            void verifierProgression(quizEngine.stats.points, total, account?.id)
+                .then(progression => {
+                    if (isCurrentQuizRun() && progressionStatus) progressionStatus.textContent = progression.message;
+                })
+                .catch(error => {
+                    console.warn("Enregistrement de la progression impossible.", error);
+                    if (isCurrentQuizRun() && progressionStatus) progressionStatus.textContent = "Progression non enregistrée. Vérifiez votre connexion.";
+                });
+        }
 
         const motivationElement = document.getElementById("result-motivation");
         if (motivationElement) {
