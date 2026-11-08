@@ -18,9 +18,14 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=retex-responses-20261103/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=help-mobile-20261105/);
+    assert.match(indexHtml, /app\.js\?v=return-console-20261108/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=visual-polish-timer-20261109/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
+    assert.match(css, /#auth-screen \.terminal-shell\s*\{[^}]*border-radius:\s*16px;/);
+    assert.match(css, /#auth-screen \.auth-form input:focus-visible[\s\S]*?box-shadow:\s*0 0 0 3px/);
+    assert.match(css, /\.confirm-actions #confirm-cancel-btn\s*\{[^}]*background:\s*rgba\(116, 131, 95, 0\.16\);/);
+    assert.match(css, /\.btn-main:not\(\.auth-preparation-btn\):not\(:disabled\)\s*\{\s*animation:\s*none;/);
+    assert.match(css, /#quiz-screen \.quiz-timer\.badge\s*\{[^}]*border-color:\s*rgba\(223, 202, 135, 0\.58\);/);
     assert.match(css, /\.options-grid \.btn\.selected,\s*#skip-btn\.selected\s*\{[\s\S]*?rgba\(24, 132, 68, 0\.96\)[\s\S]*?border-color:\s*#72f0a0;[\s\S]*?font-weight:\s*700;/);
     assert.match(css, /\.theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*209,\s*219,\s*0\.48\),\s*rgba\(88,\s*111,\s*124,\s*0\.42\)\)/);
     assert.match(css, /#theme-global-btn\.active[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(190,\s*133,\s*22,\s*0\.74\),\s*rgba\(83,\s*54,\s*10,\s*0\.68\)\)/);
@@ -29,6 +34,8 @@ test("the app and styles use fresh cache versions", () => {
     assert.match(css, /\.quiz-timer\.badge\[hidden\]\s*\{\s*display:\s*none;/);
     assert.match(css, /\.quiz-timer\.urgent/);
     assert.match(indexHtml, /id="quiz-timer-fuse" class="timer-fuse-rope" pathLength="1"/);
+    assert.match(indexHtml, /id="quiz-timer-fuse"[^>]*d="M 42 32 C 50 26 48 10 64 10 H 270 Q 290 10 290 30"/);
+    assert.match(css, /#quiz-screen \.quiz-timer\.urgent \.timer-fuse-rope\s*\{[^}]*stroke:\s*#f08a66;/);
     assert.match(css, /stroke-dasharray:\s*1 1;/);
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.timer-fuse-spark/);
     assert.match(css, /@keyframes timer-explosion-burst/);
