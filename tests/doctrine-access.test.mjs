@@ -67,6 +67,25 @@ test("un bloqueur de fenêtres affiche une indication", () => {
     } finally { f.restore(); }
 });
 
+test("l'administration utilise le même relais sécurisé que le centre", async () => {
+    const source = await readFile(new URL("../app.js", import.meta.url), "utf8");
+    const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
+    assert.match(source, /setupDoctrineAccess\(\{\s*\.\.\.doctrineAccess,\s*link: document\.getElementById\("admin-doctrine-btn"\),\s*status: document\.getElementById\("admin-doctrine-status"\)/);
+    assert.match(html, /id="admin-doctrine-status"[^>]*role="status"/);
+    const f = fixture(async () => ({
+        access_token: "admin-access", refresh_token: "secret", expires_at: 12345
+    }));
+    try {
+        f.listeners.click({ button: 0, preventDefault() {} });
+        await f.listeners.message({
+            origin: "https://domino2801-cmyk.github.io", source: f.child,
+            data: { type: "doctrine-session-request", id: "admin" }
+        });
+        assert.equal(f.messages[0].data.access_token, "admin-access");
+        assert.equal("refresh_token" in f.messages[0].data, false);
+    } finally { f.restore(); }
+});
+
 test("le retour vers la console exige l'onglet autorisé et la même session", async () => {
     let session = { access_token: "access", user: { id: "candidate" } };
     const f = fixture(async () => session);

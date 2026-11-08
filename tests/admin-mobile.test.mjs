@@ -338,6 +338,7 @@ test("les actions sont groupées avant les quatre onglets et les statuts vides n
         assert.match(toolbar, /id="admin-refresh-btn"/);
         assert.match(toolbar, />Activer notification<\/button>/);
         assert.match(toolbar, /id="admin-push-test-btn"[^>]*>Tester la notification<\/button>/);
+        assert.match(toolbar, /id="admin-push-enable-btn"[\s\S]*id="admin-push-test-btn"[\s\S]*id="admin-doctrine-btn"[^>]*>Admin ANC<\/button>/);
         assert.ok(html.indexOf('class="admin-toolbar"') < html.indexOf('class="admin-nav"'));
         assert.match(css, /\.admin-toolbar\s*\{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
         assert.match(css, /#admin-screen \.admin-toolbar button\s*\{[^}]*width: 100%;[^}]*max-width: none;[^}]*box-sizing: border-box;[^}]*justify-self: stretch;/);

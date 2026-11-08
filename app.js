@@ -4708,6 +4708,11 @@ async function initializeAppInteractions() {
         link: document.getElementById("centre-doctrine-link"),
         status: document.getElementById("centre-doctrine-status")
     });
+    setupDoctrineAccess({
+        ...doctrineAccess,
+        link: document.getElementById("admin-doctrine-btn"),
+        status: document.getElementById("admin-doctrine-status")
+    });
 
     document.getElementById("btn-retex-theme")?.addEventListener("click", () => {
         const account = currentAuthenticatedAccount || getAccounts()[currentCandidateEmail] || {};

@@ -30,6 +30,8 @@ Le journal administrateur affiche l'intensité débloquée du candidat sélectio
 
 Depuis le centre, le lien vers l'Armoire numérique de campagne ouvre un nouvel onglet et transmet temporairement le jeton d'accès de la session connectée, sans transmettre le mot de passe ni le jeton de rafraîchissement. Conservez QCM-MAJOR ouvert pour renouveler l'accès ; si la connexion automatique échoue, utilisez le formulaire de connexion de l'armoire.
 
+Dans l'interface administrateur, « Admin ANC » ouvre l'armoire avec la même session ; le bouton « Admin » des modules permet ensuite d'activer leur mode d'administration.
+
 Depuis le module 5 de l'Armoire ouverte par ce lien, le retour vers QCM-MAJOR réutilise cet onglet et affiche la console si la même session candidate est active. Une partie en cours reste affichée et n'est pas interrompue.
 
 ## Classement public
