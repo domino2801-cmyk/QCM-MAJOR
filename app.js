@@ -101,6 +101,7 @@ let publicRankingRefreshPromise = null;
 let publicRankingState = "loading";
 const profileNotReadyErrorCode = "PROFILE_NOT_READY";
 const profileLookupErrorCode = "PROFILE_LOOKUP_FAILED";
+const accountBlockedErrorCode = "ACCOUNT_BLOCKED";
 let pendingResultSync = {
     upserts: [],
     deletes: []
@@ -1483,6 +1484,7 @@ function cacheAccount(account) {
         email: account.email,
         name: account.name || "",
         specialty: account.specialty || "",
+        blocked: account.blocked ?? cachedAccounts[account.email]?.blocked ?? false,
         createdAt: account.createdAt || cachedAccounts[account.email]?.createdAt || ""
     };
 }
@@ -1583,6 +1585,19 @@ async function fetchProfileForUser(user) {
     }
 }
 
+async function isCurrentAccountBlocked(accessToken = getStoredSupabaseSession()?.access_token) {
+    if (!supabase || !accessToken) throw new Error("Session candidat indisponible.");
+    const blocked = await supabaseRestRequest("/rpc/is_current_account_blocked", {
+        method: "POST",
+        accessToken,
+        body: {}
+    });
+    if (typeof blocked !== "boolean") {
+        throw new Error("Réponse de vérification du blocage invalide.");
+    }
+    return blocked;
+}
+
 async function upsertProfileForUser(user, profile = {}, accessToken = getStoredSupabaseSession()?.access_token) {
     const account = buildAccountFromUser(user, profile);
 
@@ -1624,6 +1639,20 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
         currentCandidateEmail = "";
         showAdminApp();
         return;
+    }
+
+    let accountBlocked;
+    try {
+        accountBlocked = await isCurrentAccountBlocked(session?.access_token);
+    } catch {
+        const error = new Error("Vérification du statut du compte impossible.");
+        error.code = profileLookupErrorCode;
+        throw error;
+    }
+    if (accountBlocked) {
+        const error = new Error("Ce compte est bloqué.");
+        error.code = accountBlockedErrorCode;
+        throw error;
     }
 
     const { account, profileMissing, profileStatus } = await fetchProfileForUser(user);
@@ -1668,6 +1697,14 @@ async function handleProfileNotReady(messageId, user = getStoredSupabaseSession(
         messageId,
         "Votre profil candidat n’est pas encore finalisé. Terminez d’abord l’inscription et la vérification OTP."
     );
+}
+
+async function handleBlockedAccount(messageId) {
+    currentAuthenticatedAccount = null;
+    currentCandidateEmail = "";
+    await supabase?.auth.signOut().catch(() => {});
+    showAuthView("login");
+    setAuthMessage(messageId, "Ce compte est bloqué. Contactez un administrateur.");
 }
 
 function handleProfileLookupFailure(messageId) {
@@ -1954,6 +1991,16 @@ async function loadAdminData() {
         }
     }
 
+    const blockedAccounts = await supabaseRestRequest("/rpc/get_admin_blocked_accounts", {
+        method: "POST",
+        accessToken,
+        body: {}
+    });
+    if (!Array.isArray(blockedAccounts)) {
+        throw new Error("La liste des comptes bloqués est invalide.");
+    }
+    const blockedAccountIds = new Set(blockedAccounts.map(account => String(account.user_id)));
+
     const resultsLoaded = await loadResultsFromSupabase({ throwOnError: true });
     const reports = [];
     for (let offset = 0; ; offset += 250) {
@@ -1985,6 +2032,7 @@ async function loadAdminData() {
             email: profile.email,
             name: profile.name,
             specialty: profile.speciality || profile.specialty,
+            blocked: blockedAccountIds.has(String(profile.id)),
             createdAt: profile.created_at || ""
         }));
         profiles.forEach(profile => {
@@ -1993,6 +2041,7 @@ async function loadAdminData() {
                 email: profile.email,
                 name: profile.name,
                 specialty: profile.speciality || profile.specialty,
+                blocked: blockedAccountIds.has(String(profile.id)),
                 createdAt: profile.created_at || ""
             };
             if (account.email) synchronizedAccounts[normalizeEmail(account.email)] = account;
@@ -2690,6 +2739,7 @@ function renderAdminAccounts() {
         const specialtyCell = document.createElement("td");
         const actionCell = document.createElement("td");
         const deleteButton = document.createElement("button");
+        const blockButton = document.createElement("button");
 
         nameCell.innerText = account.name || getNameTrigram(account.name);
         nameCell.title = account.name || "Non renseigné";
@@ -2714,7 +2764,44 @@ function renderAdminAccounts() {
             renderAdminAccounts();
         });
 
-        actionCell.appendChild(deleteButton);
+        blockButton.type = "button";
+        blockButton.className = `admin-account-block-btn admin-delete-btn${account.blocked ? " is-blocked" : ""}`;
+        blockButton.innerText = account.blocked ? "Débloquer" : "Bloquer le compte";
+        blockButton.disabled = !account.id;
+        blockButton.setAttribute("aria-label", `${account.blocked ? "Débloquer" : "Bloquer"} le compte ${account.name || email}`);
+        blockButton.addEventListener("click", async () => {
+            const blocked = !account.blocked;
+            const confirmed = await showConfirmOverlay({
+                title: blocked ? "Bloquer le compte ?" : "Débloquer le compte ?",
+                message: blocked
+                    ? `Empêcher ${account.name || email} de se connecter avec cette adresse ?`
+                    : `Autoriser ${account.name || email} à se connecter de nouveau ?`,
+                okLabel: blocked ? "Bloquer" : "Débloquer",
+                cancelLabel: "Annuler"
+            });
+            if (!confirmed) return;
+
+            blockButton.disabled = true;
+            setAdminOperationPending(true);
+            try {
+                const result = await supabaseRestRequest("/rpc/set_account_blocked", {
+                    method: "POST",
+                    accessToken: getStoredSupabaseSession()?.access_token,
+                    body: { p_user_id: account.id, p_blocked: blocked }
+                });
+                if (result !== blocked) throw new Error("Le changement de statut n’a pas été confirmé.");
+                account.blocked = blocked;
+                renderAdminAccounts();
+                setAuthMessage("admin-data-status", blocked ? "Compte bloqué." : "Compte débloqué.");
+            } catch (error) {
+                setAuthMessage("admin-data-status", `Modification du blocage impossible : ${error.message}`);
+            } finally {
+                setAdminOperationPending(false);
+                blockButton.disabled = !account.id;
+            }
+        });
+
+        actionCell.append(deleteButton, blockButton);
         row.append(nameCell, emailCell, specialtyCell, actionCell);
         labelAdminRow(row, ["Candidat", "E-mail", "Spécialité", "Action"]);
         list.appendChild(row);
@@ -3839,6 +3926,10 @@ async function restoreSupabaseSession() {
             session
         );
     } catch (error) {
+        if (error?.code === accountBlockedErrorCode) {
+            await handleBlockedAccount("login-message");
+            return;
+        }
         if (error?.code === profileNotReadyErrorCode) {
             await handleProfileNotReady("login-message", session.user, session);
             return;
@@ -3877,6 +3968,10 @@ function initializeAuth() {
         try {
             await successAction();
         } catch (error) {
+            if (error?.code === accountBlockedErrorCode) {
+                await handleBlockedAccount("login-message");
+                return;
+            }
             setAuthMessage("login-message", getFriendlyAuthError(error, "Impossible de finaliser cette étape."));
             uiController.switchScreen("auth-screen");
             showAuthView("login");
@@ -3924,6 +4019,10 @@ function initializeAuth() {
             clearAuthMessages();
             await finalizeAuthenticatedUser(data.user, { email }, signedInSession);
         } catch (error) {
+            if (error?.code === accountBlockedErrorCode) {
+                await handleBlockedAccount("login-message");
+                return;
+            }
             if (error?.code === profileNotReadyErrorCode) {
                 await handleProfileNotReady("login-message", signedInUser, signedInSession);
                 return;

@@ -93,6 +93,7 @@ test("les comptes et signalements sont paginés sans tronquer les données", asy
             if (query.startsWith("/profiles")) return [{
                 id: "p", email: "candidate@test", name: "Test", created_at: "2026-10-25T12:00:00Z"
             }];
+            if (query === "/rpc/get_admin_blocked_accounts") return [];
             reports++;
             return Array.from({ length: reports === 1 ? 250 : 1 }, (_, id) => ({
                 id: `${reports}-${id}`, reporter_id: "p"
@@ -370,6 +371,58 @@ test("retirer du cache demande OUI/NON et ne modifie rien en cas de refus", asyn
     await button.listeners.click();
     assert.equal(accounts["candidate@test"], undefined);
     assert.equal(list.children.length, 0);
+});
+
+test("l’administrateur peut bloquer puis débloquer un candidat", async () => {
+    const account = { id: "candidate-id", email: "candidate@test", name: "Candidat" };
+    const accounts = { [account.email]: account };
+    const list = element();
+    const statuses = [];
+    let confirmed = true;
+    const context = vm.createContext({
+        getAccounts: () => accounts,
+        supabaseRestRequest: async (path, options) => {
+            assert.equal(path, "/rpc/set_account_blocked");
+            assert.equal(options.body.p_user_id, account.id);
+            return options.body.p_blocked;
+        },
+        getStoredSupabaseSession: () => ({ access_token: "admin" }),
+        setAdminOperationPending() {},
+        setAuthMessage: (_, message) => statuses.push(message),
+        document: {
+            getElementById: id => id === "admin-accounts-table" ? list : null,
+            createElement: element
+        },
+        getAdminListPage: (_, items) => items, labelAdminRow: () => {},
+        getSpecialtyTrigram: value => value, formatSpecialtyLabel: value => value,
+        showConfirmOverlay: async () => confirmed
+    });
+    loadFunction("renderAdminAccounts", context)();
+    let button = list.children[0].children[3].children[1];
+    assert.equal(button.innerText, "Bloquer le compte");
+    await button.listeners.click();
+    assert.equal(account.blocked, true);
+    assert.match(statuses.at(-1), /Compte bloqué/);
+
+    button = list.children[0].children[3].children[1];
+    assert.equal(button.innerText, "Débloquer");
+    assert.match(button.className, /is-blocked/);
+    await button.listeners.click();
+    assert.equal(account.blocked, false);
+    assert.match(statuses.at(-1), /Compte débloqué/);
+});
+
+test("un compte bloqué ne passe pas la finalisation de connexion candidat", async () => {
+    const context = vm.createContext({
+        isAdminSession: () => false,
+        isCurrentAccountBlocked: async () => true,
+        accountBlockedErrorCode: "ACCOUNT_BLOCKED"
+    });
+    const finalize = loadFunction("finalizeAuthenticatedUser", context);
+    await assert.rejects(
+        finalize({ id: "blocked-id", email: "blocked@test" }, {}, { access_token: "candidate" }),
+        error => error.code === "ACCOUNT_BLOCKED"
+    );
 });
 
 test("les comptes candidats sont affichés du plus récent au plus ancien", () => {

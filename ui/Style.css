@@ -4730,6 +4730,17 @@ body {
     background: rgba(122, 36, 36, 0.72);
 }
 
+#admin-screen .admin-account-block-btn.is-blocked {
+    border-color: rgba(118, 214, 154, 0.62);
+    background: rgba(28, 112, 63, 0.68);
+    color: #e7ffed;
+}
+
+#admin-screen .admin-account-block-btn.is-blocked:hover,
+#admin-screen .admin-account-block-btn.is-blocked:focus-visible {
+    background: rgba(28, 132, 72, 0.88);
+}
+
 #admin-screen input,
 #admin-screen select,
 #admin-screen textarea,
