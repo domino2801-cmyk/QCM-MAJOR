@@ -766,9 +766,13 @@ h1 {
 }
 
 .brand-lockup img {
+    aspect-ratio: 1;
+    border-radius: 50%;
     display: block;
     height: auto;
     margin: 0 auto 8px;
+    object-fit: cover;
+    object-position: center;
 }
 
 #auth-screen h1,
@@ -4147,7 +4151,9 @@ body {
 .centre-access-card img {
     width: 100px;
     height: 100px;
-    object-fit: contain;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
 }
 
 .centre-access-card span {
@@ -4299,6 +4305,7 @@ body {
     place-items: center;
     width: 76px;
     height: 76px;
+    overflow: hidden;
     margin: 0 auto 15px;
     border: 1px solid rgba(224, 204, 139, 0.45);
     border-radius: 50%;
@@ -4307,9 +4314,11 @@ body {
 }
 
 .first-visit-emblem img {
-    width: 58px;
-    height: 58px;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
 }
 
 .first-visit-eyebrow {

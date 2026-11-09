@@ -19,7 +19,7 @@ test("theme selection keeps the exam question count only for the global campaign
 
 test("the app and styles use fresh cache versions", () => {
     assert.match(indexHtml, /app\.js\?v=admin-anc-20261108/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=progression-20261108/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=brand-icon-circle-20261109/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /#auth-screen \.terminal-shell\s*\{[^}]*border-radius:\s*16px;/);
     assert.match(css, /#auth-screen \.auth-form input:focus-visible[\s\S]*?box-shadow:\s*0 0 0 3px/);
@@ -43,6 +43,17 @@ test("the app and styles use fresh cache versions", () => {
     assert.match(css, /#live-points\[hidden\]\s*\{\s*display:\s*none;/);
 });
 
+test("all app branding uses the centered splash icon cropped to a circle", () => {
+    assert.equal([...indexHtml.matchAll(/src="public\/icons\/icon-512\.png"/g)].length, 5);
+    assert.doesNotMatch(indexHtml, /public\/images\/logo2\.png/);
+
+    const css = readFileSync(`${root}/ui/Style.css`, "utf8");
+    assert.match(css, /\.brand-lockup img\s*\{[^}]*aspect-ratio:\s*1;[^}]*border-radius:\s*50%;[^}]*object-fit:\s*cover;[^}]*object-position:\s*center;/);
+    assert.match(css, /\.centre-access-card img\s*\{[^}]*border-radius:\s*50%;[^}]*object-fit:\s*cover;[^}]*object-position:\s*center;/);
+    assert.match(css, /\.first-visit-emblem\s*\{[^}]*overflow:\s*hidden;/);
+    assert.match(css, /\.first-visit-emblem img\s*\{[^}]*width:\s*100%;[^}]*height:\s*100%;[^}]*border-radius:\s*50%;[^}]*object-fit:\s*cover;[^}]*object-position:\s*center;/);
+});
+
 test("quiz action buttons share the confirmation button style", () => {
     for (const id of ["question-report-toggle", "next-question-btn", "confirm-cancel-btn", "confirm-ok-btn"]) {
         assert.match(indexHtml, new RegExp(`id="${id}" class="btn-main" type="button"`));
@@ -56,7 +67,7 @@ test("intensity choices include 40 questions in a four-column row", () => {
     assert.match(appJs, /syncObjectiveButtons\(themeId\)/);
     assert.match(indexHtml, /id="theme-training-btn"[^>]*aria-pressed="false"/);
     assert.match(indexHtml, /id="theme-global-btn"[^>]*aria-pressed="false"/);
-    assert.match(indexHtml, /<div id="theme-screen" class="screen">[\s\S]*?<div class="brand-lockup"><img src="public\/images\/logo2\.png" width="100" alt="Question pour un Major"><\/div>/);
+    assert.match(indexHtml, /<div id="theme-screen" class="screen">[\s\S]*?<div class="brand-lockup"><img src="public\/icons\/icon-512\.png" width="100" alt="Question pour un Major"><\/div>/);
     assert.doesNotMatch(indexHtml.match(/<div id="theme-screen" class="screen">([\s\S]*?)<p class="subtitle">/)?.[1] || "", /<h1>Question pour un Major<\/h1>/);
     assert.match(appJs, /const syncCampaignModeButtons = activeButton =>/);
     assert.match(appJs, /button\.setAttribute\("aria-pressed", String\(isActive\)\)/);
