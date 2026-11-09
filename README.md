@@ -59,3 +59,17 @@ Avec Node.js installé, lancer les tests avec :
 ```bash
 node --test tests/*.test.mjs
 ```
+
+## Captures d’écran mobile
+
+Le script Playwright ouvre l’application locale au format 375 × 812 px, utilise des réponses Supabase simulées pour éviter de dépendre d’un compte réel, puis enregistre des captures d’écrans candidats (connexion, récupération du mot de passe, centre, briefing, quiz, signalement, bilan, historique et RETEX) dans `screenshots_mobile_candidat/`.
+
+Installation et lancement :
+
+```bash
+npm install
+npx playwright install chromium
+npm run screenshots:mobile
+```
+
+Cette application n’a pas d’offres d’emploi, de candidatures, de gestion de CV ou de menu burger ; ces scénarios ne sont donc pas représentés par le script.

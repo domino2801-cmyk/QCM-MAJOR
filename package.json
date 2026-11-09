@@ -1,0 +1,11 @@
+{
+  "name": "qcm-major",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "screenshots:mobile": "node scripts/capture-mobile-candidat.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  }
+}
