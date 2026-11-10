@@ -110,6 +110,16 @@ Avec Node.js installé, exécuter les tests :
 node --test tests/*.test.mjs
 ```
 
+## Publication
+
+Depuis `main`, lancer une publication complète avec un message de commit :
+
+```bash
+npm run release -- "Décrire les changements"
+```
+
+La commande vérifie que le dépôt est synchronisé avec `origin/main`, exécute tous les tests, ajoute tous les changements (y compris les nouveaux fichiers), crée le commit avec le co-auteur Copilot, pousse sur `main` et attend la réussite du déploiement GitHub Pages. Elle s’arrête si les prérequis ne sont pas réunis ou si une étape échoue. Elle nécessite Git, GitHub CLI authentifié (`gh auth login`) et Node.js.
+
 ## Captures d’écran du parcours candidat
 
 Le script Playwright ouvre l’application locale au format 375 × 812 px et utilise des réponses Supabase simulées. Il enregistre des captures du parcours candidat — connexion, récupération du mot de passe, centre, briefing, quiz, signalement, bilan, historique et RETEX — dans `screenshots_mobile_candidat/`.
