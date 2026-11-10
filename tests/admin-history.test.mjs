@@ -16,6 +16,7 @@ const history = app.slice(app.indexOf("function renderCandidateHistory("), app.i
 test("les filtres de l'historique et leurs options utilisent un fond gris et un texte clair", () => {
     assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) \{\s*background: #343b43;\s*color: #e2e6eb;\s*color-scheme: dark;/);
     assert.match(css, /:is\(\.global-evolution-period, #admin-results-candidate-filter\) option \{\s*background: #343b43;\s*color: #e2e6eb;/);
+    assert.doesNotMatch(html, /Choisissez un candidat pour consulter ses résultats QCM/);
     assert.match(html, /id="admin-history-milestone"/);
     assert.match(html, /Août — objectif &gt; 90 %/);
     assert.match(html, /admin-theme-acquisition/);
@@ -154,6 +155,7 @@ test("cliquer sur une adresse e-mail affiche les histogrammes détaillés du can
     assert.equal(h.nodes.get("admin-history-title").innerText, "Notes de alpha@test.fr");
     assert.equal(h.nodes.get("admin-history-charts").children.length, 7);
     assert.equal(h.nodes.get("admin-history-charts").children[2].children[1].children.length, 1);
+    assert.equal(h.nodes.get("admin-results-candidates-status").innerText, "");
 });
 
 test("la recherche du répertoire filtre uniquement les adresses e-mail", () => {
@@ -168,6 +170,7 @@ test("la recherche du répertoire filtre uniquement les adresses e-mail", () => 
     const buttons = h.nodes.get("admin-results-candidates").children;
     assert.equal(buttons.length, 1);
     assert.equal(buttons[0].innerText, "bravo@test.fr");
+    assert.equal(h.nodes.get("admin-results-candidates-status").innerText, "");
 });
 
 test("les résultats avec ou sans e-mail sont regroupés par identifiant de compte", async () => {
@@ -239,10 +242,11 @@ test("un changement de candidat ignore une réponse de progression arrivée en r
 test("les erreurs de lecture de progression sont visibles", async () => {
     const h = harness();
     h.context.console = { warn() {} };
-    h.context.supabaseRestRequest = async () => { throw new Error("réseau"); };
+    h.context.supabaseRestRequest = async () => { throw new Error("Could not find the function"); };
     h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
     vm.runInContext("renderAdminResults()", h.context);
     await new Promise(resolve => setImmediate(resolve));
+    assert.match(h.nodes.get("admin-history-status").innerText, /Suivi DOCTRINE indisponible : Could not find the function/);
     assert.match(h.nodes.get("admin-history-progression").innerText, /indisponible/);
 });
 

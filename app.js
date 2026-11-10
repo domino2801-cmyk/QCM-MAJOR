@@ -3581,7 +3581,8 @@ async function loadAdminCandidateTracking(candidateId, candidateResults, periodD
     } catch (error) {
         if (requestId !== adminCandidateTrackingRequestId) return;
         console.warn("Chargement du suivi candidat impossible.", error);
-        if (status) status.innerText = "Suivi DOCTRINE indisponible. Vérifiez les migrations et actualisez les données administrateur.";
+        const detail = String(error?.message || error);
+        if (status) status.innerText = `Suivi DOCTRINE indisponible : ${detail}. Vérifiez les migrations et actualisez les données administrateur.`;
         if (progression) progression.innerText = "Progression enregistrée indisponible.";
         if (activity) activity.replaceChildren();
         if (timeline) timeline.replaceChildren();
@@ -3823,7 +3824,7 @@ function renderAdminResults() {
         });
         if (candidateDirectoryStatus) {
             candidateDirectoryStatus.innerText = emailCandidates.length
-                ? "Sélectionnez une adresse pour afficher les histogrammes des notes par thème."
+                ? ""
                 : "Aucune adresse e-mail trouvée.";
         }
     }
