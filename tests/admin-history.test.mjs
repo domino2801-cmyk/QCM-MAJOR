@@ -68,6 +68,7 @@ function harness(customResults) {
         "admin-history-panel", "admin-history-status", "admin-history-period", "admin-history-progression",
         "admin-history-milestone", "admin-theme-acquisition",
         "admin-history-charts", "admin-history-summary", "admin-history-recommendation",
+        "admin-history-theme-summary", "admin-history-activity", "admin-history-timeline",
         "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation",
         "candidate-history-modes"
     ].map(id => [id, element()]));
@@ -87,13 +88,24 @@ function harness(customResults) {
         document: { getElementById: id => nodes.get(id), createElement: element },
         getResults: () => results,
         getAccounts: () => ({}),
+        supabase: {},
         getStoredSupabaseSession: () => ({ access_token: "admin-token" }),
-        supabaseRestRequest: async () => 10,
+        supabaseRestRequest: async () => candidateTracking(10),
         console,
         Option: function (label, value) { this.label = label; this.value = value; }
     });
     vm.runInContext(history + admin, context);
     return { nodes, context };
+}
+
+function candidateTracking(maximum) {
+    return {
+        progress: { max_unlocked_questions: maximum },
+        progress_events: [],
+        documents: [],
+        submissions: [],
+        signalements: []
+    };
 }
 
 test("le journal affiche le palier enregistré et propose les candidats sans résultat", async () => {
@@ -104,21 +116,21 @@ test("le journal affiche le palier enregistré et propose les candidats sans ré
     const calls = [];
     h.context.supabaseRestRequest = async (path, options) => {
         calls.push({ path, id: options.body.p_user_id });
-        return options.body.p_user_id === "a" ? 50 : 10;
+        return candidateTracking(options.body.p_user_id === "a" ? 50 : 10);
     };
 
     h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
     vm.runInContext("renderAdminResults()", h.context);
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 50 questions");
+    assert.match(h.nodes.get("admin-history-progression").innerText, /^Palier enregistré : 50 questions\./);
     assert.ok(h.nodes.get("admin-results-candidate-filter").children.some(option => option.value === "c@test.fr"));
 
     h.nodes.get("admin-results-candidate-filter").value = "c@test.fr";
     vm.runInContext("renderAdminResults()", h.context);
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 10 questions");
+    assert.match(h.nodes.get("admin-history-progression").innerText, /^Palier enregistré : 10 questions\./);
     assert.deepEqual(calls.map(call => call.id), ["a", "c"]);
-    assert.ok(calls.every(call => call.path === "/rpc/get_admin_candidate_progress"));
+    assert.ok(calls.every(call => call.path === "/rpc/get_admin_candidate_tracking"));
 });
 
 test("les résultats avec ou sans e-mail sont regroupés par identifiant de compte", async () => {
@@ -135,7 +147,7 @@ test("les résultats avec ou sans e-mail sont regroupés par identifiant de comp
     const calls = [];
     h.context.supabaseRestRequest = async (_, options) => {
         calls.push(options.body.p_user_id);
-        return 50;
+        return candidateTracking(50);
     };
 
     h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
@@ -145,7 +157,7 @@ test("les résultats avec ou sans e-mail sont regroupés par identifiant de comp
     assert.deepEqual(options.map(option => option.value), ["", "a@test.fr", "b@test.fr"]);
     assert.equal(h.nodes.get("admin-results-table").children.length, 2);
     assert.match(h.nodes.get("admin-history-summary").innerText, /1 résultat.*18\.00/);
-    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 50 questions");
+    assert.match(h.nodes.get("admin-history-progression").innerText, /^Palier enregistré : 50 questions\./);
     assert.deepEqual(calls, ["a"]);
 
     h.nodes.get("admin-results-candidate-filter").value = "b@test.fr";
@@ -171,16 +183,16 @@ test("un changement de candidat ignore une réponse de progression arrivée en r
     let finishFirst;
     h.context.supabaseRestRequest = (_, options) => options.body.p_user_id === "a"
         ? new Promise(resolve => { finishFirst = resolve; })
-        : Promise.resolve(20);
+        : Promise.resolve(candidateTracking(20));
 
     h.nodes.get("admin-results-candidate-filter").value = "a@test.fr";
     vm.runInContext("renderAdminResults()", h.context);
     h.nodes.get("admin-results-candidate-filter").value = "b";
     vm.runInContext("renderAdminResults()", h.context);
     await new Promise(resolve => setImmediate(resolve));
-    finishFirst(50);
+    finishFirst(candidateTracking(50));
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(h.nodes.get("admin-history-progression").innerText, "Intensité débloquée : 20 questions");
+    assert.match(h.nodes.get("admin-history-progression").innerText, /^Palier enregistré : 20 questions\./);
 });
 
 test("les erreurs de lecture de progression sont visibles", async () => {
@@ -191,6 +203,92 @@ test("les erreurs de lecture de progression sont visibles", async () => {
     vm.runInContext("renderAdminResults()", h.context);
     await new Promise(resolve => setImmediate(resolve));
     assert.match(h.nodes.get("admin-history-progression").innerText, /indisponible/);
+});
+
+test("la fiche affiche une moyenne et une tendance numérique par thème", () => {
+    const now = Date.now();
+    const results = [5, 6, 7, 10, 11, 12].map((score, index) => ({
+        candidateId: "a",
+        theme: "1",
+        score,
+        createdAt: new Date(now - (6 - index) * 1000).toISOString()
+    }));
+    const h = harness(results);
+
+    vm.runInContext("renderAdminThemeSummary(getResults(), 0)", h.context);
+
+    const themeCard = h.nodes.get("admin-history-theme-summary").children[1];
+    assert.match(themeCard.children[1].innerText, /6 série\(s\) · moyenne 8\.50 \/ 20/);
+    assert.equal(themeCard.children[2].innerText, "Tendance : +5.00 pt");
+});
+
+test("la chronologie commune ordonne les événements et les borne à la période choisie", () => {
+    const recent = Date.now();
+    const old = "2020-01-01T00:00:00.000Z";
+    const results = [
+        { candidateId: "a", theme: "all", score: 18, createdAt: new Date(recent - 1000).toISOString() },
+        { candidateId: "a", theme: "all", score: 2, createdAt: old }
+    ];
+    const h = harness(results);
+    h.context.tracking = {
+        progress_events: [
+            {
+                event_type: "module_started",
+                module_id: "2",
+                dossier: null,
+                created_at: new Date(recent - 6000).toISOString()
+            },
+            {
+                event_type: "dossier_completed",
+                module_id: "3",
+                dossier: 8,
+                created_at: new Date(recent - 5500).toISOString()
+            },
+            {
+                event_type: "correction_accessible",
+                module_id: "4",
+                dossier: 8,
+                created_at: new Date(recent - 5000).toISOString()
+            }
+        ],
+        documents: [{
+            event_type: "open",
+            document_title: "Aide-mémoire",
+            module_id: "2",
+            opened_at: new Date(recent - 3000).toISOString()
+        }],
+        submissions: [{ dossier: 4, created_at: new Date(recent - 2000).toISOString() }],
+        signalements: [{
+            incident_type: "Correction",
+            module_id: "3",
+            resource: "Fiche 3",
+            priority: "Information",
+            status: "pending",
+            created_at: new Date(recent - 4000).toISOString()
+        }]
+    };
+    h.context.questionReports = [{
+        reporter_id: "a",
+        quiz_theme: "1",
+        status: "resolved",
+        details: "ne pas exposer ce commentaire",
+        created_at: new Date(recent - 500).toISOString()
+    }];
+
+    vm.runInContext('renderAdminTrackingTimeline(getResults(), tracking, 7, "a")', h.context);
+
+    const events = h.nodes.get("admin-history-timeline").children;
+    assert.equal(events.length, 8);
+    assert.match(events[0].children[0].innerText, /QCM-MAJOR — Signalement d’une question/);
+    assert.match(events[1].children[0].innerText, /QCM-MAJOR — Résultat Campagne globale/);
+    assert.match(events[2].children[0].innerText, /DOCTRINE — Transmission d’une fiche/);
+    assert.match(events[3].children[1].innerText, /Aide-mémoire · module 2/);
+    assert.match(events[4].children[1].innerText, /Information · en attente/);
+    assert.match(events[5].children[0].innerText, /DOCTRINE — Corrigé rendu accessible/);
+    assert.match(events[6].children[0].innerText, /DOCTRINE — Dossier marqué « Fait »/);
+    assert.match(events[7].children[0].innerText, /DOCTRINE — Module commencé/);
+    assert.doesNotMatch(events.map(event => event.children.map(child => child.innerText).join(" ")).join(" "), /ne pas exposer ce commentaire/);
+    assert.match(h.nodes.get("admin-history-activity").children[0].children[2].innerText, /1 série\(s\).*18\.00/);
 });
 
 test("la lecture du palier est réservée aux administrateurs", () => {

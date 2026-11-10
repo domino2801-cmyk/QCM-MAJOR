@@ -2428,6 +2428,88 @@ h1 {
     box-sizing: border-box;
 }
 
+.admin-candidate-overview {
+    margin: 20px 0 28px;
+    padding: 18px;
+    border: 1px solid rgba(159, 170, 132, 0.32);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.admin-candidate-overview h3 {
+    margin: 0 0 10px;
+    color: var(--accent);
+    font-size: 1.05rem;
+}
+
+.admin-overview-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    margin: 16px 0;
+}
+
+.admin-overview-filters label {
+    align-self: center;
+    color: #d3ddc1;
+    font-size: 0.86rem;
+}
+
+.admin-overview-filters .admin-search {
+    width: 100%;
+    min-width: 0;
+}
+
+.admin-overview-summary {
+    margin: 14px 0;
+    color: #e7d28f;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.admin-overview-stage-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.admin-overview-stage-card {
+    display: grid;
+    gap: 5px;
+    padding: 10px;
+    border: 1px solid rgba(159, 170, 132, 0.26);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.admin-overview-stage-card strong {
+    color: #e7d28f;
+}
+
+.admin-overview-stage-card span {
+    color: rgba(226, 232, 226, 0.76);
+    font-size: 0.82rem;
+}
+
+.admin-overview-export {
+    align-items: center;
+    margin: 14px 0;
+}
+
+.admin-overview-export .terminal-note {
+    flex: 1;
+}
+
+.admin-overview-export .admin-edit-btn {
+    flex: 0 0 auto;
+}
+
+.admin-overview-export .admin-edit-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 .admin-delete-btn {
     background: transparent;
     border: 1px solid var(--incorrect);
@@ -2440,6 +2522,16 @@ h1 {
 .admin-delete-btn:hover {
     background: var(--incorrect);
     color: #fff;
+}
+
+@media (max-width: 560px) {
+    .admin-overview-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-overview-export .admin-edit-btn {
+        width: 100%;
+    }
 }
 
 @media (max-width: 560px) {
@@ -4066,6 +4158,119 @@ body {
     border-top: 1px solid rgba(159, 170, 132, 0.35);
     margin-top: 20px;
     padding-top: 16px;
+}
+
+.admin-history-activity {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.admin-history-theme-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 18px 0;
+}
+
+.admin-history-theme-card {
+    border: 1px solid rgba(159, 170, 132, 0.28);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.16);
+    padding: 10px 12px;
+}
+
+.admin-history-theme-card h4 {
+    color: var(--accent);
+    font-size: 0.82rem;
+    margin: 0 0 6px;
+}
+
+.admin-history-theme-card p,
+.admin-history-theme-card small {
+    display: block;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.admin-history-theme-card small {
+    color: rgba(226, 232, 226, 0.72);
+    margin-top: 4px;
+}
+
+.admin-history-activity-card,
+.admin-history-timeline-item,
+.admin-history-timeline-empty {
+    border: 1px solid rgba(159, 170, 132, 0.28);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.16);
+    padding: 12px;
+}
+
+.admin-history-activity-card h4 {
+    color: var(--accent);
+    font-size: 0.88rem;
+    margin: 0 0 8px;
+}
+
+.admin-history-activity-card p,
+.admin-history-activity-card small {
+    display: block;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.admin-history-activity-card small {
+    color: rgba(226, 232, 226, 0.72);
+    margin-top: 6px;
+}
+
+.admin-history-timeline-section {
+    border-top: 1px solid rgba(159, 170, 132, 0.28);
+    margin-top: 20px;
+    padding-top: 16px;
+}
+
+.admin-history-timeline-section h3 {
+    color: var(--accent);
+    font-size: 1rem;
+    margin: 0 0 10px;
+}
+
+.admin-history-timeline {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.admin-history-timeline-item {
+    display: grid;
+    gap: 4px;
+    line-height: 1.45;
+}
+
+.admin-history-timeline-item strong {
+    color: #e7d28f;
+}
+
+.admin-history-timeline-item span,
+.admin-history-timeline-item time,
+.admin-history-timeline-empty {
+    color: rgba(226, 232, 226, 0.76);
+    font-size: 0.82rem;
+}
+
+@media (max-width: 600px) {
+    .admin-history-theme-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-history-activity {
+        grid-template-columns: 1fr;
+    }
 }
 
 .candidate-history-ranking .global-ranking-item {

@@ -85,6 +85,7 @@ let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
+let adminCandidateOverview = [];
 let retexSubmitted = false;
 let questionReports = [];
 const adminPageSize = 25;
@@ -2032,6 +2033,8 @@ async function loadAdminData() {
         throw new Error("Une session administrateur est requise.");
     }
 
+    if (typeof adminCandidateTrackingKey !== "undefined") adminCandidateTrackingKey = "";
+    if (typeof adminCandidateTrackingRequestId !== "undefined") adminCandidateTrackingRequestId++;
     const accessToken = getStoredSupabaseSession()?.access_token;
     let profiles;
     const loadProfiles = async (specialtyColumn, includeCreatedAt = false) => {
@@ -2080,6 +2083,14 @@ async function loadAdminData() {
     const blockedAccountIds = new Set(blockedAccounts.map(account => String(account.user_id)));
 
     const resultsLoaded = await loadResultsFromSupabase({ throwOnError: true });
+    const candidateOverview = await supabaseRestRequest("/rpc/get_admin_candidate_overview", {
+        method: "POST",
+        accessToken,
+        body: {}
+    });
+    if (!Array.isArray(candidateOverview)) {
+        throw new Error("La synthèse de suivi des candidats est invalide.");
+    }
     const reports = [];
     for (let offset = 0; ; offset += 250) {
         const page = await supabaseRestRequest(
@@ -2093,6 +2104,7 @@ async function loadAdminData() {
     if (getStoredSupabaseSession()?.access_token !== accessToken) {
         throw new Error("La session a changé pendant la synchronisation.");
     }
+    adminCandidateOverview = candidateOverview;
     const profileEmailsById = new Map(
         (Array.isArray(profiles) ? profiles : [])
             .filter(profile => profile.id && profile.email)
@@ -2126,6 +2138,7 @@ async function loadAdminData() {
         });
         cachedAccounts = synchronizedAccounts;
     }
+    if (typeof document !== "undefined") renderAdminOverview();
 
     if (!resultsLoaded) {
         throw new Error("Les résultats administrateur n’ont pas pu être chargés.");
@@ -3073,33 +3086,505 @@ function editQuestion(themeId, index) {
 }
 
 const deletableResultEmail = "domino2801@gmail.com";
-let adminProgressRequestId = 0;
+let adminCandidateTrackingRequestId = 0;
+let adminCandidateTrackingKey = "";
 
-async function renderAdminProgression(candidateId) {
+function renderAdminProgression(progress) {
     const status = document.getElementById("admin-history-progression");
-    const requestId = ++adminProgressRequestId;
     if (!status) return;
-    if (!candidateId) {
-        status.innerText = "Intensité débloquée indisponible : compte candidat introuvable.";
+    const maximum = Number(progress?.max_unlocked_questions);
+    if (![10, 20, 30, 40, 50].includes(maximum)) {
+        status.innerText = "Progression enregistrée indisponible.";
         return;
     }
 
-    status.innerText = "Chargement de l’intensité débloquée…";
+    const bestScores = [10, 20, 30, 40, 50]
+        .map(count => [count, progress[`high_score_${count}`]])
+        .filter(([, score]) => score !== null && score !== undefined)
+        .map(([count, score]) => `${count} Q : ${score} pts`)
+        .join(" · ");
+    status.innerText = `Palier enregistré : ${maximum} questions${bestScores ? ` · Meilleurs scores bruts : ${bestScores}` : ""}. Ces valeurs déclaratives ne constituent pas une preuve inviolable.`;
+}
+
+function getAdminCandidateStageKeys(candidate) {
+    const keys = [];
+    if (candidate.doctrine_module_id) keys.push(`doctrine:${candidate.doctrine_module_id}`);
+    const qcmLevel = Number(candidate.qcm_max_unlocked_questions);
+    if ([10, 20, 30, 40, 50].includes(qcmLevel)) keys.push(`qcm:${qcmLevel}`);
+    return keys;
+}
+
+function getAdminCandidateStageLabel(candidate) {
+    const labels = [];
+    if (candidate.doctrine_module_id) {
+        const module = candidate.doctrine_module_id;
+        const eventLabels = {
+            module_started: "commencé",
+            module_completed: "terminé",
+            dossier_completed: `dossier ${candidate.doctrine_dossier || ""} marqué fait`.trim(),
+            correction_accessible: `corrigé du dossier ${candidate.doctrine_dossier || ""} rendu accessible`.trim()
+        };
+        const completed = Array.isArray(candidate.doctrine_completed_modules)
+            && candidate.doctrine_completed_modules.includes(module);
+        const eventLabel = eventLabels[candidate.doctrine_event_type] || "événement enregistré";
+        labels.push(`DOCTRINE · Module ${module} · ${eventLabel}${completed && candidate.doctrine_event_type !== "module_completed" ? " · module terminé" : ""}`);
+    }
+    const qcmLevel = Number(candidate.qcm_max_unlocked_questions);
+    if ([10, 20, 30, 40, 50].includes(qcmLevel)) labels.push(`QCM-MAJOR · Palier ${qcmLevel} questions`);
+    return labels.join(" · ") || "Aucune étape enregistrée";
+}
+
+function getAdminCandidateOverviewState() {
+    const specialty = document.getElementById("admin-overview-specialty")?.value || "";
+    const periodDays = Number(document.getElementById("admin-overview-period")?.value || 0);
+    const stage = document.getElementById("admin-overview-stage")?.value || "";
+    const activityFilter = document.getElementById("admin-overview-activity-filter")?.value || "all";
+    const inactivityDays = Number(document.getElementById("admin-overview-inactivity")?.value || 30);
+    const periodCutoff = periodDays > 0 ? Date.now() - periodDays * 86400000 : 0;
+    const inactivityCutoff = Date.now() - inactivityDays * 86400000;
+    const matchesCommonFilters = candidate => {
+        if (specialty && String(candidate.specialty || "") !== specialty) return false;
+        if (stage && !getAdminCandidateStageKeys(candidate).includes(stage)) return false;
+        return true;
+    };
+    const hasRecentActivity = candidate => {
+        const timestamp = Date.parse(candidate.last_activity || "");
+        return Number.isFinite(timestamp) && (!periodCutoff || timestamp >= periodCutoff);
+    };
+    const isInactive = candidate => {
+        const timestamp = Date.parse(candidate.last_activity || "");
+        return !Number.isFinite(timestamp) || timestamp <= inactivityCutoff;
+    };
+    const cohort = adminCandidateOverview.filter(matchesCommonFilters);
+    const filtered = cohort.filter(candidate => activityFilter === "active"
+        ? hasRecentActivity(candidate)
+        : activityFilter === "inactive" ? isInactive(candidate) : true);
+    const stageCounts = new Map();
+    cohort.forEach(candidate => {
+        getAdminCandidateStageKeys(candidate).forEach(key => {
+            stageCounts.set(key, (stageCounts.get(key) || 0) + 1);
+        });
+    });
+    return {
+        cohort,
+        filtered,
+        stageCounts,
+        periodDays,
+        inactivityDays,
+        activeCount: cohort.filter(hasRecentActivity).length,
+        inactiveCount: cohort.filter(isInactive).length
+    };
+}
+
+function renderAdminOverview() {
+    const table = document.getElementById("admin-overview-table");
+    const specialtySelect = document.getElementById("admin-overview-specialty");
+    const stageSelect = document.getElementById("admin-overview-stage");
+    const status = document.getElementById("admin-overview-status");
+    if (!table || !specialtySelect || !stageSelect) return;
+
+    const selectedSpecialty = specialtySelect.value;
+    const selectedStage = stageSelect.value;
+    const specialties = [...new Set(adminCandidateOverview
+        .map(candidate => String(candidate.specialty || "").trim())
+        .filter(Boolean))].sort((first, second) => first.localeCompare(second, "fr"));
+    specialtySelect.replaceChildren(new Option("Toutes les spécialités", ""));
+    specialties.forEach(specialty => specialtySelect.appendChild(new Option(specialty, specialty)));
+    specialtySelect.value = specialties.includes(selectedSpecialty) ? selectedSpecialty : "";
+
+    const stageLabels = new Map();
+    adminCandidateOverview.forEach(candidate => {
+        getAdminCandidateStageKeys(candidate).forEach(key => {
+            stageLabels.set(key, key.startsWith("doctrine:")
+                ? `DOCTRINE · Module ${key.slice("doctrine:".length)}`
+                : `QCM-MAJOR · Palier ${key.slice("qcm:".length)} questions`);
+        });
+    });
+    stageSelect.replaceChildren(new Option("Toutes les étapes", ""));
+    [...stageLabels.entries()]
+        .sort((first, second) => first[1].localeCompare(second[1], "fr"))
+        .forEach(([key, label]) => stageSelect.appendChild(new Option(label, key)));
+    stageSelect.value = stageLabels.has(selectedStage) ? selectedStage : "";
+
+    const state = getAdminCandidateOverviewState();
+    const summary = document.getElementById("admin-overview-summary");
+    const stageSummary = document.getElementById("admin-overview-stage-summary");
+    const count = document.getElementById("admin-overview-count");
+    const exportButton = document.getElementById("admin-overview-export");
+    if (summary) {
+        summary.innerText = `${state.cohort.length} candidat(s) dans le périmètre · `
+            + `${state.activeCount} avec activité dans la période · `
+            + `${state.inactiveCount} sans activité depuis ${state.inactivityDays} jours ou plus.`;
+    }
+    if (stageSummary) {
+        stageSummary.replaceChildren();
+        [...state.stageCounts.entries()]
+            .sort((first, second) => first[0].localeCompare(second[0], "fr"))
+            .forEach(([key, value]) => {
+                const item = document.createElement("div");
+                const label = document.createElement("strong");
+                const total = document.createElement("span");
+                label.innerText = stageLabels.get(key) || key;
+                total.innerText = `${value} candidat(s) · étape observée`;
+                item.className = "admin-overview-stage-card";
+                item.append(label, total);
+                stageSummary.appendChild(item);
+            });
+        if (stageSummary.children.length === 0) {
+            const empty = document.createElement("p");
+            empty.className = "terminal-note";
+            empty.innerText = "Aucun jalon enregistré pour le moment.";
+            stageSummary.appendChild(empty);
+        }
+    }
+    if (status) {
+        status.innerText = adminCandidateOverview.length
+            ? ""
+            : "Aucun compte candidat n’est disponible dans la synthèse.";
+    }
+
+    table.replaceChildren();
+    state.filtered
+        .slice()
+        .sort((first, second) => String(first.name || first.email || "")
+            .localeCompare(String(second.name || second.email || ""), "fr"))
+        .forEach(candidate => {
+            const row = document.createElement("tr");
+            const name = document.createElement("td");
+            const specialty = document.createElement("td");
+            const stage = document.createElement("td");
+            const doctrineActivity = document.createElement("td");
+            const qcmActivity = document.createElement("td");
+            name.innerText = candidate.name || candidate.email || "Candidat";
+            specialty.innerText = candidate.specialty || "Non renseignée";
+            stage.innerText = getAdminCandidateStageLabel(candidate);
+            doctrineActivity.innerText = formatAdminTrackingDate(candidate.doctrine_last_activity);
+            qcmActivity.innerText = formatAdminTrackingDate(candidate.qcm_last_activity);
+            [name, specialty, stage, doctrineActivity, qcmActivity]
+                .forEach((cell, index) => cell.setAttribute("data-label", [
+                    "Candidat", "Spécialité", "Étape observée",
+                    "Dernière activité DOCTRINE", "Dernière activité QCM-MAJOR"
+                ][index]));
+            row.append(name, specialty, stage, doctrineActivity, qcmActivity);
+            table.appendChild(row);
+        });
+    if (count) count.innerText = `${state.filtered.length} candidat(s) affiché(s), triés alphabétiquement.`;
+    if (exportButton) {
+        const hasNarrowingFilter = Boolean(specialtySelect.value || stageSelect.value
+            || (document.getElementById("admin-overview-activity-filter")?.value || "all") !== "all");
+        exportButton.disabled = !hasNarrowingFilter || state.filtered.length === 0;
+    }
+}
+
+function exportAdminCandidateOverview() {
+    const state = getAdminCandidateOverviewState();
+    const hasNarrowingFilter = Boolean(
+        document.getElementById("admin-overview-specialty")?.value
+        || document.getElementById("admin-overview-stage")?.value
+        || (document.getElementById("admin-overview-activity-filter")?.value || "all") !== "all"
+    );
+    if (!hasNarrowingFilter || state.filtered.length === 0) {
+        setAuthMessage("admin-overview-status", "Appliquez un filtre et vérifiez la sélection avant l’export.");
+        return;
+    }
+
+    const headers = ["Nom ou pseudo", "E-mail", "Spécialité", "Étape observée", "Dernière activité DOCTRINE", "Dernière activité QCM-MAJOR"];
+    const csvCell = value => {
+        let text = String(value ?? "");
+        if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+    };
+    const lines = [
+        headers,
+        ...state.filtered.map(candidate => [
+            candidate.name,
+            candidate.email,
+            candidate.specialty,
+            getAdminCandidateStageLabel(candidate),
+            candidate.doctrine_last_activity ? formatAdminTrackingDate(candidate.doctrine_last_activity) : "",
+            candidate.qcm_last_activity ? formatAdminTrackingDate(candidate.qcm_last_activity) : ""
+        ])
+    ];
+    const blob = new Blob(["\uFEFF", lines.map(line => line.map(csvCell).join(";")).join("\r\n")], {
+        type: "text/csv;charset=utf-8"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `suivi-candidats-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    setAuthMessage("admin-overview-status", `${state.filtered.length} candidat(s) exporté(s) en CSV.`);
+}
+
+function refreshAdminCandidateTrackingView() {
+    adminCandidateTrackingKey = "";
+    renderAdminResults();
+}
+
+function formatAdminTrackingDate(timestamp) {
+    const date = timestamp ? new Date(timestamp) : null;
+    return date && Number.isFinite(date.getTime())
+        ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(date)
+        : "Date inconnue";
+}
+
+function renderAdminTrackingTimeline(candidateResults, tracking, periodDays, candidateId) {
+    const activity = document.getElementById("admin-history-activity");
+    const timeline = document.getElementById("admin-history-timeline");
+    if (!activity || !timeline) return;
+
+    const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
+    const isInPeriod = timestamp => {
+        const time = Date.parse(timestamp || "");
+        return Number.isFinite(time) && (!cutoff || time >= cutoff);
+    };
+    const themeLabels = {
+        all: "Campagne globale",
+        "1": "Thème 1",
+        "2": "Thème 2",
+        "3": "Thème 3",
+        "4": "Thème 4",
+        "5": "Thème 5",
+        "6": "Thème 6"
+    };
+    const events = candidateResults
+        .filter(result => isInPeriod(result.createdAt))
+        .map(result => ({
+            source: "QCM-MAJOR",
+            timestamp: result.createdAt,
+            title: `Résultat ${themeLabels[String(result.theme)] || `thème ${result.theme}`}`,
+            detail: `${Number(result.score).toFixed(2)} / 20`
+        }));
+    const candidateReports = typeof questionReports !== "undefined" && Array.isArray(questionReports)
+        ? questionReports.filter(report => String(report.reporter_id) === String(candidateId)
+            && isInPeriod(report.created_at))
+        : [];
+    candidateReports.forEach(report => events.push({
+        source: "QCM-MAJOR",
+        timestamp: report.created_at,
+        title: "Signalement d’une question",
+        detail: `${report.quiz_theme === "all" ? "Campagne globale" : `Thème ${report.quiz_theme}`} · ${report.status === "resolved" ? "traité" : "en attente"}`
+    }));
+    (tracking.documents || []).forEach(documentView => events.push({
+        source: "DOCTRINE",
+        timestamp: documentView.opened_at,
+        title: `${documentView.event_type === "download" ? "Téléchargement" : "Consultation"} d’une ressource`,
+        detail: `${documentView.document_title} · module ${documentView.module_id}`
+    }));
+    (tracking.progress_events || []).forEach(progressEvent => {
+        const dossier = progressEvent.dossier ? ` · dossier ${progressEvent.dossier}` : "";
+        const labels = {
+            module_started: "Module commencé",
+            module_completed: "Module terminé",
+            dossier_completed: "Dossier marqué « Fait »",
+            correction_accessible: "Corrigé rendu accessible"
+        };
+        events.push({
+            source: "DOCTRINE",
+            timestamp: progressEvent.created_at,
+            title: labels[progressEvent.event_type] || "Progression mise à jour",
+            detail: `Module ${progressEvent.module_id}${dossier}`
+        });
+    });
+    (tracking.submissions || []).forEach(submission => events.push({
+        source: "DOCTRINE",
+        timestamp: submission.created_at,
+        title: "Transmission d’une fiche",
+        detail: `Dossier ${submission.dossier}`
+    }));
+    (tracking.signalements || []).forEach(report => events.push({
+        source: "DOCTRINE",
+        timestamp: report.created_at,
+        title: `Signalement · ${report.incident_type}`,
+        detail: [
+            `module ${report.module_id}`,
+            report.resource,
+            report.priority,
+            report.status === "resolved" ? "traité" : "en attente"
+        ].filter(Boolean).join(" · ")
+    }));
+    events.sort((first, second) => Date.parse(second.timestamp) - Date.parse(first.timestamp));
+
+    const makeActivityCard = (label, timestamp, detail) => {
+        const card = document.createElement("article");
+        const heading = document.createElement("h4");
+        const date = document.createElement("p");
+        const description = document.createElement("small");
+        card.className = "admin-history-activity-card";
+        heading.innerText = label;
+        date.innerText = timestamp ? formatAdminTrackingDate(timestamp) : "Aucune activité sur cette période";
+        description.innerText = detail;
+        card.append(heading, date, description);
+        return card;
+    };
+    const quizResults = candidateResults
+        .filter(result => isInPeriod(result.createdAt))
+        .sort((first, second) => Date.parse(first.createdAt) - Date.parse(second.createdAt));
+    const scores = quizResults.map(result => Number(result.score)).filter(Number.isFinite);
+    const average = scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null;
+    const recent = scores.slice(-3);
+    const previous = scores.slice(-6, -3);
+    const trendDelta = scores.length >= 6
+        ? recent.reduce((sum, score) => sum + score, 0) / recent.length
+            - previous.reduce((sum, score) => sum + score, 0) / previous.length
+        : null;
+    const trend = trendDelta === null
+        ? "Tendance : 6 séries sont nécessaires pour comparer les 3 dernières aux 3 précédentes."
+        : `Tendance : ${trendDelta >= 0 ? "+" : ""}${trendDelta.toFixed(2)} pt (moyenne des 3 dernières séries comparée aux 3 précédentes).`;
+    const doctrineEvents = events.filter(event => event.source === "DOCTRINE");
+    const latestQuiz = quizResults.at(-1);
+    const latestQcmEvent = events.find(event => event.source === "QCM-MAJOR");
+    const latestDoctrine = doctrineEvents[0];
+    activity.replaceChildren(
+        makeActivityCard(
+            "Activité QCM-MAJOR",
+            latestQcmEvent?.timestamp,
+            `${scores.length} série(s)${average === null ? "" : ` · moyenne ${average.toFixed(2)} / 20`} · ${trend}${latestQcmEvent && latestQcmEvent.timestamp !== latestQuiz?.createdAt ? ` Dernier événement : ${latestQcmEvent.title}.` : ""}`
+        ),
+        makeActivityCard(
+            "Activité DOCTRINE",
+            latestDoctrine?.timestamp,
+            latestDoctrine?.title || "Aucun événement DOCTRINE enregistré dans la période."
+        )
+    );
+
+    timeline.replaceChildren();
+    if (events.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "admin-history-timeline-empty";
+        empty.innerText = "Aucun événement enregistré pour cette période.";
+        timeline.appendChild(empty);
+        return;
+    }
+    events.forEach(event => {
+        const item = document.createElement("li");
+        const heading = document.createElement("strong");
+        const meta = document.createElement("span");
+        const date = document.createElement("time");
+        item.className = "admin-history-timeline-item";
+        heading.innerText = `${event.source} — ${event.title}`;
+        meta.innerText = event.detail;
+        date.innerText = formatAdminTrackingDate(event.timestamp);
+        if (Number.isFinite(Date.parse(event.timestamp || ""))) {
+            date.dateTime = new Date(event.timestamp).toISOString();
+        }
+        item.append(heading, meta, date);
+        timeline.appendChild(item);
+    });
+}
+
+function renderAdminThemeSummary(candidateResults, periodDays) {
+    const container = document.getElementById("admin-history-theme-summary");
+    if (!container) return;
+
+    const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
+    const labels = [
+        ["all", "Campagne globale"],
+        ["1", "Thème 1 · Organisation et Commandement"],
+        ["2", "Thème 2 · Matériels, Armements et Technologies"],
+        ["3", "Thème 3 · Lois de Programmation Militaire"],
+        ["4", "Thème 4 · Opérations Extérieures"],
+        ["5", "Thème 5 · Histoire & Traditions"],
+        ["6", "Thème 6 · Implantation des unités"]
+    ];
+    container.replaceChildren();
+    labels.forEach(([theme, label]) => {
+        const scores = candidateResults
+            .filter(result => String(result.theme) === theme
+                && result.createdAt
+                && Number.isFinite(Date.parse(result.createdAt))
+                && (!cutoff || Date.parse(result.createdAt) >= cutoff))
+            .sort((first, second) => Date.parse(first.createdAt) - Date.parse(second.createdAt))
+            .map(result => Number(result.score))
+            .filter(Number.isFinite);
+        const card = document.createElement("article");
+        const title = document.createElement("h4");
+        const average = document.createElement("p");
+        const trend = document.createElement("small");
+        card.className = "admin-history-theme-card";
+        title.innerText = label;
+        if (scores.length) {
+            const mean = values => values.reduce((sum, score) => sum + score, 0) / values.length;
+            const meanScore = mean(scores);
+            const change = scores.length >= 6 ? mean(scores.slice(-3)) - mean(scores.slice(-6, -3)) : null;
+            average.innerText = `${scores.length} série(s) · moyenne ${meanScore.toFixed(2)} / 20`;
+            trend.innerText = change === null
+                ? "Tendance : 6 séries sont nécessaires."
+                : `Tendance : ${change >= 0 ? "+" : ""}${change.toFixed(2)} pt`;
+        } else {
+            average.innerText = "Aucun résultat sur cette période.";
+            trend.innerText = "";
+        }
+        card.append(title, average, trend);
+        container.appendChild(card);
+    });
+}
+
+async function loadAdminCandidateTracking(candidateId, candidateResults, periodDays) {
+    const status = document.getElementById("admin-history-status");
+    const progression = document.getElementById("admin-history-progression");
+    const activity = document.getElementById("admin-history-activity");
+    const timeline = document.getElementById("admin-history-timeline");
+    if (!candidateId) {
+        adminCandidateTrackingKey = "";
+        adminCandidateTrackingRequestId++;
+        if (status) status.innerText = "Suivi DOCTRINE indisponible : identifiant Supabase du candidat introuvable.";
+        if (progression) progression.innerText = "";
+        if (activity) activity.replaceChildren();
+        if (timeline) timeline.replaceChildren();
+        return;
+    }
+
+    const key = `${candidateId}:${periodDays}`;
+    if (typeof supabase === "undefined" || !supabase) {
+        adminCandidateTrackingKey = key;
+        if (status) status.innerText = "Suivi DOCTRINE indisponible sans connexion à Supabase.";
+        if (progression) progression.innerText = "Progression enregistrée indisponible.";
+        if (activity) activity.replaceChildren();
+        if (timeline) timeline.replaceChildren();
+        return;
+    }
+    if (adminCandidateTrackingKey === key) return;
+    adminCandidateTrackingKey = key;
+    const requestId = ++adminCandidateTrackingRequestId;
+    if (status) status.innerText = "Chargement des événements DOCTRINE…";
+    if (progression) progression.innerText = "Chargement de la progression enregistrée…";
+    if (activity) activity.replaceChildren();
+    if (timeline) timeline.replaceChildren();
+
     try {
         const accessToken = getStoredSupabaseSession()?.access_token;
         if (!accessToken) throw new Error("Session administrateur indisponible.");
-        const maximum = await supabaseRestRequest("/rpc/get_admin_candidate_progress", {
+        const since = periodDays > 0
+            ? new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString()
+            : null;
+        const tracking = await supabaseRestRequest("/rpc/get_admin_candidate_tracking", {
             method: "POST",
             accessToken,
-            body: { p_user_id: candidateId }
+            body: { p_user_id: candidateId, p_since: since }
         });
-        if (![10, 20, 30, 40, 50].includes(maximum)) throw new Error("Palier invalide.");
-        if (requestId !== adminProgressRequestId || getStoredSupabaseSession()?.access_token !== accessToken) return;
-        status.innerText = `Intensité débloquée : ${maximum} questions`;
+        if (requestId !== adminCandidateTrackingRequestId
+            || getStoredSupabaseSession()?.access_token !== accessToken) return;
+        if (!tracking || typeof tracking !== "object"
+            || !Array.isArray(tracking.documents)
+            || !Array.isArray(tracking.progress_events)
+            || !Array.isArray(tracking.submissions)
+            || !Array.isArray(tracking.signalements)) {
+            throw new Error("Réponse du suivi candidat invalide.");
+        }
+        renderAdminProgression(tracking.progress);
+        renderAdminTrackingTimeline(candidateResults, tracking, periodDays, candidateId);
+        if (status) status.innerText = "";
     } catch (error) {
-        if (requestId !== adminProgressRequestId) return;
-        console.warn("Chargement de la progression du candidat impossible.", error);
-        status.innerText = "Intensité débloquée indisponible. Actualisez les données administrateur.";
+        if (requestId !== adminCandidateTrackingRequestId) return;
+        console.warn("Chargement du suivi candidat impossible.", error);
+        if (status) status.innerText = "Suivi DOCTRINE indisponible. Vérifiez les migrations et actualisez les données administrateur.";
+        if (progression) progression.innerText = "Progression enregistrée indisponible.";
+        if (activity) activity.replaceChildren();
+        if (timeline) timeline.replaceChildren();
     }
 }
 
@@ -3305,11 +3790,21 @@ function renderAdminResults() {
         const account = candidates.get(selectedCandidate)?.account;
         const ids = [...new Set(candidateResults.map(result => result.candidateId).filter(id => id && id !== "candidat-inconnu"))];
         const candidateId = account?.id || (ids.length === 1 ? ids[0] : null);
-        void renderAdminProgression(candidateId);
+        void loadAdminCandidateTracking(
+            candidateId,
+            candidateResults,
+            Number(document.getElementById("admin-history-period")?.value || 0)
+        );
     } else {
-        adminProgressRequestId++;
+        adminCandidateTrackingKey = "";
+        adminCandidateTrackingRequestId++;
         const progression = document.getElementById("admin-history-progression");
         if (progression) progression.innerText = "";
+        const status = document.getElementById("admin-history-status");
+        if (status) status.innerText = "";
+        document.getElementById("admin-history-activity")?.replaceChildren();
+        document.getElementById("admin-history-theme-summary")?.replaceChildren();
+        document.getElementById("admin-history-timeline")?.replaceChildren();
     }
     renderCandidateHistory(
         candidateResults,
@@ -3317,6 +3812,10 @@ function renderAdminResults() {
         "",
         Number(document.getElementById("admin-history-period")?.value || 0),
         { prefix: "admin-history", filterCandidate: false }
+    );
+    renderAdminThemeSummary(
+        candidateResults,
+        Number(document.getElementById("admin-history-period")?.value || 0)
     );
     renderAdminThemeAcquisition(candidateResults, milestoneSelect?.value || getDefaultAdminMilestone());
 
@@ -3442,6 +3941,7 @@ function renderAdminQuestionReports() {
                     });
                     report.status = "resolved";
                     renderAdminQuestionReports();
+                    refreshAdminCandidateTrackingView();
                 } catch (error) {
                     setAuthMessage("admin-question-reports-status", `Mise à jour impossible : ${error.message}`);
                 } finally {
@@ -3474,6 +3974,7 @@ function renderAdminQuestionReports() {
                 });
                 questionReports = questionReports.filter(item => item.id !== report.id);
                 renderAdminQuestionReports();
+                refreshAdminCandidateTrackingView();
                 setAuthMessage("admin-question-reports-status", "Signalement effacé.");
             } catch (error) {
                 setAuthMessage("admin-question-reports-status", `Suppression impossible : ${error.message}`);
@@ -4616,6 +5117,14 @@ async function initializeAppInteractions() {
     document.getElementById("admin-results-theme-filter")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-period")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-milestone")?.addEventListener("change", renderAdminResults);
+    [
+        "admin-overview-specialty",
+        "admin-overview-period",
+        "admin-overview-stage",
+        "admin-overview-activity-filter",
+        "admin-overview-inactivity"
+    ].forEach(id => document.getElementById(id)?.addEventListener("change", renderAdminOverview));
+    document.getElementById("admin-overview-export")?.addEventListener("click", exportAdminCandidateOverview);
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
@@ -4855,6 +5364,7 @@ async function initializeAppInteractions() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
+        adminCandidateOverview = [];
         if (typeof navigator.setAppBadge === "function") {
             navigator.clearAppBadge?.()?.catch(error => console.warn("Effacement du badge de l’application impossible.", error));
         }
@@ -5118,6 +5628,7 @@ async function initializeAppInteractions() {
                     const report = questionReports.find(item => item.id === adminEditingReportId);
                     if (report) report.status = "resolved";
                     renderAdminQuestionReports();
+                    refreshAdminCandidateTrackingView();
                 } catch (error) {
                     setAuthMessage("admin-question-reports-status", `Question enregistrée, mais signalement non traité : ${error.message}`);
                 }

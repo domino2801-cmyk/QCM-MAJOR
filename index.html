@@ -305,6 +305,49 @@
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><h2>Résultats</h2></div>
+                <section id="admin-candidate-overview" class="admin-candidate-overview" aria-labelledby="admin-candidate-overview-title">
+                    <h3 id="admin-candidate-overview-title">Suivi global descriptif</h3>
+                    <p class="terminal-note">Indicateurs d’activité et d’étapes observées, sans score composite ni classement. Les étapes reflètent les événements enregistrés et ne prouvent pas le travail effectué.</p>
+                    <p class="terminal-note">« Sans activité observée » inclut aussi les comptes sans événement ou date disponible ; cela ne prouve pas une absence d’activité réelle.</p>
+                    <p class="terminal-note">La période règle l’indicateur d’activité ; pour limiter la liste aux actifs, choisissez « Actifs dans la période ».</p>
+                    <div class="admin-overview-filters">
+                        <label for="admin-overview-specialty">Spécialité</label>
+                        <select id="admin-overview-specialty" class="admin-search"><option value="">Toutes les spécialités</option></select>
+                        <label for="admin-overview-period">Période d’activité</label>
+                        <select id="admin-overview-period" class="admin-search">
+                            <option value="0">Toute période</option><option value="7">7 derniers jours</option>
+                            <option value="30">30 derniers jours</option><option value="90">90 derniers jours</option>
+                        </select>
+                        <label for="admin-overview-stage">Étape observée</label>
+                        <select id="admin-overview-stage" class="admin-search"><option value="">Toutes les étapes</option></select>
+                        <label for="admin-overview-activity-filter">Activité des candidats affichés</label>
+                        <select id="admin-overview-activity-filter" class="admin-search">
+                            <option value="all">Tous les candidats</option>
+                            <option value="active">Actifs dans la période</option>
+                            <option value="inactive">Sans activité récente</option>
+                        </select>
+                        <label for="admin-overview-inactivity">Seuil « sans activité »</label>
+                        <select id="admin-overview-inactivity" class="admin-search">
+                            <option value="14">14 jours</option><option value="30" selected>30 jours</option>
+                            <option value="60">60 jours</option><option value="90">90 jours</option>
+                        </select>
+                    </div>
+                    <div id="admin-overview-summary" class="admin-overview-summary" role="status" aria-live="polite"></div>
+                    <p class="terminal-note">Une même personne peut apparaître dans plusieurs étapes, selon les événements enregistrés.</p>
+                    <div id="admin-overview-stage-summary" class="admin-overview-stage-summary" aria-label="Effectifs descriptifs par étape observée"></div>
+                    <p id="admin-overview-status" class="terminal-note" role="status" aria-live="polite"></p>
+                    <div class="admin-results-header admin-overview-export">
+                        <p class="terminal-note">L’export CSV contient uniquement la sélection filtrée et les champs d’identité et d’activité minimale.</p>
+                        <button id="admin-overview-export" class="admin-edit-btn" type="button" disabled>Exporter la sélection (CSV)</button>
+                    </div>
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead><tr><th>Candidat</th><th>Spécialité</th><th>Étape observée</th><th>Dernière activité DOCTRINE</th><th>Dernière activité QCM-MAJOR</th></tr></thead>
+                            <tbody id="admin-overview-table"></tbody>
+                        </table>
+                    </div>
+                    <p id="admin-overview-count" class="terminal-note" role="status" aria-live="polite"></p>
+                </section>
                 <label for="admin-results-candidate-filter">Filtrer par candidat</label>
                 <select id="admin-results-candidate-filter" class="admin-search" aria-label="Filtrer les résultats par candidat"><option value="">Tous les candidats</option></select>
                 <label for="admin-results-theme-filter">Filtrer par thème</label>
@@ -312,7 +355,7 @@
                 <p id="admin-history-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <section id="admin-history-panel" class="global-evolution candidate-history-panel hidden" aria-labelledby="admin-history-title">
                     <h2 id="admin-history-title">Journal de campagne du candidat sélectionné</h2>
-                    <p class="terminal-note">Choisissez un candidat dans le filtre pour consulter ses résultats de campagne et par thème, son évolution dans le temps et son thème à travailler.</p>
+                    <p class="terminal-note">Choisissez un candidat pour consulter ses résultats QCM, sa progression enregistrée et les événements utiles de DOCTRINE. Les consultations sont des clics, pas une preuve de lecture ; les commentaires libres ne sont pas repris.</p>
                     <p id="admin-history-progression" class="terminal-note" role="status" aria-live="polite"></p>
                     <section class="admin-theme-acquisition" aria-labelledby="admin-theme-acquisition-title">
                         <h3 id="admin-theme-acquisition-title">Acquis par thème</h3>
@@ -335,6 +378,13 @@
                     <div id="admin-history-summary" class="global-evolution-summary"></div>
                     <div id="admin-history-charts" class="candidate-history-charts" aria-label="Histogrammes du candidat sélectionné"></div>
                     <p id="admin-history-recommendation" class="candidate-history-recommendation"></p>
+                    <div id="admin-history-theme-summary" class="admin-history-theme-summary" aria-label="Moyennes et tendances par thème"></div>
+                    <div id="admin-history-activity" class="admin-history-activity" aria-live="polite"></div>
+                    <section class="admin-history-timeline-section" aria-labelledby="admin-history-timeline-title">
+                        <h3 id="admin-history-timeline-title">Chronologie commune</h3>
+                        <p class="terminal-note">La période sélectionnée s’applique aux résultats QCM et aux événements DOCTRINE. Les consultations DOCTRINE sont conservées au maximum 12 mois.</p>
+                        <ul id="admin-history-timeline" class="admin-history-timeline" aria-live="polite"></ul>
+                    </section>
                 </section>
                 <input id="admin-results-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou une note" aria-label="Rechercher un résultat">
                 <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-results-table"></tbody></table></div>

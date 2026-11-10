@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Aperçu — Résultats et acquis par thème</title>
+    <style>
+        :root { color-scheme: dark; font-family: "Segoe UI", Arial, sans-serif; background: #080f13; color: #e2e8e4; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 28px; }
+        main { max-width: 1050px; margin: auto; padding: 26px; border: 1px solid #42544c; border-radius: 12px; background: #10191b; box-shadow: 0 18px 55px #0008; }
+        .eyebrow { color: #9baa89; letter-spacing: .14em; font-size: .75rem; }
+        h1 { margin: 8px 0 22px; color: #e8cb73; font-size: clamp(1.5rem, 3vw, 2.2rem); }
+        h2 { margin: 0 0 14px; color: #e8cb73; font-size: 1.15rem; }
+        h3 { margin: 0 0 10px; font-size: 1rem; }
+        .filter { display: grid; grid-template-columns: minmax(240px, 430px) 1fr; gap: 18px; align-items: end; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 7px; color: #b7c1bb; font-size: .9rem; }
+        select { width: 100%; padding: 12px; border: 1px solid #59675f; border-radius: 7px; background: #293339; color: #f0f3f1; font: inherit; }
+        .period { color: #aab8ad; text-align: right; font-size: .86rem; }
+        .panel { padding: 20px; border: 1px solid #405149; border-radius: 10px; background: #131e1e; }
+        .intro { margin: -4px 0 18px; color: #aeb9b1; line-height: 1.55; }
+        .charts-title { margin: 20px 0 10px; color: #e8cb73; }
+        .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .chart-card { min-width: 0; padding: 12px; border: 1px solid #35443e; border-radius: 8px; background: #101918; }
+        .chart-card h4 { min-height: 2.4em; margin: 0 0 10px; color: #d7dfd8; font-size: .86rem; }
+        .chart { display: flex; align-items: flex-end; gap: 10px; height: 128px; overflow-x: auto; padding: 18px 4px 0; border-bottom: 1px solid #84938a; }
+        .chart-item { display: flex; flex: 0 0 34px; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+        .bar-track { position: relative; display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 100px; }
+        .bar { width: 25px; min-height: 3px; border-radius: 4px 4px 0 0; background: #5dcc88; }
+        .bar.warning { background: #f39c12; }
+        .bar.critical { background: #d64545; }
+        .bar-value { position: absolute; top: -17px; color: #e2e8e4; font-size: .66rem; white-space: nowrap; }
+        .bar-date { padding-top: 5px; color: #aab6ae; font-size: .62rem; }
+        .milestone { max-width: 410px; margin-bottom: 14px; }
+        .note { margin: 4px 0 16px; color: #aab6ae; font-size: .82rem; line-height: 1.5; }
+        .summary { margin: 0 0 12px; color: #e8cb73; font-weight: 700; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid #35443e; vertical-align: middle; }
+        th { color: #e8cb73; font-size: .84rem; }
+        td { font-size: .9rem; }
+        .status { display: inline-block; padding: 5px 10px; border: 1px solid; border-radius: 99px; font-size: .77rem; font-weight: 800; white-space: nowrap; }
+        .yes { border-color: #42865d; background: #183b2b; color: #8be0a6; }
+        .no { border-color: #8c594d; background: #42251f; color: #ffab99; }
+        .empty { color: #c8b787; }
+        .foot { margin: 15px 0 0; color: #84938a; font-size: .78rem; }
+        @media (max-width: 650px) {
+            body { padding: 10px; }
+            main { padding: 16px; }
+            .filter { grid-template-columns: 1fr; gap: 12px; }
+            .period { text-align: left; }
+            .panel { padding: 13px; }
+            .charts { grid-template-columns: 1fr; }
+            th, td { padding: 9px 7px; font-size: .79rem; }
+            th:nth-child(2), td:nth-child(2) { min-width: 130px; }
+        }
+    </style>
+</head>
+<body>
+<main>
+    <div class="eyebrow">ESPACE ADMINISTRATEUR · APERÇU LOCAL</div>
+    <h1>Résultats — suivi de campagne</h1>
+    <div class="filter">
+        <div>
+            <label for="candidate">Filtrer par candidat</label>
+            <select id="candidate"><option>Camille Martin · aperçu fictif</option></select>
+        </div>
+        <div class="period">Planning de préparation BM4 2027 · données d’exemple, non réelles</div>
+    </div>
+    <section class="panel">
+        <h2>Journal de campagne du candidat sélectionné</h2>
+        <p class="intro">Résultats par thème, progression et thème à travailler. Le seuil évolue selon le jalon de préparation.</p>
+        <h3 class="charts-title">Histogrammes des notes — tous les thèmes</h3>
+        <div class="charts">
+            <section class="chart-card"><h4>Organisation et Commandement</h4><div class="chart">
+                <div class="chart-item" title="12/06/2027 — 12 / 20"><div class="bar-track"><span class="bar-value">12</span><div class="bar warning" style="height:60%"></div></div><span class="bar-date">12/06</span></div>
+                <div class="chart-item" title="28/06/2027 — 15 / 20"><div class="bar-track"><span class="bar-value">15</span><div class="bar" style="height:75%"></div></div><span class="bar-date">28/06</span></div>
+                <div class="chart-item" title="14/07/2027 — 18,5 / 20"><div class="bar-track"><span class="bar-value">18,5</span><div class="bar" style="height:92.5%"></div></div><span class="bar-date">14/07</span></div>
+            </div></section>
+            <section class="chart-card"><h4>Matériels, Armements et Technologies</h4><div class="chart">
+                <div class="chart-item" title="18/06/2027 — 11 / 20"><div class="bar-track"><span class="bar-value">11</span><div class="bar warning" style="height:55%"></div></div><span class="bar-date">18/06</span></div>
+                <div class="chart-item" title="02/07/2027 — 14 / 20"><div class="bar-track"><span class="bar-value">14</span><div class="bar warning" style="height:70%"></div></div><span class="bar-date">02/07</span></div>
+                <div class="chart-item" title="19/07/2027 — 17,4 / 20"><div class="bar-track"><span class="bar-value">17,4</span><div class="bar" style="height:87%"></div></div><span class="bar-date">19/07</span></div>
+            </div></section>
+            <section class="chart-card"><h4>Lois de Programmation Militaire</h4><div class="chart">
+                <div class="chart-item" title="15/05/2027 — 13 / 20"><div class="bar-track"><span class="bar-value">13</span><div class="bar warning" style="height:65%"></div></div><span class="bar-date">15/05</span></div>
+                <div class="chart-item" title="16/06/2027 — 17 / 20"><div class="bar-track"><span class="bar-value">17</span><div class="bar" style="height:85%"></div></div><span class="bar-date">16/06</span></div>
+                <div class="chart-item" title="22/07/2027 — 18,8 / 20"><div class="bar-track"><span class="bar-value">18,8</span><div class="bar" style="height:94%"></div></div><span class="bar-date">22/07</span></div>
+            </div></section>
+            <section class="chart-card"><h4>Opérations Extérieures</h4><div class="chart">
+                <div class="chart-item" title="10/05/2027 — 10 / 20"><div class="bar-track"><span class="bar-value">10</span><div class="bar warning" style="height:50%"></div></div><span class="bar-date">10/05</span></div>
+                <div class="chart-item" title="12/06/2027 — 13 / 20"><div class="bar-track"><span class="bar-value">13</span><div class="bar warning" style="height:65%"></div></div><span class="bar-date">12/06</span></div>
+                <div class="chart-item" title="08/07/2027 — 16 / 20"><div class="bar-track"><span class="bar-value">16</span><div class="bar" style="height:80%"></div></div><span class="bar-date">08/07</span></div>
+            </div></section>
+            <section class="chart-card"><h4>Histoire &amp; Traditions</h4><div class="chart">
+                <div class="chart-item" title="14/06/2027 — 14 / 20"><div class="bar-track"><span class="bar-value">14</span><div class="bar warning" style="height:70%"></div></div><span class="bar-date">14/06</span></div>
+                <div class="chart-item" title="30/06/2027 — 16 / 20"><div class="bar-track"><span class="bar-value">16</span><div class="bar" style="height:80%"></div></div><span class="bar-date">30/06</span></div>
+                <div class="chart-item" title="21/07/2027 — 18,2 / 20"><div class="bar-track"><span class="bar-value">18,2</span><div class="bar" style="height:91%"></div></div><span class="bar-date">21/07</span></div>
+            </div></section>
+            <section class="chart-card"><h4>Implantation des unités</h4><div class="chart">
+                <div class="chart-item" title="02/05/2027 — 11 / 20"><div class="bar-track"><span class="bar-value">11</span><div class="bar warning" style="height:55%"></div></div><span class="bar-date">02/05</span></div>
+                <div class="chart-item" title="11/06/2027 — 14 / 20"><div class="bar-track"><span class="bar-value">14</span><div class="bar warning" style="height:70%"></div></div><span class="bar-date">11/06</span></div>
+                <div class="chart-item" title="20/07/2027 — 15,7 / 20"><div class="bar-track"><span class="bar-value">15,7</span><div class="bar warning" style="height:78.5%"></div></div><span class="bar-date">20/07</span></div>
+            </div></section>
+        </div>
+        <h3>Acquis par thème</h3>
+        <label for="milestone">Jalon du planning</label>
+        <select class="milestone" id="milestone">
+            <option>Janvier — objectif &gt; 60 %</option>
+            <option>Février — objectif &gt; 60 %</option>
+            <option>Mars — objectif &gt; 70 %</option>
+            <option>Avril — objectif &gt; 70 %</option>
+            <option>Mai — objectif &gt; 80 %</option>
+            <option>Juin — objectif &gt; 80 %</option>
+            <option>Juillet — objectif &gt; 85 %</option>
+            <option selected>Août — objectif &gt; 90 %</option>
+        </select>
+        <p class="note">Moyenne des taux de bonnes réponses par série, jusqu’à la fin du jalon. Un thème sans résultat est non acquis. Le seuil est strict : il faut dépasser le pourcentage indiqué.</p>
+        <p class="summary">3 thèmes acquis sur 6 au jalon août.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Thème</th><th>Moyenne des bonnes réponses</th><th>Seuil requis</th><th>État</th></tr></thead>
+                <tbody>
+                    <tr><td>Organisation et Commandement</td><td>92,5 %</td><td>&gt; 90 %</td><td><span class="status yes">ACQUIS</span></td></tr>
+                    <tr><td>Matériels, Armements et Technologies</td><td>87,0 %</td><td>&gt; 90 %</td><td><span class="status no">NON ACQUIS</span></td></tr>
+                    <tr><td>Lois de Programmation Militaire</td><td>94,0 %</td><td>&gt; 90 %</td><td><span class="status yes">ACQUIS</span></td></tr>
+                    <tr><td>Opérations Extérieures</td><td>—</td><td>&gt; 90 %</td><td><span class="status no empty">NON ACQUIS · aucun résultat</span></td></tr>
+                    <tr><td>Histoire &amp; Traditions</td><td>91,2 %</td><td>&gt; 90 %</td><td><span class="status yes">ACQUIS</span></td></tr>
+                    <tr><td>Implantation des unités</td><td>78,5 %</td><td>&gt; 90 %</td><td><span class="status no">NON ACQUIS</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="foot">Aperçu de présentation — toutes les notes et identités visibles ici sont fictives.</p>
+    </section>
+</main>
+</body>
+</html>
