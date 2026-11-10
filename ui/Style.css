@@ -2436,6 +2436,48 @@ h1 {
     background: rgba(0, 0, 0, 0.12);
 }
 
+.admin-candidate-directory {
+    margin: 20px 0 28px;
+    padding: 18px;
+    border: 1px solid rgba(159, 170, 132, 0.32);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.admin-candidate-directory h3 {
+    color: var(--accent);
+    margin: 0 0 12px;
+}
+
+.admin-candidate-email-list {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+}
+
+.admin-candidate-email {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(159, 170, 132, 0.42);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    overflow-wrap: anywhere;
+    padding: 11px 12px;
+    text-align: left;
+}
+
+.admin-candidate-email:hover,
+.admin-candidate-email[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.admin-candidate-email:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 .admin-candidate-overview h3 {
     margin: 0 0 10px;
     color: var(--accent);

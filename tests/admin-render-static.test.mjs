@@ -33,6 +33,10 @@ test("admin renderers target the existing table body ids", () => {
     assert.match(html, /id="admin-questions-table"/);
     assert.match(html, /id="admin-results-table"/);
     assert.match(html, /id="admin-results-candidate-filter"/);
+    assert.match(html, /id="admin-results-candidates"/);
+    assert.match(html, /Rechercher une adresse e-mail/);
+    assert.match(html, /id="admin-history-charts"/);
+    assert.match(html, /<div class="hidden" aria-hidden="true">[\s\S]*id="admin-results-table"/);
     assert.match(html, /id="admin-retex-pdf-btn"/);
     assert.match(html, /id="admin-retex-responses"/);
     assert.match(html, /id="admin-retex-responses-block"/);

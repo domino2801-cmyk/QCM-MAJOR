@@ -3722,7 +3722,12 @@ function renderAdminResults() {
         if (!value) return;
         const id = String(account.id || "").trim();
         const email = emailKey(account.email);
-        candidates.set(value, { account, label: `${account.name || account.email || value}${account.email && account.name ? ` • ${account.email}` : ""}` });
+        candidates.set(value, {
+            account,
+            email: String(account.email || "").trim(),
+            name: String(account.name || "").trim(),
+            label: `${account.name || account.email || value}${account.email && account.name ? ` • ${account.email}` : ""}`
+        });
         if (id) {
             keysById.set(id, value);
             idsByKey.set(value, id);
@@ -3756,7 +3761,16 @@ function renderAdminResults() {
         if (result.email && !keysByEmail.has(emailKey(result.email))) keysByEmail.set(emailKey(result.email), value);
         if (!candidates.has(value)) {
             const label = result.name || result.label || result.email || value;
-            candidates.set(value, { label: `${label}${result.email && result.name ? ` • ${result.email}` : ""}` });
+            candidates.set(value, {
+                email: String(result.email || "").trim(),
+                name: String(result.name || result.label || "").trim(),
+                label: `${label}${result.email && result.name ? ` • ${result.email}` : ""}`
+            });
+        } else if (!candidates.get(value).email && result.email) {
+            candidates.get(value).email = String(result.email).trim();
+        }
+        if (!candidates.get(value).name && (result.name || result.label)) {
+            candidates.get(value).name = String(result.name || result.label).trim();
         }
     });
     if (candidateFilter) {
@@ -3773,6 +3787,46 @@ function renderAdminResults() {
     }
 
     const historyPanel = document.getElementById("admin-history-panel");
+    const candidateDirectory = document.getElementById("admin-results-candidates");
+    const candidateDirectoryStatus = document.getElementById("admin-results-candidates-status");
+    if (candidateDirectory) {
+        const emailSearch = search.trim().toLowerCase();
+        const emailCandidates = [...candidates.entries()]
+            .filter(([, candidate]) => {
+                const email = String(candidate.email || "").trim().toLowerCase();
+                return email && email.includes(emailSearch);
+            })
+            .sort((first, second) =>
+                String(first[1].email).localeCompare(String(second[1].email), "fr", { sensitivity: "base" })
+            );
+        const emailCounts = new Map();
+        emailCandidates.forEach(([, candidate]) => {
+            const email = String(candidate.email).trim().toLowerCase();
+            emailCounts.set(email, (emailCounts.get(email) || 0) + 1);
+        });
+        candidateDirectory.replaceChildren();
+        emailCandidates.forEach(([value, candidate]) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "admin-candidate-email";
+            const email = String(candidate.email).trim();
+            button.innerText = emailCounts.get(email.toLowerCase()) > 1
+                ? `${email} · ${candidate.name || idsByKey.get(value) || "compte distinct"}`
+                : email;
+            button.setAttribute("role", "listitem");
+            button.setAttribute("aria-pressed", String(value === selectedCandidate));
+            button.addEventListener("click", () => {
+                if (candidateFilter) candidateFilter.value = value;
+                renderAdminResults();
+            });
+            candidateDirectory.appendChild(button);
+        });
+        if (candidateDirectoryStatus) {
+            candidateDirectoryStatus.innerText = emailCandidates.length
+                ? "Sélectionnez une adresse pour afficher les histogrammes des notes par thème."
+                : "Aucune adresse e-mail trouvée.";
+        }
+    }
     const historyStatus = document.getElementById("admin-history-status");
     const milestoneSelect = document.getElementById("admin-history-milestone");
     if (milestoneSelect && !milestoneSelect.dataset.initialized) {
@@ -3780,6 +3834,14 @@ function renderAdminResults() {
         milestoneSelect.dataset.initialized = "true";
     }
     historyPanel?.classList.toggle("hidden", !selectedCandidate);
+    if (selectedCandidate) {
+        const selected = candidates.get(selectedCandidate);
+        const title = document.getElementById("admin-history-title");
+        if (title) title.innerText = `Notes de ${selected?.email || selected?.label || "ce candidat"}`;
+    } else {
+        const title = document.getElementById("admin-history-title");
+        if (title) title.innerText = "Détails des notes du candidat";
+    }
     if (historyStatus) {
         historyStatus.innerText = "";
     }

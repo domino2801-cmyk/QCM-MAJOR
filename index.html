@@ -307,9 +307,6 @@
                 <div class="admin-results-header"><h2>Résultats</h2></div>
                 <section id="admin-candidate-overview" class="admin-candidate-overview" aria-labelledby="admin-candidate-overview-title">
                     <h3 id="admin-candidate-overview-title">Suivi global descriptif</h3>
-                    <p class="terminal-note">Indicateurs d’activité et d’étapes observées, sans score composite ni classement. Les étapes reflètent les événements enregistrés et ne prouvent pas le travail effectué.</p>
-                    <p class="terminal-note">« Sans activité observée » inclut aussi les comptes sans événement ou date disponible ; cela ne prouve pas une absence d’activité réelle.</p>
-                    <p class="terminal-note">La période règle l’indicateur d’activité ; pour limiter la liste aux actifs, choisissez « Actifs dans la période ».</p>
                     <div class="admin-overview-filters">
                         <label for="admin-overview-specialty">Spécialité</label>
                         <select id="admin-overview-specialty" class="admin-search"><option value="">Toutes les spécialités</option></select>
@@ -333,7 +330,7 @@
                         </select>
                     </div>
                     <div id="admin-overview-summary" class="admin-overview-summary" role="status" aria-live="polite"></div>
-                    <p class="terminal-note">Une même personne peut apparaître dans plusieurs étapes, selon les événements enregistrés.</p>
+
                     <div id="admin-overview-stage-summary" class="admin-overview-stage-summary" aria-label="Effectifs descriptifs par étape observée"></div>
                     <p id="admin-overview-status" class="terminal-note" role="status" aria-live="polite"></p>
                     <div class="admin-results-header admin-overview-export">
@@ -348,13 +345,20 @@
                     </div>
                     <p id="admin-overview-count" class="terminal-note" role="status" aria-live="polite"></p>
                 </section>
-                <label for="admin-results-candidate-filter">Filtrer par candidat</label>
-                <select id="admin-results-candidate-filter" class="admin-search" aria-label="Filtrer les résultats par candidat"><option value="">Tous les candidats</option></select>
-                <label for="admin-results-theme-filter">Filtrer par thème</label>
-                <select id="admin-results-theme-filter" class="admin-search" aria-label="Filtrer les résultats par thème"><option value="">Tous les thèmes</option><option value="all">Campagne Globale</option><option value="1">Thème 1 • Organisation et Commandement</option><option value="2">Thème 2 • Matériels, Armements et Technologies</option><option value="3">Thème 3 • Lois de Programmation Militaire</option><option value="4">Thème 4 • Opérations Extérieures</option><option value="5">Thème 5 • Histoire &amp; Traditions</option><option value="6">Thème 6 • Implantation des unités</option></select>
+                <section class="admin-candidate-directory" aria-labelledby="admin-candidate-directory-title">
+                    <h3 id="admin-candidate-directory-title">Notes QCM-MAJOR par candidat</h3>
+                    <label for="admin-results-search">Rechercher une adresse e-mail</label>
+                    <input id="admin-results-search" class="admin-search" type="search" placeholder="Rechercher une adresse e-mail" aria-label="Rechercher un candidat par adresse e-mail">
+                    <div id="admin-results-candidates" class="admin-candidate-email-list" role="list" aria-label="Adresses e-mail des candidats"></div>
+                    <p id="admin-results-candidates-status" class="terminal-note" role="status" aria-live="polite"></p>
+                </section>
+                <div class="hidden" aria-hidden="true">
+                    <select id="admin-results-candidate-filter" class="admin-search" aria-label="Candidat sélectionné en interne"><option value="">Tous les candidats</option></select>
+                    <select id="admin-results-theme-filter" class="admin-search" aria-label="Filtre de thème interne"><option value="">Tous les thèmes</option><option value="all">Campagne Globale</option><option value="1">Thème 1 • Organisation et Commandement</option><option value="2">Thème 2 • Matériels, Armements et Technologies</option><option value="3">Thème 3 • Lois de Programmation Militaire</option><option value="4">Thème 4 • Opérations Extérieures</option><option value="5">Thème 5 • Histoire &amp; Traditions</option><option value="6">Thème 6 • Implantation des unités</option></select>
+                </div>
                 <p id="admin-history-status" class="terminal-note" role="status" aria-live="polite"></p>
                 <section id="admin-history-panel" class="global-evolution candidate-history-panel hidden" aria-labelledby="admin-history-title">
-                    <h2 id="admin-history-title">Journal de campagne du candidat sélectionné</h2>
+                    <h2 id="admin-history-title">Détails des notes du candidat</h2>
                     <p class="terminal-note">Choisissez un candidat pour consulter ses résultats QCM, sa progression enregistrée et les événements utiles de DOCTRINE. Les consultations sont des clics, pas une preuve de lecture ; les commentaires libres ne sont pas repris.</p>
                     <p id="admin-history-progression" class="terminal-note" role="status" aria-live="polite"></p>
                     <section class="admin-theme-acquisition" aria-labelledby="admin-theme-acquisition-title">
@@ -386,9 +390,10 @@
                         <ul id="admin-history-timeline" class="admin-history-timeline" aria-live="polite"></ul>
                     </section>
                 </section>
-                <input id="admin-results-search" class="admin-search" type="search" placeholder="Rechercher un pseudo ou une note" aria-label="Rechercher un résultat">
-                <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-results-table"></tbody></table></div>
-                <div class="admin-pagination"><p id="admin-results-count" role="status"></p><button id="admin-results-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
+                <div class="hidden" aria-hidden="true">
+                    <div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>Candidat</th><th>Note</th><th>Réponses</th><th>Date</th><th>Action</th></tr></thead><tbody id="admin-results-table"></tbody></table></div>
+                    <div class="admin-pagination"><p id="admin-results-count" role="status"></p><button id="admin-results-more" class="admin-edit-btn hidden" type="button">Charger plus</button></div>
+                </div>
             </section>
         </div>
 

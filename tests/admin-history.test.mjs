@@ -43,9 +43,11 @@ test("la suppression d'un résultat reste réservée au compte domino2801@gmail.
 
 function element() {
     const classes = new Set();
+    const listeners = {};
     return {
         children: [], innerText: "", value: "", style: {},
         dataset: {},
+        listeners,
         set innerHTML(value) { this.children = []; },
         classList: {
             add(value) { classes.add(value); },
@@ -58,13 +60,15 @@ function element() {
         attributes: {},
         setAttribute(name, value) { this.attributes[name] = value; },
         getAttribute(name) { return this.attributes[name] || null; },
-        addEventListener() {}
+        addEventListener(name, callback) { listeners[name] = callback; },
+        click() { listeners.click?.(); }
     };
 }
 
 function harness(customResults) {
     const nodes = new Map([
-        "admin-results-table", "admin-results-candidate-filter", "admin-results-search",
+        "admin-results-table", "admin-results-candidate-filter", "admin-results-theme-filter", "admin-results-search",
+        "admin-results-candidates", "admin-results-candidates-status", "admin-history-title",
         "admin-history-panel", "admin-history-status", "admin-history-period", "admin-history-progression",
         "admin-history-milestone", "admin-theme-acquisition",
         "admin-history-charts", "admin-history-summary", "admin-history-recommendation",
@@ -124,6 +128,7 @@ test("le journal affiche le palier enregistré et propose les candidats sans ré
     await new Promise(resolve => setImmediate(resolve));
     assert.match(h.nodes.get("admin-history-progression").innerText, /^Palier enregistré : 50 questions\./);
     assert.ok(h.nodes.get("admin-results-candidate-filter").children.some(option => option.value === "c@test.fr"));
+    assert.ok(h.nodes.get("admin-results-candidates").children.some(button => button.innerText === "c@test.fr"));
 
     h.nodes.get("admin-results-candidate-filter").value = "c@test.fr";
     vm.runInContext("renderAdminResults()", h.context);
@@ -131,6 +136,38 @@ test("le journal affiche le palier enregistré et propose les candidats sans ré
     assert.match(h.nodes.get("admin-history-progression").innerText, /^Palier enregistré : 10 questions\./);
     assert.deepEqual(calls.map(call => call.id), ["a", "c"]);
     assert.ok(calls.every(call => call.path === "/rpc/get_admin_candidate_tracking"));
+});
+
+test("cliquer sur une adresse e-mail affiche les histogrammes détaillés du candidat", () => {
+    const h = harness([
+        { candidateId: "a", email: "alpha@test.fr", theme: "all", score: 18, createdAt: new Date().toISOString() },
+        { candidateId: "a", email: "alpha@test.fr", theme: "2", score: 12, createdAt: new Date().toISOString() }
+    ]);
+
+    vm.runInContext("renderAdminResults()", h.context);
+    const emailButton = h.nodes.get("admin-results-candidates").children[0];
+    assert.equal(emailButton.innerText, "alpha@test.fr");
+    emailButton.click();
+
+    assert.equal(h.nodes.get("admin-results-candidate-filter").value, "alpha@test.fr");
+    assert.equal(h.nodes.get("admin-history-panel").classList.contains("hidden"), false);
+    assert.equal(h.nodes.get("admin-history-title").innerText, "Notes de alpha@test.fr");
+    assert.equal(h.nodes.get("admin-history-charts").children.length, 7);
+    assert.equal(h.nodes.get("admin-history-charts").children[2].children[1].children.length, 1);
+});
+
+test("la recherche du répertoire filtre uniquement les adresses e-mail", () => {
+    const h = harness([
+        { candidateId: "a", email: "alpha@test.fr", name: "Alpha", theme: "1", score: 12, createdAt: new Date().toISOString() },
+        { candidateId: "b", email: "bravo@test.fr", name: "Bravo", theme: "2", score: 16, createdAt: new Date().toISOString() }
+    ]);
+    h.nodes.get("admin-results-search").value = "bravo@";
+
+    vm.runInContext("renderAdminResults()", h.context);
+
+    const buttons = h.nodes.get("admin-results-candidates").children;
+    assert.equal(buttons.length, 1);
+    assert.equal(buttons[0].innerText, "bravo@test.fr");
 });
 
 test("les résultats avec ou sans e-mail sont regroupés par identifiant de compte", async () => {
@@ -176,6 +213,10 @@ test("un e-mail partagé ne fusionne pas deux identifiants distincts", () => {
     vm.runInContext("renderAdminResults()", h.context);
     assert.equal(h.nodes.get("admin-results-table").children.length, 0);
     assert.ok(h.nodes.get("admin-results-candidate-filter").children.some(option => option.value === "b"));
+    assert.deepEqual(
+        h.nodes.get("admin-results-candidates").children.map(button => button.innerText),
+        ["a@test.fr · Alpha", "a@test.fr · Bravo"]
+    );
 });
 
 test("un changement de candidat ignore une réponse de progression arrivée en retard", async () => {

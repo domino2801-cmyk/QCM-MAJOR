@@ -91,12 +91,15 @@ test("le palier QCM n’est jamais présenté comme acquis en l’absence de pro
     }), /dossier 12 rendu accessible.*module terminé/);
 });
 
-test("l’interface expose les indicateurs non punitifs et l’export CSV filtré aux six champs autorisés", () => {
+test("l’interface expose les filtres descriptifs et l’export CSV filtré aux six champs autorisés", () => {
     assert.match(html, /id="admin-overview-specialty"/);
     assert.match(html, /id="admin-overview-period"/);
     assert.match(html, /id="admin-overview-stage"/);
     assert.match(html, /id="admin-overview-inactivity"/);
-    assert.match(html, /sans score composite ni classement/i);
+    assert.doesNotMatch(html, /Indicateurs d’activité et d’étapes observées/i);
+    assert.doesNotMatch(html, /Sans activité observée.*absence d’activité réelle/i);
+    assert.doesNotMatch(html, /La période règle l’indicateur d’activité/i);
+    assert.doesNotMatch(html, /Une même personne peut apparaître dans plusieurs étapes/i);
     assert.match(app, /function exportAdminCandidateOverview/);
     assert.match(app, /"Nom ou pseudo", "E-mail", "Spécialité", "Étape observée", "Dernière activité DOCTRINE", "Dernière activité QCM-MAJOR"/);
     assert.match(app, /if \(!hasNarrowingFilter \|\| state\.filtered\.length === 0\)/);
