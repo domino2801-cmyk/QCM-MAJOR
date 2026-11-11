@@ -3716,18 +3716,18 @@ function getAdminDashboardSummaries() {
     const status = document.getElementById("admin-dashboard-status")?.value || "";
     const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
     const all = buildCandidateSummaries({ results: getResults(), accounts: Object.values(getAccounts()) });
-    const filtered = all.filter(summary =>
-        (!status || summary.status === status)
-        && (!specialty || summary.specialty === specialty)
+    const scoped = all.filter(summary =>
+        (!specialty || summary.specialty === specialty)
         && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
-    return { all, filtered: sortByPriority(filtered), hasFilter: Boolean(status || specialty || search) };
+    const filtered = scoped.filter(summary => !status || summary.status === status);
+    return { all, scoped, status, filtered: sortByPriority(filtered), hasFilter: Boolean(status || specialty || search) };
 }
 
 function renderAdminCandidateDashboard() {
     const cards = document.getElementById("admin-dashboard-cards");
     if (!cards) return;
     const specialtySelect = document.getElementById("admin-dashboard-specialty");
-    const { all, filtered } = getAdminDashboardSummaries();
+    const { all, scoped, status: activeStatus, filtered } = getAdminDashboardSummaries();
     if (specialtySelect) {
         const selected = specialtySelect.value;
         const specialties = [...new Set(all.map(summary => summary.specialty).filter(Boolean))]
@@ -3753,19 +3753,22 @@ function renderAdminCandidateDashboard() {
             }
         }
     });
-    const counts = countByStatus(filtered);
+    const counts = countByStatus(scoped);
     const summary = document.getElementById("admin-dashboard-summary");
     if (summary) {
         summary.replaceChildren();
-        const total = document.createElement("span");
-        total.className = "admin-dashboard-chip";
-        total.textContent = `${filtered.length} candidat(s)`;
-        summary.appendChild(total);
+        const statusSelect = document.getElementById("admin-dashboard-status");
         ["struggling", "watch", "ready", "none"].forEach(key => {
-            const chip = document.createElement("span");
+            const chip = document.createElement("button");
+            chip.type = "button";
             chip.className = "admin-dashboard-chip";
             chip.style.setProperty("--status-color", STATUSES[key].color);
+            chip.setAttribute("aria-pressed", String(activeStatus === key));
             chip.textContent = `${STATUSES[key].label} : ${counts[key]}`;
+            chip.addEventListener("click", () => {
+                if (statusSelect) statusSelect.value = key;
+                renderAdminCandidateDashboard();
+            });
             summary.appendChild(chip);
         });
     }
