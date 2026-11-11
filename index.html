@@ -308,16 +308,14 @@
                 <section id="admin-candidate-dashboard" class="admin-dashboard" aria-labelledby="admin-dashboard-title">
                     <h3 id="admin-dashboard-title">Tableau de bord des candidats</h3>
                     <p class="terminal-note">Statut selon la moyenne générale sur 20 : Prêt ≥ 14 · À surveiller de 10 à 14 · En difficulté &lt; 10.</p>
+                    <select id="admin-dashboard-status" class="hidden" aria-hidden="true" tabindex="-1">
+                        <option value="">Tous les statuts</option>
+                        <option value="struggling" selected>En difficulté</option>
+                        <option value="watch">À surveiller</option>
+                        <option value="ready">Prêt</option>
+                        <option value="none">Sans résultat</option>
+                    </select>
                     <div class="admin-dashboard-controls">
-                        <input id="admin-dashboard-search" class="admin-search" type="search" placeholder="Rechercher un candidat" aria-label="Rechercher un candidat dans le tableau de bord">
-                        <select id="admin-dashboard-status" class="admin-search" aria-label="Filtrer par statut">
-                            <option value="">Tous les statuts</option>
-                            <option value="struggling" selected>En difficulté</option>
-                            <option value="watch">À surveiller</option>
-                            <option value="ready">Prêt</option>
-                            <option value="none">Sans résultat</option>
-                        </select>
-                        <select id="admin-dashboard-specialty" class="admin-search" aria-label="Filtrer par spécialité"><option value="">Toutes les spécialités</option></select>
                         <button id="admin-dashboard-pdf" class="admin-edit-btn" type="button">Exporter le suivi en PDF</button>
                     </div>
                     <div id="admin-dashboard-summary" class="admin-dashboard-summary" role="status" aria-live="polite"></div>

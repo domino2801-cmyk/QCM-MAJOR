@@ -2564,7 +2564,8 @@ h1 {
 
 .admin-dashboard-controls {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
+    display: flex;
+    justify-content: flex-end;
     gap: 8px;
     margin: 14px 0;
 }
