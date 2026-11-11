@@ -150,12 +150,27 @@ function meter(doc, value, className = "") {
     return track;
 }
 
-export function renderCandidateDashboard(container, summaries, doc = document) {
+export function renderCandidateDashboard(container, summaries, doc = document, { selected = "", onSelect } = {}) {
     container.replaceChildren();
+    const selectedKey = String(selected || "").trim().toLowerCase();
     summaries.forEach(summary => {
         const status = STATUSES[summary.status];
         const card = element(doc, "article", "candidate-card");
+        const isSelected = Boolean(selectedKey)
+            && [summary.email, summary.id].some(value => String(value || "").trim().toLowerCase() === selectedKey);
         card.dataset.status = summary.status;
+        card.setAttribute("role", "button");
+        card.tabIndex = 0;
+        card.setAttribute("aria-pressed", String(isSelected));
+        card.setAttribute("aria-label", `Détails de ${summary.name}`);
+        if (onSelect) {
+            card.addEventListener("click", () => onSelect(summary, isSelected));
+            card.addEventListener("keydown", event => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                onSelect(summary, isSelected);
+            });
+        }
         card.style.setProperty("--status-color", status.color);
 
         const head = element(doc, "header", "candidate-card-head");
@@ -178,18 +193,7 @@ export function renderCandidateDashboard(container, summaries, doc = document) {
             : `tendance ${summary.trend >= 0 ? "+" : ""}${formatScore(summary.trend)} pt`;
         facts.textContent = `${summary.seriesCount} série(s) · dernière activité ${formatDate(summary.lastActivity)} · ${trend}`;
 
-        const themes = element(doc, "ul", "candidate-card-themes");
-        summary.themes.forEach(theme => {
-            const row = element(doc, "li");
-            row.append(
-                element(doc, "span", "candidate-theme-label", theme.label),
-                meter(doc, theme.average),
-                element(doc, "span", "candidate-theme-value", theme.count ? formatScore(theme.average) : "—")
-            );
-            themes.appendChild(row);
-        });
-
-        card.append(head, score, facts, themes);
+        card.append(head, score, facts);
         container.appendChild(card);
     });
 }

@@ -2672,6 +2672,32 @@ h1 {
     height: 100%;
 }
 
+.candidate-card {
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.candidate-card:hover,
+.candidate-card:focus-visible {
+    background: rgba(255, 255, 255, 0.06);
+    outline: none;
+}
+
+.candidate-card[aria-pressed="true"] {
+    box-shadow: 0 0 0 2px var(--status-color);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-overview-details {
+    margin: 0 0 18px;
+}
+
+.admin-overview-details > summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 700;
+}
+
 .candidate-card-themes {
     display: grid;
     gap: 6px;

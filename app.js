@@ -3736,7 +3736,23 @@ function renderAdminCandidateDashboard() {
         specialties.forEach(value => specialtySelect.appendChild(new Option(value, value)));
         specialtySelect.value = specialties.includes(selected) ? selected : "";
     }
-    renderCandidateDashboard(cards, filtered, document);
+    const candidateFilter = document.getElementById("admin-results-candidate-filter");
+    renderCandidateDashboard(cards, filtered, document, {
+        selected: candidateFilter?.value || "",
+        onSelect: (candidate, wasSelected) => {
+            if (!candidateFilter) return;
+            const key = candidate.email || candidate.id;
+            candidateFilter.value = wasSelected || !key ? "" : key;
+            if (candidateFilter.value !== (wasSelected ? "" : key) && key) {
+                candidateFilter.appendChild(new Option(candidate.name, key));
+                candidateFilter.value = key;
+            }
+            renderAdminResults();
+            if (candidateFilter.value) {
+                document.getElementById("admin-history-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+    });
     const counts = countByStatus(filtered);
     const summary = document.getElementById("admin-dashboard-summary");
     if (summary) {
