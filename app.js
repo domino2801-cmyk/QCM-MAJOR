@@ -17,7 +17,7 @@ import {
     sortByPriority,
     countByStatus,
     STATUSES
-} from "./modules/candidate-report/index.js";
+} from "./modules/candidate-report/index.js?v=dashboard-status-20261111";
 import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=return-console-20261108";
 import {
     reportNotificationsEnabled,
@@ -3758,6 +3758,16 @@ function renderAdminCandidateDashboard() {
     if (summary) {
         summary.replaceChildren();
         const statusSelect = document.getElementById("admin-dashboard-status");
+        const total = document.createElement("button");
+        total.type = "button";
+        total.className = "admin-dashboard-chip";
+        total.setAttribute("aria-pressed", String(activeStatus === ""));
+        total.textContent = `Total : ${all.length}`;
+        total.addEventListener("click", () => {
+            if (statusSelect) statusSelect.value = "";
+            renderAdminCandidateDashboard();
+        });
+        summary.appendChild(total);
         ["struggling", "watch", "ready", "none"].forEach(key => {
             const chip = document.createElement("button");
             chip.type = "button";

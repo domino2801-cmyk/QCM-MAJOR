@@ -2594,7 +2594,7 @@ h1 {
 }
 
 .admin-dashboard-chip[aria-pressed="true"] {
-    background: var(--status-color);
+    background: var(--status-color, #74835f);
     color: #fff;
 }
 
