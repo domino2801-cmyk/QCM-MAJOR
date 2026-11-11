@@ -29,8 +29,8 @@ test("register markup keeps required ids and HTML5 constraints", () => {
     assert.match(html, /id="register-password"[^>]*minlength="6"/);
     assert.match(html, /id="register-password"[^>]*title="Le code de reconnaissance doit contenir au moins 6 caractères\."/);
     assert.match(html, /id="login-password"[^>]*title="Code de reconnaissance créé lors de l’enrôlement \(6 caractères minimum\)\."/);
-    assert.match(html, /data-auth-mode="register">S'engager<\/button>\s*<button class="auth-tab active" type="button" data-auth-mode="login">Rallier l’unité<\/button>/);
-    assert.match(html, /data-auth-mode="register" class="auth-tab active"|class="auth-tab active" type="button" data-auth-mode="register">S'engager<\/button>\s*<button class="auth-tab" type="button" data-auth-mode="login">Rallier l’unité<\/button>/);
+    assert.match(html, /data-auth-mode="register">S'engager<\/button>\s*<button class="auth-tab active" type="button" data-auth-mode="login">Rallier votre unité<\/button>/);
+    assert.match(html, /data-auth-mode="register" class="auth-tab active"|class="auth-tab active" type="button" data-auth-mode="register">S'engager<\/button>\s*<button class="auth-tab" type="button" data-auth-mode="login">Rallier votre unité<\/button>/);
     assert.match(css, /#auth-screen \.auth-tab\[data-auth-mode="login"\]\s*\{[^}]*#efe8d0/s);
     assert.match(css, /#auth-screen \.auth-tab\[data-auth-mode="register"\]\s*\{[^}]*#1d2a24/s);
     assert.match(css, /:is\(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list\) \.global-ranking-item:first-child\s*\{[^}]*#c7a84d/);

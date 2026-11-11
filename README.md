@@ -8,7 +8,7 @@ QCM-MAJOR est une application web de préparation au Brevet militaire de 4e nive
 
 Sans session active, l’application demande « Est-ce votre première visite ? » :
 
-- **Non — Rallier l’unité** : ouvrir le formulaire de connexion avec un compte candidat existant ;
+- **Non — Rallier votre unité** : ouvrir le formulaire de connexion avec un compte candidat existant ;
 - **Oui — S’engager** : ouvrir la création de compte.
 
 Les formulaires permettent aussi de basculer entre connexion et inscription, et de demander un lien de récupération du mot de passe. L’authentification est gérée par Supabase.
