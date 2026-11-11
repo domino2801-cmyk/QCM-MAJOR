@@ -10,6 +10,14 @@ import { getQuestionTheme, reconcileQuestionThemes } from "./modules/questions-b
 import { showStartupRecoveryState } from "./modules/startup-recovery/index.js";
 import { initializeFirstVisitPrompt } from "./modules/first-visit/index.js?v=first-visit-routes-20261108";
 import { uiController } from "./modules/ui-controller/index.js";
+import {
+    buildCandidateSummaries,
+    buildCandidateReportPdf,
+    renderCandidateDashboard,
+    sortByPriority,
+    countByStatus,
+    STATUSES
+} from "./modules/candidate-report/index.js";
 import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=return-console-20261108";
 import {
     reportNotificationsEnabled,
@@ -3703,10 +3711,86 @@ function renderAdminThemeAcquisition(results, milestoneValue) {
     container.replaceChildren(summary, table);
 }
 
+function getAdminDashboardSummaries() {
+    const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
+    const status = document.getElementById("admin-dashboard-status")?.value || "";
+    const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
+    const all = buildCandidateSummaries({ results: getResults(), accounts: Object.values(getAccounts()) });
+    const filtered = all.filter(summary =>
+        (!status || summary.status === status)
+        && (!specialty || summary.specialty === specialty)
+        && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
+    return { all, filtered: sortByPriority(filtered), hasFilter: Boolean(status || specialty || search) };
+}
+
+function renderAdminCandidateDashboard() {
+    const cards = document.getElementById("admin-dashboard-cards");
+    if (!cards) return;
+    const specialtySelect = document.getElementById("admin-dashboard-specialty");
+    const { all, filtered } = getAdminDashboardSummaries();
+    if (specialtySelect) {
+        const selected = specialtySelect.value;
+        const specialties = [...new Set(all.map(summary => summary.specialty).filter(Boolean))]
+            .sort((first, second) => first.localeCompare(second, "fr"));
+        specialtySelect.replaceChildren(new Option("Toutes les spécialités", ""));
+        specialties.forEach(value => specialtySelect.appendChild(new Option(value, value)));
+        specialtySelect.value = specialties.includes(selected) ? selected : "";
+    }
+    renderCandidateDashboard(cards, filtered, document);
+    const counts = countByStatus(filtered);
+    const summary = document.getElementById("admin-dashboard-summary");
+    if (summary) {
+        summary.replaceChildren();
+        const total = document.createElement("span");
+        total.className = "admin-dashboard-chip";
+        total.textContent = `${filtered.length} candidat(s)`;
+        summary.appendChild(total);
+        ["struggling", "watch", "ready", "none"].forEach(key => {
+            const chip = document.createElement("span");
+            chip.className = "admin-dashboard-chip";
+            chip.style.setProperty("--status-color", STATUSES[key].color);
+            chip.textContent = `${STATUSES[key].label} : ${counts[key]}`;
+            summary.appendChild(chip);
+        });
+    }
+    const message = document.getElementById("admin-dashboard-message");
+    if (message) message.innerText = filtered.length ? "" : "Aucun candidat ne correspond à la sélection.";
+}
+
+async function exportAdminCandidateReportPdf() {
+    const { filtered, hasFilter } = getAdminDashboardSummaries();
+    if (!filtered.length) {
+        setAuthMessage("admin-dashboard-message", "Aucun candidat à exporter.");
+        return;
+    }
+    const blob = buildCandidateReportPdf(filtered, { scopeLabel: hasFilter ? "sélection filtrée" : "promotion entière" });
+    const fileName = `suivi-candidats-bm4-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const file = new File([blob], fileName, { type: "application/pdf" });
+    if (navigator.canShare?.({ files: [file] }) && window.matchMedia?.("(pointer: coarse)").matches) {
+        try {
+            await navigator.share({ files: [file], title: "Suivi des candidats BM4" });
+            setAuthMessage("admin-dashboard-message", "Suivi partagé.");
+            return;
+        } catch (error) {
+            if (error?.name === "AbortError") return;
+        }
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    setAuthMessage("admin-dashboard-message", `${fileName} téléchargé.`);
+}
+
 function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const results = getResults();
     if (!list) return;
+    renderAdminCandidateDashboard();
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
     let selectedCandidate = candidateFilter?.value || "";
@@ -5188,6 +5272,10 @@ async function initializeAppInteractions() {
         "admin-overview-inactivity"
     ].forEach(id => document.getElementById(id)?.addEventListener("change", renderAdminOverview));
     document.getElementById("admin-overview-export")?.addEventListener("click", exportAdminCandidateOverview);
+    ["admin-dashboard-search", "admin-dashboard-status", "admin-dashboard-specialty"].forEach(id => {
+        document.getElementById(id)?.addEventListener(id === "admin-dashboard-search" ? "input" : "change", renderAdminCandidateDashboard);
+    });
+    document.getElementById("admin-dashboard-pdf")?.addEventListener("click", exportAdminCandidateReportPdf);
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";

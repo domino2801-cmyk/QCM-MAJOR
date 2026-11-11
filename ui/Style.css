@@ -2552,6 +2552,178 @@ h1 {
     opacity: 0.5;
 }
 
+.admin-dashboard {
+    margin-bottom: 24px;
+}
+
+.admin-dashboard h3 {
+    margin: 0 0 10px;
+    color: var(--accent);
+    font-size: 1.05rem;
+}
+
+.admin-dashboard-controls {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.admin-dashboard-controls .admin-search {
+    width: 100%;
+    min-width: 0;
+}
+
+.admin-dashboard-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.admin-dashboard-chip {
+    padding: 4px 10px;
+    border: 1px solid var(--status-color, rgba(159, 170, 132, 0.5));
+    border-radius: 999px;
+    color: #efe8d0;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.admin-dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.candidate-card {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid rgba(159, 170, 132, 0.26);
+    border-left: 5px solid var(--status-color);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    min-width: 0;
+}
+
+.candidate-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.candidate-card-identity {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.candidate-card-name {
+    color: #efe8d0;
+    font-size: 1.02rem;
+    overflow-wrap: anywhere;
+}
+
+.candidate-card-identity small,
+.candidate-card-facts {
+    margin: 0;
+    color: rgba(226, 232, 226, 0.72);
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.candidate-pill {
+    flex: 0 0 auto;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--status-color);
+    color: #fff;
+    font-size: 0.74rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.candidate-card-score {
+    display: grid;
+    gap: 6px;
+}
+
+.candidate-card-score strong {
+    color: #e7d28f;
+    font-size: 1.5rem;
+}
+
+.candidate-meter {
+    display: block;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+}
+
+.candidate-meter-large {
+    height: 12px;
+}
+
+.candidate-meter-fill {
+    display: block;
+    height: 100%;
+}
+
+.candidate-card-themes {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.candidate-card-themes li {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 2.6em;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+}
+
+.candidate-theme-label {
+    overflow: hidden;
+    color: rgba(226, 232, 226, 0.86);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.candidate-theme-value {
+    color: #efe8d0;
+    font-weight: 700;
+    text-align: right;
+}
+
+@media (max-width: 760px) {
+    .admin-dashboard-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .candidate-card-themes li {
+        grid-template-columns: minmax(0, 1fr) 2.6em;
+    }
+
+    .candidate-card-themes .candidate-meter {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .candidate-theme-label {
+        white-space: normal;
+    }
+}
+
 .admin-delete-btn {
     background: transparent;
     border: 1px solid var(--incorrect);
