@@ -8,7 +8,7 @@ export const REPORT_THEMES = [
     ["6", "Implantation des unités"]
 ];
 
-export const READY_THRESHOLD = 14;
+export const READY_THRESHOLD = 13;
 export const WATCH_THRESHOLD = 10;
 
 export const STATUSES = {
@@ -355,7 +355,7 @@ export function buildCandidateReportPdf(summaries, { generatedAt = new Date(), s
             text(theme.count ? `${formatScore(theme.average)} (${theme.count} série${theme.count > 1 ? "s" : ""})` : "—", W - M, cursor, { size: 9, bold: true, align: "right" });
             cursor += 24;
         });
-        text("Repères sur les barres : 10 et 14 sur 20.", M, cursor, { size: 8, color: "#5b5a50" });
+        text("Repères sur les barres : 10 et 13 sur 20.", M, cursor, { size: 8, color: "#5b5a50" });
         cursor += 28;
 
         cursor = section("Progression sur les dernières séries", cursor);

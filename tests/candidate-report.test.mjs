@@ -19,9 +19,9 @@ const accounts = [
     { id: "d", email: "d@x.fr", name: "Delta", specialty: "Santé" }
 ];
 
-test("status thresholds follow 14 / 10 on 20", () => {
-    assert.equal(getCandidateStatus(14), "ready");
-    assert.equal(getCandidateStatus(13.9), "watch");
+test("status thresholds follow 13 / 10 on 20", () => {
+    assert.equal(getCandidateStatus(13), "ready");
+    assert.equal(getCandidateStatus(12.9), "watch");
     assert.equal(getCandidateStatus(10), "watch");
     assert.equal(getCandidateStatus(9.9), "struggling");
     assert.equal(getCandidateStatus(NaN), "none");
