@@ -1,2 +1,5 @@
 [functions.report-push]
 verify_jwt = false
+
+[functions.inactivity-reminders]
+verify_jwt = false

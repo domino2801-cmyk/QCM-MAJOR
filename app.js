@@ -1983,7 +1983,26 @@ async function refreshCandidateHistory(account) {
     }
 }
 
+async function recordQcmVisit() {
+    const accountId = currentAuthenticatedAccount?.id;
+    let session = getStoredSupabaseSession();
+    if (!accountId || !session?.access_token || isAdminSession(session)) return;
+    try {
+        if (session.refresh_token && session.expires_at && session.expires_at <= Date.now() / 1000 + 60) {
+            session = (await supabase.auth.refreshSession(session.refresh_token)).data?.session;
+        }
+        if (!session?.access_token || currentAuthenticatedAccount?.id !== accountId
+            || session.user?.id !== accountId || isAdminSession(session)) return;
+        await supabaseRestRequest("/rpc/record_qcm_visit", {
+            method: "POST", accessToken: session.access_token, body: {}
+        });
+    } catch (error) {
+        console.warn("Enregistrement de la visite QCM impossible.", error);
+    }
+}
+
 function showAuthenticatedApp(email, account = getAccounts()[email] || {}) {
+    void recordQcmVisit();
     const progressionStatus = document.getElementById("progression-status");
     if (progressionStatus) progressionStatus.textContent = "";
     if (typeof chargerProgression === "function") void chargerProgression(account.id).catch(error => {
@@ -3169,6 +3188,22 @@ function renderAdminTrackingTimeline(candidateResults, tracking, periodDays, can
         title: "Signalement d’une question",
         detail: `${report.quiz_theme === "all" ? "Campagne globale" : `Thème ${report.quiz_theme}`} · ${report.status === "resolved" ? "traité" : "en attente"}`
     }));
+    (tracking.inactivity_emails || []).forEach(mail => {
+        if (!isInPeriod(mail.attempted_at)) return;
+        const labels = {
+            sent: "Relance d’inactivité acceptée par Resend",
+            failed: "Échec de la relance d’inactivité",
+            unknown: "Relance d’inactivité : résultat inconnu",
+            sending: "Relance d’inactivité en cours",
+            cancelled: "Relance d’inactivité annulée"
+        };
+        events.push({
+            source: "QCM-MAJOR",
+            timestamp: mail.sent_at || mail.attempted_at,
+            title: labels[mail.status] || "Relance d’inactivité",
+            detail: mail.error || ""
+        });
+    });
     (tracking.documents || []).forEach(documentView => events.push({
         source: "DOCTRINE",
         timestamp: documentView.opened_at,
@@ -4839,6 +4874,12 @@ async function initializeApp() {
         initializeAuth();
         authUiReady = true;
         initializeAppInteractions();
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") void recordQcmVisit();
+        });
+        setInterval(() => {
+            if (document.visibilityState === "visible") void recordQcmVisit();
+        }, 10 * 60 * 1000);
         const showFirstVisitPrompt = initializeFirstVisitPrompt({ showAuthView });
         await syncSupabaseSessionFromUrl();
         await restoreSupabaseSession();

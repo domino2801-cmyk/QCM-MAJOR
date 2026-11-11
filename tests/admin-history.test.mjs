@@ -369,6 +369,23 @@ test("la chronologie commune ordonne les événements et les borne à la périod
     assert.match(h.nodes.get("admin-history-activity").children[0].children[2].innerText, /1 série\(s\).*18\.00/);
 });
 
+test("la chronologie indique les relances acceptées et les échecs", () => {
+    const h = harness([]);
+    h.context.tracking = {
+        documents: [], progress_events: [], submissions: [], signalements: [],
+        inactivity_emails: [
+            { status: "sent", attempted_at: new Date().toISOString(), sent_at: new Date().toISOString() },
+            { status: "failed", attempted_at: new Date().toISOString(), error: "Resend HTTP 429." },
+            { status: "sent", attempted_at: "2020-01-01T00:00:00Z" }
+        ]
+    };
+    vm.runInContext('renderAdminTrackingTimeline([], tracking, 7, "a")', h.context);
+    const events = h.nodes.get("admin-history-timeline").children;
+    assert.equal(events.length, 2);
+    assert.ok(events.some(event => event.children[0].innerText.includes("acceptée par Resend")));
+    assert.ok(events.some(event => event.children[1].innerText.includes("Resend HTTP 429")));
+});
+
 test("la lecture du palier est réservée aux administrateurs", () => {
     const migration = readFileSync(new URL("../supabase/migrations/20261108195000_admin_candidate_progress.sql", import.meta.url), "utf8");
     assert.match(migration, /security definer[\s\S]*Administrator access required/);

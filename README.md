@@ -58,6 +58,8 @@ L’espace administrateur permet de gérer les comptes, les questions, les résu
 
 Les comptes candidats peuvent être bloqués ou débloqués par un administrateur. Les notifications push de signalement sont facultatives et dépendent du navigateur ; sur les navigateurs compatibles avec l’API Badging, l’icône de la PWA installée peut aussi afficher le nombre de signalements à traiter.
 
+La relance d’inactivité, une fois configurée, utilise le modèle Resend sans pseudo. Une visite connectée sur QCM-MAJOR repousse la relance ; les visites DOCTRINE ne comptent pas. Une seule relance est envoyée après au moins 15 jours d’inactivité, puis une nouvelle visite ouvre un nouveau cycle. Les comptes déjà connus par leurs résultats QCM démarrent leur premier délai à l’installation de la migration ; les autres sont suivis après leur première visite enregistrée. Les administrateurs et comptes bloqués ne sont pas relancés. Le suivi administrateur indique l’acceptation par Resend, et non la réception effective ; les échecs et les résultats incertains y figurent également.
+
 ## Configuration Supabase
 
 Le frontend est développé en HTML, CSS et JavaScript sans étape de compilation. Supabase fournit l’authentification, les données et la correction des réponses. Appliquez les migrations nécessaires au projet Supabase avant de déployer les fonctionnalités concernées.
@@ -78,6 +80,14 @@ La dernière migration recalcule les paliers avec les seuils actuels sans rédui
 - Appliquez `supabase/migrations/20261108152100_add_admin_account_blocking.sql` pour activer le blocage des comptes candidats. Seuls les administrateurs peuvent modifier leur statut.
 - Appliquez `supabase/migrations/20261108195000_admin_candidate_progress.sql` pour permettre au journal administrateur de lire l’intensité débloquée, y compris pour les candidats sans résultat.
 - Appliquez d’abord les schémas DOCTRINE `documentation-consultations.sql`, `fiche-submissions.sql`, `progression-events.sql` et `retex-signalements.sql`, puis `supabase/migrations/20261110120000_admin_candidate_tracking.sql`. Cette fonction protégée par rôle admin fournit uniquement les métadonnées nécessaires au suivi ; elle ne retourne ni les détails des signalements ni les URL des documents.
+
+### Relances d’inactivité
+
+1. Vérifiez le modèle Resend « inactivité qcm-major » : il doit être publié, sans variable de pseudo, avec un domaine d’envoi vérifié et une adresse de réponse fonctionnelle. Le texte doit correspondre au fonctionnement réel : le blocage reste une décision manuelle. Vérifiez également les règles applicables aux relances et à leur désabonnement avant activation.
+2. Appliquez `supabase/migrations/20261111210000_inactivity_reminders.sql` après les migrations du suivi et du blocage. Déployez le site mis à jour pour enregistrer les visites QCM ; la migration initiale seule ne lance aucun envoi.
+3. Configurez les secrets de la fonction Supabase `QCM_INACTIVITY_RESEND_API_KEY` (clé Resend limitée à l’envoi), `QCM_INACTIVITY_TEMPLATE_ID` (identifiant ou alias du modèle publié) et `QCM_INACTIVITY_SECRET` (secret aléatoire long réservé au déclenchement). Ne les ajoutez pas au dépôt. Déployez la fonction `inactivity-reminders`.
+4. Dans Supabase Vault, créez `qcm_inactivity_project_url` avec l’URL du projet et `qcm_inactivity_cron_secret` avec la même valeur que `QCM_INACTIVITY_SECRET`. Exécutez ensuite `supabase/inactivity-reminders-schedule.sql` pour programmer la vérification toutes les 15 minutes. Comme `pg_net` place temporairement les en-têtes dans sa file, limitez l’accès aux rôles de base de données de confiance.
+5. Testez d’abord avec un compte dédié et contrôlez les journaux de la fonction, Resend et la chronologie administrateur. Les rejets HTTP explicites sont réessayés après une heure, sauf les réponses 408 et 409 dont le résultat est incertain. Une tentative dont le résultat est incertain ou restée « en cours » n’est pas réessayée automatiquement : vérifiez Resend avant toute intervention pour éviter un doublon. Le quota Resend s’applique à tous les envois utilisant le compte.
 
 ### Classement public
 
