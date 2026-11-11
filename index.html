@@ -322,49 +322,6 @@
                     <div id="admin-dashboard-cards" class="admin-dashboard-cards"></div>
                     <p id="admin-dashboard-message" class="terminal-note" role="status" aria-live="polite"></p>
                 </section>
-                <details class="admin-overview-details">
-                <summary>Suivi global descriptif et export CSV</summary>
-                <section id="admin-candidate-overview" class="admin-candidate-overview" aria-labelledby="admin-candidate-overview-title">
-                    <h3 id="admin-candidate-overview-title">Suivi global descriptif</h3>
-                    <div class="admin-overview-filters">
-                        <label for="admin-overview-specialty">Spécialité</label>
-                        <select id="admin-overview-specialty" class="admin-search"><option value="">Toutes les spécialités</option></select>
-                        <label for="admin-overview-period">Période d’activité</label>
-                        <select id="admin-overview-period" class="admin-search">
-                            <option value="0">Toute période</option><option value="7">7 derniers jours</option>
-                            <option value="30">30 derniers jours</option><option value="90">90 derniers jours</option>
-                        </select>
-                        <label for="admin-overview-stage">Étape observée</label>
-                        <select id="admin-overview-stage" class="admin-search"><option value="">Toutes les étapes</option></select>
-                        <label for="admin-overview-activity-filter">Activité des candidats affichés</label>
-                        <select id="admin-overview-activity-filter" class="admin-search">
-                            <option value="all">Tous les candidats</option>
-                            <option value="active">Actifs dans la période</option>
-                            <option value="inactive">Sans activité récente</option>
-                        </select>
-                        <label for="admin-overview-inactivity">Seuil « sans activité »</label>
-                        <select id="admin-overview-inactivity" class="admin-search">
-                            <option value="14">14 jours</option><option value="30" selected>30 jours</option>
-                            <option value="60">60 jours</option><option value="90">90 jours</option>
-                        </select>
-                    </div>
-                    <div id="admin-overview-summary" class="admin-overview-summary" role="status" aria-live="polite"></div>
-
-                    <div id="admin-overview-stage-summary" class="admin-overview-stage-summary" aria-label="Effectifs descriptifs par étape observée"></div>
-                    <p id="admin-overview-status" class="terminal-note" role="status" aria-live="polite"></p>
-                    <div class="admin-results-header admin-overview-export">
-                        <p class="terminal-note">L’export CSV contient uniquement la sélection filtrée et les champs d’identité et d’activité minimale.</p>
-                        <button id="admin-overview-export" class="admin-edit-btn" type="button" disabled>Exporter la sélection (CSV)</button>
-                    </div>
-                    <div class="admin-table-wrapper">
-                        <table class="admin-table">
-                            <thead><tr><th>Candidat</th><th>Spécialité</th><th>Étape observée</th><th>Dernière activité DOCTRINE</th><th>Dernière activité QCM-MAJOR</th></tr></thead>
-                            <tbody id="admin-overview-table"></tbody>
-                        </table>
-                    </div>
-                    <p id="admin-overview-count" class="terminal-note" role="status" aria-live="polite"></p>
-                </section>
-                </details>
                 <section class="admin-candidate-directory hidden" aria-labelledby="admin-candidate-directory-title">
                     <h3 id="admin-candidate-directory-title">Notes QCM-MAJOR par candidat</h3>
                     <label for="admin-results-search">Rechercher une adresse e-mail</label>

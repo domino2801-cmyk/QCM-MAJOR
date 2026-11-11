@@ -93,7 +93,6 @@ let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
 let resultsCache = [];
-let adminCandidateOverview = [];
 let retexSubmitted = false;
 let questionReports = [];
 const adminPageSize = 25;
@@ -2091,14 +2090,6 @@ async function loadAdminData() {
     const blockedAccountIds = new Set(blockedAccounts.map(account => String(account.user_id)));
 
     const resultsLoaded = await loadResultsFromSupabase({ throwOnError: true });
-    const candidateOverview = await supabaseRestRequest("/rpc/get_admin_candidate_overview", {
-        method: "POST",
-        accessToken,
-        body: {}
-    });
-    if (!Array.isArray(candidateOverview)) {
-        throw new Error("La synthèse de suivi des candidats est invalide.");
-    }
     const reports = [];
     for (let offset = 0; ; offset += 250) {
         const page = await supabaseRestRequest(
@@ -2112,7 +2103,6 @@ async function loadAdminData() {
     if (getStoredSupabaseSession()?.access_token !== accessToken) {
         throw new Error("La session a changé pendant la synchronisation.");
     }
-    adminCandidateOverview = candidateOverview;
     const profileEmailsById = new Map(
         (Array.isArray(profiles) ? profiles : [])
             .filter(profile => profile.id && profile.email)
@@ -2146,7 +2136,6 @@ async function loadAdminData() {
         });
         cachedAccounts = synchronizedAccounts;
     }
-    if (typeof document !== "undefined") renderAdminOverview();
 
     if (!resultsLoaded) {
         throw new Error("Les résultats administrateur n’ont pas pu être chargés.");
@@ -3112,219 +3101,6 @@ function renderAdminProgression(progress) {
         .map(([count, score]) => `${count} Q : ${score} pts`)
         .join(" · ");
     status.innerText = `Palier enregistré : ${maximum} questions${bestScores ? ` · Meilleurs scores bruts : ${bestScores}` : ""}. Ces valeurs déclaratives ne constituent pas une preuve inviolable.`;
-}
-
-function getAdminCandidateStageKeys(candidate) {
-    const keys = [];
-    if (candidate.doctrine_module_id) keys.push(`doctrine:${candidate.doctrine_module_id}`);
-    const qcmLevel = Number(candidate.qcm_max_unlocked_questions);
-    if ([10, 20, 30, 40, 50].includes(qcmLevel)) keys.push(`qcm:${qcmLevel}`);
-    return keys;
-}
-
-function getAdminCandidateStageLabel(candidate) {
-    const labels = [];
-    if (candidate.doctrine_module_id) {
-        const module = candidate.doctrine_module_id;
-        const eventLabels = {
-            module_started: "commencé",
-            module_completed: "terminé",
-            dossier_completed: `dossier ${candidate.doctrine_dossier || ""} marqué fait`.trim(),
-            correction_accessible: `corrigé du dossier ${candidate.doctrine_dossier || ""} rendu accessible`.trim()
-        };
-        const completed = Array.isArray(candidate.doctrine_completed_modules)
-            && candidate.doctrine_completed_modules.includes(module);
-        const eventLabel = eventLabels[candidate.doctrine_event_type] || "événement enregistré";
-        labels.push(`DOCTRINE · Module ${module} · ${eventLabel}${completed && candidate.doctrine_event_type !== "module_completed" ? " · module terminé" : ""}`);
-    }
-    const qcmLevel = Number(candidate.qcm_max_unlocked_questions);
-    if ([10, 20, 30, 40, 50].includes(qcmLevel)) labels.push(`QCM-MAJOR · Palier ${qcmLevel} questions`);
-    return labels.join(" · ") || "Aucune étape enregistrée";
-}
-
-function getAdminCandidateOverviewState() {
-    const specialty = document.getElementById("admin-overview-specialty")?.value || "";
-    const periodDays = Number(document.getElementById("admin-overview-period")?.value || 0);
-    const stage = document.getElementById("admin-overview-stage")?.value || "";
-    const activityFilter = document.getElementById("admin-overview-activity-filter")?.value || "all";
-    const inactivityDays = Number(document.getElementById("admin-overview-inactivity")?.value || 30);
-    const periodCutoff = periodDays > 0 ? Date.now() - periodDays * 86400000 : 0;
-    const inactivityCutoff = Date.now() - inactivityDays * 86400000;
-    const matchesCommonFilters = candidate => {
-        if (specialty && String(candidate.specialty || "") !== specialty) return false;
-        if (stage && !getAdminCandidateStageKeys(candidate).includes(stage)) return false;
-        return true;
-    };
-    const hasRecentActivity = candidate => {
-        const timestamp = Date.parse(candidate.last_activity || "");
-        return Number.isFinite(timestamp) && (!periodCutoff || timestamp >= periodCutoff);
-    };
-    const isInactive = candidate => {
-        const timestamp = Date.parse(candidate.last_activity || "");
-        return !Number.isFinite(timestamp) || timestamp <= inactivityCutoff;
-    };
-    const cohort = adminCandidateOverview.filter(matchesCommonFilters);
-    const filtered = cohort.filter(candidate => activityFilter === "active"
-        ? hasRecentActivity(candidate)
-        : activityFilter === "inactive" ? isInactive(candidate) : true);
-    const stageCounts = new Map();
-    cohort.forEach(candidate => {
-        getAdminCandidateStageKeys(candidate).forEach(key => {
-            stageCounts.set(key, (stageCounts.get(key) || 0) + 1);
-        });
-    });
-    return {
-        cohort,
-        filtered,
-        stageCounts,
-        periodDays,
-        inactivityDays,
-        activeCount: cohort.filter(hasRecentActivity).length,
-        inactiveCount: cohort.filter(isInactive).length
-    };
-}
-
-function renderAdminOverview() {
-    const table = document.getElementById("admin-overview-table");
-    const specialtySelect = document.getElementById("admin-overview-specialty");
-    const stageSelect = document.getElementById("admin-overview-stage");
-    const status = document.getElementById("admin-overview-status");
-    if (!table || !specialtySelect || !stageSelect) return;
-
-    const selectedSpecialty = specialtySelect.value;
-    const selectedStage = stageSelect.value;
-    const specialties = [...new Set(adminCandidateOverview
-        .map(candidate => String(candidate.specialty || "").trim())
-        .filter(Boolean))].sort((first, second) => first.localeCompare(second, "fr"));
-    specialtySelect.replaceChildren(new Option("Toutes les spécialités", ""));
-    specialties.forEach(specialty => specialtySelect.appendChild(new Option(specialty, specialty)));
-    specialtySelect.value = specialties.includes(selectedSpecialty) ? selectedSpecialty : "";
-
-    const stageLabels = new Map();
-    adminCandidateOverview.forEach(candidate => {
-        getAdminCandidateStageKeys(candidate).forEach(key => {
-            stageLabels.set(key, key.startsWith("doctrine:")
-                ? `DOCTRINE · Module ${key.slice("doctrine:".length)}`
-                : `QCM-MAJOR · Palier ${key.slice("qcm:".length)} questions`);
-        });
-    });
-    stageSelect.replaceChildren(new Option("Toutes les étapes", ""));
-    [...stageLabels.entries()]
-        .sort((first, second) => first[1].localeCompare(second[1], "fr"))
-        .forEach(([key, label]) => stageSelect.appendChild(new Option(label, key)));
-    stageSelect.value = stageLabels.has(selectedStage) ? selectedStage : "";
-
-    const state = getAdminCandidateOverviewState();
-    const summary = document.getElementById("admin-overview-summary");
-    const stageSummary = document.getElementById("admin-overview-stage-summary");
-    const count = document.getElementById("admin-overview-count");
-    const exportButton = document.getElementById("admin-overview-export");
-    if (summary) {
-        summary.innerText = `${state.cohort.length} candidat(s) dans le périmètre · `
-            + `${state.activeCount} avec activité dans la période · `
-            + `${state.inactiveCount} sans activité depuis ${state.inactivityDays} jours ou plus.`;
-    }
-    if (stageSummary) {
-        stageSummary.replaceChildren();
-        [...state.stageCounts.entries()]
-            .sort((first, second) => first[0].localeCompare(second[0], "fr"))
-            .forEach(([key, value]) => {
-                const item = document.createElement("div");
-                const label = document.createElement("strong");
-                const total = document.createElement("span");
-                label.innerText = stageLabels.get(key) || key;
-                total.innerText = `${value} candidat(s) · étape observée`;
-                item.className = "admin-overview-stage-card";
-                item.append(label, total);
-                stageSummary.appendChild(item);
-            });
-        if (stageSummary.children.length === 0) {
-            const empty = document.createElement("p");
-            empty.className = "terminal-note";
-            empty.innerText = "Aucun jalon enregistré pour le moment.";
-            stageSummary.appendChild(empty);
-        }
-    }
-    if (status) {
-        status.innerText = adminCandidateOverview.length
-            ? ""
-            : "Aucun compte candidat n’est disponible dans la synthèse.";
-    }
-
-    table.replaceChildren();
-    state.filtered
-        .slice()
-        .sort((first, second) => String(first.name || first.email || "")
-            .localeCompare(String(second.name || second.email || ""), "fr"))
-        .forEach(candidate => {
-            const row = document.createElement("tr");
-            const name = document.createElement("td");
-            const specialty = document.createElement("td");
-            const stage = document.createElement("td");
-            const doctrineActivity = document.createElement("td");
-            const qcmActivity = document.createElement("td");
-            name.innerText = candidate.name || candidate.email || "Candidat";
-            specialty.innerText = candidate.specialty || "Non renseignée";
-            stage.innerText = getAdminCandidateStageLabel(candidate);
-            doctrineActivity.innerText = formatAdminTrackingDate(candidate.doctrine_last_activity);
-            qcmActivity.innerText = formatAdminTrackingDate(candidate.qcm_last_activity);
-            [name, specialty, stage, doctrineActivity, qcmActivity]
-                .forEach((cell, index) => cell.setAttribute("data-label", [
-                    "Candidat", "Spécialité", "Étape observée",
-                    "Dernière activité DOCTRINE", "Dernière activité QCM-MAJOR"
-                ][index]));
-            row.append(name, specialty, stage, doctrineActivity, qcmActivity);
-            table.appendChild(row);
-        });
-    if (count) count.innerText = `${state.filtered.length} candidat(s) affiché(s), triés alphabétiquement.`;
-    if (exportButton) {
-        const hasNarrowingFilter = Boolean(specialtySelect.value || stageSelect.value
-            || (document.getElementById("admin-overview-activity-filter")?.value || "all") !== "all");
-        exportButton.disabled = !hasNarrowingFilter || state.filtered.length === 0;
-    }
-}
-
-function exportAdminCandidateOverview() {
-    const state = getAdminCandidateOverviewState();
-    const hasNarrowingFilter = Boolean(
-        document.getElementById("admin-overview-specialty")?.value
-        || document.getElementById("admin-overview-stage")?.value
-        || (document.getElementById("admin-overview-activity-filter")?.value || "all") !== "all"
-    );
-    if (!hasNarrowingFilter || state.filtered.length === 0) {
-        setAuthMessage("admin-overview-status", "Appliquez un filtre et vérifiez la sélection avant l’export.");
-        return;
-    }
-
-    const headers = ["Nom ou pseudo", "E-mail", "Spécialité", "Étape observée", "Dernière activité DOCTRINE", "Dernière activité QCM-MAJOR"];
-    const csvCell = value => {
-        let text = String(value ?? "");
-        if (/^[\s\u0000-\u001f]*[=+\-@]/.test(text)) text = `'${text}`;
-        return `"${text.replace(/"/g, '""')}"`;
-    };
-    const lines = [
-        headers,
-        ...state.filtered.map(candidate => [
-            candidate.name,
-            candidate.email,
-            candidate.specialty,
-            getAdminCandidateStageLabel(candidate),
-            candidate.doctrine_last_activity ? formatAdminTrackingDate(candidate.doctrine_last_activity) : "",
-            candidate.qcm_last_activity ? formatAdminTrackingDate(candidate.qcm_last_activity) : ""
-        ])
-    ];
-    const blob = new Blob(["\uFEFF", lines.map(line => line.map(csvCell).join(";")).join("\r\n")], {
-        type: "text/csv;charset=utf-8"
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `suivi-candidats-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    setAuthMessage("admin-overview-status", `${state.filtered.length} candidat(s) exporté(s) en CSV.`);
 }
 
 function refreshAdminCandidateTrackingView() {
@@ -5293,14 +5069,6 @@ async function initializeAppInteractions() {
     document.getElementById("admin-results-theme-filter")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-period")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-milestone")?.addEventListener("change", renderAdminResults);
-    [
-        "admin-overview-specialty",
-        "admin-overview-period",
-        "admin-overview-stage",
-        "admin-overview-activity-filter",
-        "admin-overview-inactivity"
-    ].forEach(id => document.getElementById(id)?.addEventListener("change", renderAdminOverview));
-    document.getElementById("admin-overview-export")?.addEventListener("click", exportAdminCandidateOverview);
     ["admin-dashboard-search", "admin-dashboard-status", "admin-dashboard-specialty"].forEach(id => {
         document.getElementById(id)?.addEventListener(id === "admin-dashboard-search" ? "input" : "change", renderAdminCandidateDashboard);
     });
@@ -5544,7 +5312,6 @@ async function initializeAppInteractions() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
-        adminCandidateOverview = [];
         if (typeof navigator.setAppBadge === "function") {
             navigator.clearAppBadge?.()?.catch(error => console.warn("Effacement du badge de l’application impossible.", error));
         }

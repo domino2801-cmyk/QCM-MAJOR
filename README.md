@@ -56,8 +56,6 @@ Les meilleurs scores et le palier sont conservés dans `user_progress`. Les poli
 
 L’espace administrateur permet de gérer les comptes, les questions, les résultats et les signalements. La fiche de suivi par candidat présente ses résultats récents, ses moyennes et tendances par thème, sa progression enregistrée, ses consultations de ressources et signalements dans DOCTRINE, les signalements de questions dans QCM-MAJOR, les transmissions de fiches et la dernière activité observée dans chaque application. Le filtre de période s’applique à une chronologie commune. Les commentaires libres ne sont pas recopiés dans cette fiche ; une consultation est un clic enregistré, pas une preuve de lecture.
 
-La synthèse globale fournit des indicateurs descriptifs filtrables par spécialité, période, étape observée et statut d’activité. Le seuil « sans activité » est réglable (30 jours par défaut). Les effectifs par étape ne constituent ni un classement ni un score de performance. L’export CSV porte uniquement sur une sélection filtrée et contient le nom/pseudo, l’e-mail, la spécialité, l’étape observée et les dates de dernière activité dans chaque application ; un filtre doit être appliqué avant de l’activer.
-
 Les comptes candidats peuvent être bloqués ou débloqués par un administrateur. Les notifications push de signalement sont facultatives et dépendent du navigateur ; sur les navigateurs compatibles avec l’API Badging, l’icône de la PWA installée peut aussi afficher le nombre de signalements à traiter.
 
 ## Configuration Supabase
@@ -80,7 +78,6 @@ La dernière migration recalcule les paliers avec les seuils actuels sans rédui
 - Appliquez `supabase/migrations/20261108152100_add_admin_account_blocking.sql` pour activer le blocage des comptes candidats. Seuls les administrateurs peuvent modifier leur statut.
 - Appliquez `supabase/migrations/20261108195000_admin_candidate_progress.sql` pour permettre au journal administrateur de lire l’intensité débloquée, y compris pour les candidats sans résultat.
 - Appliquez d’abord les schémas DOCTRINE `documentation-consultations.sql`, `fiche-submissions.sql`, `progression-events.sql` et `retex-signalements.sql`, puis `supabase/migrations/20261110120000_admin_candidate_tracking.sql`. Cette fonction protégée par rôle admin fournit uniquement les métadonnées nécessaires au suivi ; elle ne retourne ni les détails des signalements ni les URL des documents.
-- Appliquez ensuite `supabase/migrations/20261110140000_admin_candidate_overview.sql` pour activer les indicateurs globaux. Cette migration suppose aussi que `user_progress` et `retex_responses` existent. Les deux fonctions de synthèse vérifient le rôle administrateur côté base.
 
 ### Classement public
 

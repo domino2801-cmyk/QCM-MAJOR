@@ -94,7 +94,6 @@ test("les comptes et signalements sont paginés sans tronquer les données", asy
                 id: "p", email: "candidate@test", name: "Test", created_at: "2026-10-25T12:00:00Z"
             }];
             if (query === "/rpc/get_admin_blocked_accounts") return [];
-            if (query === "/rpc/get_admin_candidate_overview") return [];
             reports++;
             return Array.from({ length: reports === 1 ? 250 : 1 }, (_, id) => ({
                 id: `${reports}-${id}`, reporter_id: "p"
