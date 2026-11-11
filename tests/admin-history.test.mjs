@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { buildCandidateSummaries, sortByPriority } from "../modules/candidate-report/index.js";
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
@@ -112,6 +113,38 @@ function candidateTracking(maximum) {
         signalements: []
     };
 }
+
+test("les résultats administrateur sont exclus du tableau de bord, du répertoire et de l'historique", () => {
+    const now = new Date().toISOString();
+    const h = harness([
+        { candidateId: "admin-id", email: "", name: "Admin", theme: "all", score: 20, createdAt: now },
+        { candidateId: "other-admin-id", email: " ADMIN@ADMIN.FR ", name: "Admin", theme: "all", score: 19, createdAt: now },
+        { candidateId: "other-admin-id", email: "", name: "Admin", theme: "all", score: 18, createdAt: now },
+        { candidateId: "candidat-inconnu", email: "admin@admin.fr", name: "Admin", theme: "all", score: 17, createdAt: now },
+        { candidateId: "candidat-inconnu", email: "candidate@test.fr", name: "Candidat", theme: "all", score: 12, createdAt: now },
+        { candidateId: "candidate-id", email: "candidate@test.fr", name: "Candidat", theme: "all", score: 14, createdAt: now }
+    ]);
+    h.context.getAccounts = () => ({
+        admin: { id: "admin-id", email: " Admin@Admin.fr ", name: "Admin" },
+        otherAdmin: { id: "other-admin-id", email: "", name: "Admin" },
+        candidate: { id: "candidate-id", email: "candidate@test.fr", name: "Candidat" }
+    });
+    h.context.buildCandidateSummaries = buildCandidateSummaries;
+    h.context.sortByPriority = sortByPriority;
+    h.nodes.get("admin-results-candidate-filter").value = "admin@admin.fr";
+
+    vm.runInContext("renderAdminResults()", h.context);
+    const summaries = vm.runInContext("getAdminDashboardSummaries()", h.context);
+    assert.equal(summaries.all.length, 1);
+    assert.equal(summaries.all[0].email, "candidate@test.fr");
+    assert.equal(summaries.all[0].seriesCount, 2);
+    assert.equal(summaries.all[0].average, 13);
+    assert.equal(h.nodes.get("admin-results-table").children.length, 2);
+    assert.deepEqual(h.nodes.get("admin-results-candidates").children.map(button => button.innerText), ["candidate@test.fr"]);
+    assert.deepEqual(h.nodes.get("admin-results-candidate-filter").children.map(option => option.value), ["", "candidate@test.fr"]);
+    assert.equal(h.nodes.get("admin-results-candidate-filter").value, "");
+    assert.equal(h.nodes.get("admin-history-panel").classList.contains("hidden"), true);
+});
 
 test("le journal affiche le palier enregistré et propose les candidats sans résultat", async () => {
     const h = harness();

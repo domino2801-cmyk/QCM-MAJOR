@@ -3083,6 +3083,23 @@ function editQuestion(themeId, index) {
 }
 
 const deletableResultEmail = "domino2801@gmail.com";
+const excludedAdminResultsEmail = "admin@admin.fr";
+
+function getAdminResultsData() {
+    const accounts = Object.values(getAccounts());
+    const results = getResults();
+    const isExcludedEmail = email => String(email || "").trim().toLowerCase() === excludedAdminResultsEmail;
+    const excludedIds = new Set([
+        ...accounts.filter(account => isExcludedEmail(account.email)).map(account => account.id),
+        ...results.filter(result => isExcludedEmail(result.email)).map(result => result.candidateId)
+    ].map(id => String(id || "").trim()).filter(id => id && id !== "candidat-inconnu"));
+    return {
+        accounts: accounts.filter(account => !isExcludedEmail(account.email)
+            && !excludedIds.has(String(account.id || "").trim())),
+        results: results.filter(result => !isExcludedEmail(result.email)
+            && !excludedIds.has(String(result.candidateId || "").trim()))
+    };
+}
 let adminCandidateTrackingRequestId = 0;
 let adminCandidateTrackingKey = "";
 
@@ -3491,7 +3508,7 @@ function getAdminDashboardSummaries() {
     const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
     const status = document.getElementById("admin-dashboard-status")?.value || "";
     const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
-    const all = buildCandidateSummaries({ results: getResults(), accounts: Object.values(getAccounts()) });
+    const all = buildCandidateSummaries(getAdminResultsData());
     const scoped = all.filter(summary =>
         (!specialty || summary.specialty === specialty)
         && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
@@ -3593,14 +3610,13 @@ async function exportAdminCandidateReportPdf() {
 
 function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
-    const results = getResults();
+    const { results, accounts } = getAdminResultsData();
     if (!list) return;
     renderAdminCandidateDashboard();
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
     let selectedCandidate = candidateFilter?.value || "";
     const selectedTheme = document.getElementById("admin-results-theme-filter")?.value || "";
-    const accounts = Object.values(getAccounts());
     const candidates = new Map();
     const keysById = new Map();
     const keysByEmail = new Map();
