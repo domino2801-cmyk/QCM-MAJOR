@@ -5193,15 +5193,35 @@ body {
     background: rgba(122, 36, 36, 0.72);
 }
 
-#admin-screen .admin-account-block-btn.is-blocked {
-    border-color: rgba(118, 214, 154, 0.62);
-    background: rgba(28, 112, 63, 0.68);
-    color: #e7ffed;
+#admin-screen .admin-account-status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    color: #fff;
 }
 
-#admin-screen .admin-account-block-btn.is-blocked:hover,
-#admin-screen .admin-account-block-btn.is-blocked:focus-visible {
-    background: rgba(28, 132, 72, 0.88);
+#admin-screen .admin-account-status.is-blocked {
+    background: #912d2d;
+}
+
+#admin-screen .admin-account-status.is-unblocked {
+    background: #17613a;
+}
+
+#admin-screen .admin-account-status.is-unknown {
+    background: #505050;
+}
+
+#admin-screen .admin-account-block-btn {
+    border-color: #9db7cf;
+    background: #344f68;
+    color: #fff;
+}
+
+#admin-screen .admin-account-block-btn:hover,
+#admin-screen .admin-account-block-btn:focus-visible {
+    background: #41647f;
 }
 
 #admin-screen input,

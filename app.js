@@ -92,6 +92,7 @@ let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
+let adminBlockedAccountsLoaded = false;
 let adminInactivityReminderIds = new Set();
 let adminInactivityReminderError = "";
 let resultsCache = [];
@@ -2061,6 +2062,7 @@ async function loadAdminData() {
         throw new Error("Une session administrateur est requise.");
     }
 
+    adminBlockedAccountsLoaded = false;
     adminInactivityReminderIds = new Set();
     adminInactivityReminderError = "";
     if (typeof adminCandidateTrackingKey !== "undefined") adminCandidateTrackingKey = "";
@@ -2102,13 +2104,18 @@ async function loadAdminData() {
         }
     }
 
-    const blockedAccounts = await supabaseRestRequest("/rpc/get_admin_blocked_accounts", {
-        method: "POST",
-        accessToken,
-        body: {}
-    });
-    if (!Array.isArray(blockedAccounts)) {
-        throw new Error("La liste des comptes bloqués est invalide.");
+    const blockedAccounts = [];
+    for (let offset = 0; ; offset += 1000) {
+        const page = await supabaseRestRequest(`/rpc/get_admin_blocked_accounts?limit=1000&offset=${offset}`, {
+            method: "POST",
+            accessToken,
+            body: {}
+        });
+        if (!Array.isArray(page) || page.some(account => typeof account.user_id !== "string")) {
+            throw new Error("La liste des comptes bloqués est invalide.");
+        }
+        blockedAccounts.push(...page);
+        if (page.length < 1000) break;
     }
     const blockedAccountIds = new Set(blockedAccounts.map(account => String(account.user_id)));
 
@@ -2163,6 +2170,7 @@ async function loadAdminData() {
     if (!resultsLoaded) {
         throw new Error("Les résultats administrateur n’ont pas pu être chargés.");
     }
+    adminBlockedAccountsLoaded = true;
 
     try {
         const remindedIds = await supabaseRestRequest("/rpc/get_admin_current_inactivity_reminders", {
@@ -2540,6 +2548,7 @@ async function exportAdminRetexPdf() {
 }
 
 async function showAdminApp() {
+    adminBlockedAccountsLoaded = false;
     adminInactivityReminderIds = new Set();
     adminInactivityReminderError = "";
     setAuthAudioPlaying(false);
@@ -2591,6 +2600,8 @@ async function refreshAdminData() {
             document.getElementById("admin-refresh-btn").classList.add("admin-state-ready");
         } catch (error) {
             console.warn("Chargement des données administrateur impossible.", error);
+            adminBlockedAccountsLoaded = false;
+            renderAdminAccounts();
             setAuthMessage("admin-data-status", `Données non actualisées. ${error.message}`);
             document.getElementById("admin-refresh-btn").innerText = "Réessayer";
         } finally {
@@ -2868,6 +2879,8 @@ function renderAdminAccounts() {
         const nameCell = document.createElement("td");
         const emailCell = document.createElement("td");
         const specialtyCell = document.createElement("td");
+        const statusCell = document.createElement("td");
+        const statusBadge = document.createElement("span");
         const actionCell = document.createElement("td");
         const deleteButton = document.createElement("button");
         const blockButton = document.createElement("button");
@@ -2877,6 +2890,10 @@ function renderAdminAccounts() {
         emailCell.innerText = email;
         specialtyCell.innerText = getSpecialtyTrigram(account.specialty);
         specialtyCell.title = formatSpecialtyLabel(account.specialty);
+        const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
+        statusBadge.className = `admin-account-status ${statusKnown ? (account.blocked ? "is-blocked" : "is-unblocked") : "is-unknown"}`;
+        statusBadge.innerText = statusKnown ? (account.blocked ? "Bloqué" : "Débloqué") : "Statut indisponible";
+        statusCell.appendChild(statusBadge);
         deleteButton.type = "button";
         deleteButton.className = "admin-delete-btn";
         deleteButton.innerText = "Retirer du cache";
@@ -2898,7 +2915,7 @@ function renderAdminAccounts() {
         blockButton.type = "button";
         blockButton.className = `admin-account-block-btn admin-delete-btn${account.blocked ? " is-blocked" : ""}`;
         blockButton.innerText = account.blocked ? "Débloquer" : "Bloquer le compte";
-        blockButton.disabled = !account.id;
+        blockButton.disabled = !statusKnown;
         blockButton.setAttribute("aria-label", `${account.blocked ? "Débloquer" : "Bloquer"} le compte ${account.name || email}`);
         blockButton.addEventListener("click", async () => {
             const blocked = !account.blocked;
@@ -2928,13 +2945,13 @@ function renderAdminAccounts() {
                 setAuthMessage("admin-data-status", `Modification du blocage impossible : ${error.message}`);
             } finally {
                 setAdminOperationPending(false);
-                blockButton.disabled = !account.id;
+                blockButton.disabled = !statusKnown;
             }
         });
 
         actionCell.append(deleteButton, blockButton);
-        row.append(nameCell, emailCell, specialtyCell, actionCell);
-        labelAdminRow(row, ["Candidat", "E-mail", "Spécialité", "Action"]);
+        row.append(nameCell, emailCell, specialtyCell, statusCell, actionCell);
+        labelAdminRow(row, ["Candidat", "E-mail", "Spécialité", "Statut", "Action"]);
         list.appendChild(row);
     });
 
@@ -5399,6 +5416,7 @@ async function initializeAppInteractions() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
+        adminBlockedAccountsLoaded = false;
         adminInactivityReminderIds = new Set();
         adminInactivityReminderError = "";
         if (typeof navigator.setAppBadge === "function") {
