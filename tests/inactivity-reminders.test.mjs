@@ -95,3 +95,13 @@ test("a QCM visit refreshes an expired session before recording", async () => {
     assert.equal(calls[0].path, "/rpc/record_qcm_visit");
     assert.equal(calls[0].token, "fresh");
 });
+
+test("the dashboard reminder RPC is admin-only and includes only accepted emails for the current visit", () => {
+    const migration = readFileSync(new URL("../supabase/migrations/20261112180000_admin_inactivity_card_status.sql", import.meta.url), "utf8");
+    assert.match(migration, /security definer/i);
+    assert.match(migration, /set search_path = ''/i);
+    assert.match(migration, /Administrator access required/i);
+    assert.match(migration, /m\.activity_at = a\.last_seen_at/i);
+    assert.match(migration, /m\.status = 'sent'/i);
+    assert.match(migration, /revoke all on function public\.get_admin_current_inactivity_reminders\(\) from public, anon/i);
+});

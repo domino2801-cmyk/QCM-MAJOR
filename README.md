@@ -60,6 +60,8 @@ Les comptes candidats peuvent être bloqués ou débloqués par un administrateu
 
 La relance d’inactivité, une fois configurée, utilise le modèle Resend sans pseudo. Une visite connectée sur QCM-MAJOR repousse la relance ; les visites DOCTRINE ne comptent pas. Une seule relance est envoyée après au moins 15 jours d’inactivité, puis une nouvelle visite ouvre un nouveau cycle. Les comptes déjà connus par leurs résultats QCM démarrent leur premier délai à l’installation de la migration ; les autres sont suivis après leur première visite enregistrée. Les administrateurs et comptes bloqués ne sont pas relancés. Le suivi administrateur indique l’acceptation par Resend, et non la réception effective ; les échecs et les résultats incertains y figurent également.
 
+Dans le tableau de bord administrateur, une carte devient gris foncé quand Resend a accepté la relance du cycle d’inactivité en cours. Elle retrouve son apparence normale après une nouvelle visite connectée sur QCM-MAJOR, à la prochaine actualisation des données administrateur.
+
 ## Configuration Supabase
 
 Le frontend est développé en HTML, CSS et JavaScript sans étape de compilation. Supabase fournit l’authentification, les données et la correction des réponses. Appliquez les migrations nécessaires au projet Supabase avant de déployer les fonctionnalités concernées.
@@ -88,6 +90,7 @@ La dernière migration recalcule les paliers avec les seuils actuels sans rédui
 3. Configurez les secrets de la fonction Supabase `QCM_INACTIVITY_RESEND_API_KEY` (clé Resend limitée à l’envoi), `QCM_INACTIVITY_TEMPLATE_ID` (identifiant ou alias du modèle publié) et `QCM_INACTIVITY_SECRET` (secret aléatoire long réservé au déclenchement). Ne les ajoutez pas au dépôt. Déployez la fonction `inactivity-reminders`.
 4. Dans Supabase Vault, créez `qcm_inactivity_project_url` avec l’URL du projet et `qcm_inactivity_cron_secret` avec la même valeur que `QCM_INACTIVITY_SECRET`. Exécutez ensuite `supabase/inactivity-reminders-schedule.sql` pour programmer la vérification toutes les 15 minutes. Comme `pg_net` place temporairement les en-têtes dans sa file, limitez l’accès aux rôles de base de données de confiance.
 5. Testez d’abord avec un compte dédié et contrôlez les journaux de la fonction, Resend et la chronologie administrateur. Les rejets HTTP explicites sont réessayés après une heure, sauf les réponses 408 et 409 dont le résultat est incertain. Une tentative dont le résultat est incertain ou restée « en cours » n’est pas réessayée automatiquement : vérifiez Resend avant toute intervention pour éviter un doublon. Le quota Resend s’applique à tous les envois utilisant le compte.
+6. Pour activer l’indicateur gris dans le tableau de bord, appliquez `supabase/migrations/20261112180000_admin_inactivity_card_status.sql` après la migration des relances, puis déployez le site mis à jour.
 
 ### Classement public
 

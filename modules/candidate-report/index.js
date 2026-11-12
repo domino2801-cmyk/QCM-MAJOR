@@ -155,14 +155,14 @@ export function renderCandidateDashboard(container, summaries, doc = document, {
     const selectedKey = String(selected || "").trim().toLowerCase();
     summaries.forEach(summary => {
         const status = STATUSES[summary.status];
-        const card = element(doc, "article", "candidate-card");
+        const card = element(doc, "article", `candidate-card${summary.inactivityReminderSent ? " has-inactivity-reminder" : ""}`);
         const isSelected = Boolean(selectedKey)
             && [summary.email, summary.id].some(value => String(value || "").trim().toLowerCase() === selectedKey);
         card.dataset.status = summary.status;
         card.setAttribute("role", "button");
         card.tabIndex = 0;
         card.setAttribute("aria-pressed", String(isSelected));
-        card.setAttribute("aria-label", `Détails de ${summary.name}`);
+        card.setAttribute("aria-label", `Détails de ${summary.name}${summary.inactivityReminderSent ? " — relance d’inactivité acceptée par Resend" : ""}`);
         if (onSelect) {
             card.addEventListener("click", () => onSelect(summary, isSelected));
             card.addEventListener("keydown", event => {
@@ -194,6 +194,9 @@ export function renderCandidateDashboard(container, summaries, doc = document, {
         facts.textContent = `${summary.seriesCount} série(s) · dernière activité ${formatDate(summary.lastActivity)} · ${trend}`;
 
         card.append(head, score, facts);
+        if (summary.inactivityReminderSent) {
+            card.appendChild(element(doc, "p", "candidate-card-reminder", "Relance d’inactivité acceptée par Resend"));
+        }
         container.appendChild(card);
     });
 }

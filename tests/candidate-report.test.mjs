@@ -5,6 +5,7 @@ import {
     buildCandidateSummaries,
     buildCandidateReportPdf,
     getCandidateStatus,
+    renderCandidateDashboard,
     sortByPriority
 } from "../modules/candidate-report/index.js";
 
@@ -53,4 +54,32 @@ test("the admin results panel exposes the dashboard and its PDF export", () => {
     ["admin-dashboard-cards", "admin-dashboard-status", "admin-dashboard-pdf"].forEach(id =>
         assert.match(html, new RegExp(`id="${id}"`)));
     assert.match(app, /getElementById\("admin-dashboard-pdf"\)\?\.addEventListener\("click", exportAdminCandidateReportPdf\)/);
+});
+
+test("only candidates with a current accepted reminder get the dark card and label", () => {
+    class Element {
+        constructor() {
+            this.children = [];
+            this.dataset = {};
+            this.attributes = {};
+            this.style = { setProperty() {} };
+        }
+        replaceChildren(...children) { this.children = children; }
+        append(...children) { this.children.push(...children); }
+        appendChild(child) { this.children.push(child); }
+        setAttribute(name, value) { this.attributes[name] = value; }
+        addEventListener() {}
+    }
+    const container = new Element();
+    const doc = { createElement: () => new Element() };
+    const summaries = buildCandidateSummaries({ accounts });
+    summaries[0].inactivityReminderSent = true;
+    renderCandidateDashboard(container, summaries, doc);
+
+    const [reminded, normal] = container.children;
+    assert.match(reminded.className, /\bhas-inactivity-reminder\b/);
+    assert.match(reminded.attributes["aria-label"], /relance d’inactivité acceptée par Resend/);
+    assert.equal(reminded.children.at(-1).textContent, "Relance d’inactivité acceptée par Resend");
+    assert.doesNotMatch(normal.className, /\bhas-inactivity-reminder\b/);
+    assert.doesNotMatch(normal.attributes["aria-label"], /relance/);
 });

@@ -94,6 +94,7 @@ test("les comptes et signalements sont paginés sans tronquer les données", asy
                 id: "p", email: "candidate@test", name: "Test", created_at: "2026-10-25T12:00:00Z"
             }];
             if (query === "/rpc/get_admin_blocked_accounts") return [];
+            if (query === "/rpc/get_admin_current_inactivity_reminders") return ["p"];
             reports++;
             return Array.from({ length: reports === 1 ? 250 : 1 }, (_, id) => ({
                 id: `${reports}-${id}`, reporter_id: "p"
@@ -107,7 +108,27 @@ test("les comptes et signalements sont paginés sans tronquer les données", asy
     assert.equal(context.questionReports[250].reporter_email, "candidate@test");
     assert.match(queries[0], /created_at/);
     assert.equal(context.cachedAccounts["candidate@test"].createdAt, "2026-10-25T12:00:00Z");
-    assert.match(queries.at(-1), /offset=250/);
+    assert.ok(queries.some(query => /offset=250/.test(query)));
+    assert.deepEqual(Array.from(context.adminInactivityReminderIds), ["p"]);
+});
+
+test("un échec de lecture des relances est signalé sans conserver les anciens statuts", async () => {
+    const context = vm.createContext({
+        supabase: {}, isAdminSession: () => true,
+        getStoredSupabaseSession: () => ({ access_token: "admin" }),
+        loadResultsFromSupabase: async () => true,
+        supabaseRestRequest: async query => {
+            if (query === "/rpc/get_admin_current_inactivity_reminders") throw new Error("RPC unavailable");
+            return [];
+        },
+        console: { warn() {} },
+        questionReports: [], cachedAccounts: {},
+        adminInactivityReminderIds: new Set(["ancien"]),
+        adminInactivityReminderError: ""
+    });
+    await loadFunction("loadAdminData", context)();
+    assert.equal(context.adminInactivityReminderIds.size, 0);
+    assert.match(context.adminInactivityReminderError, /indisponible/);
 });
 
 test("une session remplacée ne reçoit pas les comptes et signalements de l'ancien administrateur", async () => {

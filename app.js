@@ -17,7 +17,7 @@ import {
     sortByPriority,
     countByStatus,
     STATUSES
-} from "./modules/candidate-report/index.js?v=dashboard-status-20261111";
+} from "./modules/candidate-report/index.js?v=inactivity-card-20261112";
 import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=return-console-20261108";
 import {
     reportNotificationsEnabled,
@@ -92,6 +92,8 @@ let currentCandidateEmail = "";
 let currentSupabaseSession = null;
 let authUiReady = false;
 let cachedAccounts = {};
+let adminInactivityReminderIds = new Set();
+let adminInactivityReminderError = "";
 let resultsCache = [];
 let retexSubmitted = false;
 let questionReports = [];
@@ -2059,6 +2061,8 @@ async function loadAdminData() {
         throw new Error("Une session administrateur est requise.");
     }
 
+    adminInactivityReminderIds = new Set();
+    adminInactivityReminderError = "";
     if (typeof adminCandidateTrackingKey !== "undefined") adminCandidateTrackingKey = "";
     if (typeof adminCandidateTrackingRequestId !== "undefined") adminCandidateTrackingRequestId++;
     const accessToken = getStoredSupabaseSession()?.access_token;
@@ -2158,6 +2162,24 @@ async function loadAdminData() {
 
     if (!resultsLoaded) {
         throw new Error("Les résultats administrateur n’ont pas pu être chargés.");
+    }
+
+    try {
+        const remindedIds = await supabaseRestRequest("/rpc/get_admin_current_inactivity_reminders", {
+            method: "POST",
+            accessToken,
+            body: {}
+        });
+        if (!Array.isArray(remindedIds) || remindedIds.some(id => typeof id !== "string")) {
+            throw new Error("Réponse invalide.");
+        }
+        if (getStoredSupabaseSession()?.access_token !== accessToken) {
+            throw new Error("La session a changé pendant la synchronisation.");
+        }
+        adminInactivityReminderIds = new Set(remindedIds);
+    } catch (error) {
+        console.warn("Chargement des relances d’inactivité impossible.", error);
+        adminInactivityReminderError = "Statut des relances indisponible : vérifiez la migration Supabase et actualisez.";
     }
 }
 
@@ -2518,6 +2540,8 @@ async function exportAdminRetexPdf() {
 }
 
 async function showAdminApp() {
+    adminInactivityReminderIds = new Set();
+    adminInactivityReminderError = "";
     setAuthAudioPlaying(false);
     renderAdminAccounts();
     renderAdminQuestions();
@@ -3543,7 +3567,10 @@ function getAdminDashboardSummaries() {
     const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
     const status = document.getElementById("admin-dashboard-status")?.value || "";
     const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
-    const all = buildCandidateSummaries(getAdminResultsData());
+    const all = buildCandidateSummaries(getAdminResultsData()).map(summary => ({
+        ...summary,
+        inactivityReminderSent: adminInactivityReminderIds.has(summary.id)
+    }));
     const scoped = all.filter(summary =>
         (!specialty || summary.specialty === specialty)
         && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
@@ -3611,7 +3638,10 @@ function renderAdminCandidateDashboard() {
         });
     }
     const message = document.getElementById("admin-dashboard-message");
-    if (message) message.innerText = filtered.length ? "" : "Aucun candidat ne correspond à la sélection.";
+    if (message) message.innerText = [
+        adminInactivityReminderError,
+        filtered.length ? "" : "Aucun candidat ne correspond à la sélection."
+    ].filter(Boolean).join(" ");
 }
 
 async function exportAdminCandidateReportPdf() {
@@ -5369,6 +5399,8 @@ async function initializeAppInteractions() {
         }
         currentAuthenticatedAccount = null;
         currentCandidateEmail = "";
+        adminInactivityReminderIds = new Set();
+        adminInactivityReminderError = "";
         if (typeof navigator.setAppBadge === "function") {
             navigator.clearAppBadge?.()?.catch(error => console.warn("Effacement du badge de l’application impossible.", error));
         }

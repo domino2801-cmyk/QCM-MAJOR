@@ -2615,6 +2615,35 @@ h1 {
     background: rgba(255, 255, 255, 0.08);
 }
 
+.candidate-card.has-inactivity-reminder,
+.candidate-card.has-inactivity-reminder:hover,
+.candidate-card.has-inactivity-reminder:focus-visible,
+.candidate-card.has-inactivity-reminder[aria-pressed="true"] {
+    background: #373737;
+}
+
+.candidate-card.has-inactivity-reminder .candidate-card-name,
+.candidate-card.has-inactivity-reminder .candidate-card-score strong {
+    color: #fff;
+}
+
+.candidate-card.has-inactivity-reminder .candidate-card-identity small,
+.candidate-card.has-inactivity-reminder .candidate-card-facts,
+.candidate-card-reminder {
+    color: #f0f0f0;
+}
+
+.candidate-card.has-inactivity-reminder .candidate-pill {
+    background: #f0f0f0;
+    color: #202020;
+}
+
+.candidate-card-reminder {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
 .candidate-card-themes {
     display: grid;
     gap: 6px;

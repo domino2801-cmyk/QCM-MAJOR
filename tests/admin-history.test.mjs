@@ -89,6 +89,8 @@ function harness(customResults) {
     ];
     const context = vm.createContext({
         candidateHistoryCategory: "combat",
+        adminInactivityReminderIds: new Set(),
+        adminInactivityReminderError: "",
         getAdminListPage: (_, items) => items,
         labelAdminRow: () => {},
         document: { getElementById: id => nodes.get(id), createElement: element },
