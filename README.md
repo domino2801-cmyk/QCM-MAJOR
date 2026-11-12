@@ -66,6 +66,8 @@ Dans le tableau de bord administrateur, une carte devient gris foncé quand Rese
 
 Le frontend est développé en HTML, CSS et JavaScript sans étape de compilation. Supabase fournit l’authentification, les données et la correction des réponses. Appliquez les migrations nécessaires au projet Supabase avant de déployer les fonctionnalités concernées.
 
+La page principale applique une politique CSP par balise meta : scripts locaux uniquement et connexions limitées au site et au projet Supabase indiqué dans `index.html`. Si ce projet change, mettez aussi à jour `connect-src`. Les styles en ligne restent autorisés pour les styles dynamiques. Cette protection ne remplace pas des en-têtes HTTP : GitHub Pages ne permet pas de configurer HSTS, `frame-ancestors` ou `X-Content-Type-Options` depuis le dépôt ; ces en-têtes nécessitent un hébergement ou un proxy compatible. La session Supabase est stockée dans `sessionStorage` et reste accessible au JavaScript : des cookies `HttpOnly` nécessiteraient une architecture serveur adaptée.
+
 ### Progression
 
 Appliquez ces migrations dans l’ordre :
