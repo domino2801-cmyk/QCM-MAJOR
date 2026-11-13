@@ -4643,6 +4643,10 @@ body {
     letter-spacing: 0.08em;
 }
 
+#confirm-overlay .confirm-actions button {
+    padding-inline: 10px;
+}
+
 .confirm-actions :is(#confirm-cancel-btn, #first-visit-no-btn) {
     border-color: rgba(190, 199, 151, 0.38);
     background: rgba(116, 131, 95, 0.16);
@@ -5281,6 +5285,14 @@ body {
 
     .confirm-box {
         padding: 22px 18px 18px;
+    }
+
+    #confirm-overlay .confirm-actions button {
+        min-width: 0;
+        padding: 10px 6px;
+        font-size: 0.8rem;
+        line-height: 1.2;
+        letter-spacing: 0.03em;
     }
 
     #report-screen .report-panel,
