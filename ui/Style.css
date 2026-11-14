@@ -2557,19 +2557,26 @@ h1 {
     margin: 0 0 10px;
     color: var(--accent);
     font-size: 1.05rem;
+    text-align: center;
 }
 
 .admin-dashboard-controls {
-    display: grid;
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     margin: 14px 0;
 }
 
 .admin-dashboard-controls .admin-search {
-    width: 100%;
-    min-width: 0;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+.admin-filter-label {
+    white-space: nowrap;
+    font-weight: 500;
 }
 
 .admin-dashboard-summary {
@@ -2764,7 +2771,12 @@ h1 {
 
 @media (max-width: 760px) {
     .admin-dashboard-controls {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-dashboard-controls .admin-search {
+        max-width: none;
     }
 
     .admin-dashboard-cards {
