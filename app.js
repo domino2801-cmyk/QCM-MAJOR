@@ -3019,7 +3019,6 @@ function renderAdminAccounts() {
             }
         });
 
-        const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
         const statusBadge = document.createElement("span");
         statusBadge.className = `admin-account-status ${statusKnown ? (account.blocked ? "is-blocked" : "is-unblocked") : "is-unknown"}`;
         statusBadge.innerText = statusKnown ? (account.blocked ? "Inactif" : "Actif") : "Statut indisponible";
