@@ -2877,33 +2877,42 @@ function renderAdminAccounts() {
             return secondTimestamp - firstTimestamp;
         });
     getAdminListPage("accounts", filteredAccounts, search).forEach(([email, account]) => {
-        const row = document.createElement("tr");
-        const nameCell = document.createElement("td");
-        const emailCell = document.createElement("td");
-        const specialtyCell = document.createElement("td");
-        const statusCell = document.createElement("td");
-        const statusBadge = document.createElement("span");
-        const actionCell = document.createElement("td");
-        const deleteButton = document.createElement("button");
-        const blockButton = document.createElement("button");
-
-        nameCell.innerText = account.name || getNameTrigram(account.name);
-        nameCell.title = account.name || "Non renseigné";
-        emailCell.innerText = email;
+        const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
+        const card = document.createElement("div");
+        card.className = "admin-account-card";
+        
+        // Ajouter classe de couleur si OG ou EMIA
+        if (account.specialty === "OG" || account.specialty === "EMIA") {
+            card.classList.add("admin-account-card-colored");
+        }
+        
+        // Première ligne: Candidat (gauche) et Spécialité (droite)
+        const topLine = document.createElement("div");
+        topLine.className = "admin-account-top-line";
+        
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "admin-account-name";
+        nameSpan.innerText = account.name || getNameTrigram(account.name);
+        nameSpan.title = account.name || "Non renseigné";
+        
         const trigram = getSpecialtyTrigram(account.specialty);
         const specialtySpan = document.createElement("span");
+        specialtySpan.className = "admin-account-specialty";
         specialtySpan.innerText = trigram;
         if (account.specialty === "OG") {
-            specialtySpan.className = "specialty-og";
+            specialtySpan.className = "admin-account-specialty specialty-og";
         } else if (account.specialty === "EMIA") {
-            specialtySpan.className = "specialty-emia";
+            specialtySpan.className = "admin-account-specialty specialty-emia";
         }
-        specialtyCell.appendChild(specialtySpan);
-        specialtyCell.title = formatSpecialtyLabel(account.specialty);
-        const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
-        statusBadge.className = `admin-account-status ${statusKnown ? (account.blocked ? "is-blocked" : "is-unblocked") : "is-unknown"}`;
-        statusBadge.innerText = statusKnown ? (account.blocked ? "Inactif" : "Actif") : "Statut indisponible";
-        statusCell.appendChild(statusBadge);
+        specialtySpan.title = formatSpecialtyLabel(account.specialty);
+        
+        topLine.append(nameSpan, specialtySpan);
+        
+        // Deuxième ligne: Action (gauche) et Statut (droite)
+        const bottomLine = document.createElement("div");
+        bottomLine.className = "admin-account-bottom-line";
+        
+        const deleteButton = document.createElement("button");
         deleteButton.type = "button";
         deleteButton.className = "admin-delete-btn";
         deleteButton.innerText = "Retirer du cache";
@@ -2922,6 +2931,7 @@ function renderAdminAccounts() {
             renderAdminAccounts();
         });
 
+        const blockButton = document.createElement("button");
         blockButton.type = "button";
         blockButton.className = `admin-account-block-btn admin-delete-btn${account.blocked ? " is-blocked" : ""}`;
         blockButton.innerText = account.blocked ? "Débloquer" : "Bloquer le compte";
@@ -3009,21 +3019,19 @@ function renderAdminAccounts() {
             }
         });
 
-        const accordion = document.createElement("details");
-        accordion.className = "admin-actions-accordion";
-        const summary = document.createElement("summary");
-        summary.innerText = "Actions";
-        accordion.appendChild(summary);
+        const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
+        const statusBadge = document.createElement("span");
+        statusBadge.className = `admin-account-status ${statusKnown ? (account.blocked ? "is-blocked" : "is-unblocked") : "is-unknown"}`;
+        statusBadge.innerText = statusKnown ? (account.blocked ? "Inactif" : "Actif") : "Statut indisponible";
         
-        const actionsList = document.createElement("div");
-        actionsList.className = "admin-actions-list";
-        actionsList.append(deleteButton, blockButton, specialtyButton);
-        accordion.appendChild(actionsList);
+        const actionsContainer = document.createElement("div");
+        actionsContainer.className = "admin-account-actions";
+        actionsContainer.append(deleteButton, blockButton, specialtyButton);
         
-        actionCell.appendChild(accordion);
-        row.append(nameCell, emailCell, specialtyCell, statusCell, actionCell);
-        labelAdminRow(row, ["Candidat", "E-mail", "Spécialité", "Statut", "Action"]);
-        list.appendChild(row);
+        bottomLine.append(actionsContainer, statusBadge);
+        
+        card.append(topLine, bottomLine);
+        list.appendChild(card);
     });
 
     if (accountCount) {
