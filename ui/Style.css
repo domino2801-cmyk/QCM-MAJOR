@@ -2770,6 +2770,26 @@ h1 {
 }
 
 @media (max-width: 760px) {
+    .admin-results-header {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .admin-results-header h2 {
+        width: 100%;
+        text-align: center;
+    }
+
+    .admin-results-header .admin-summary {
+        justify-content: center;
+    }
+
+    .admin-results-header .admin-edit-btn {
+        width: 100%;
+    }
+
     .admin-dashboard-controls {
         flex-direction: row;
         align-items: center;
