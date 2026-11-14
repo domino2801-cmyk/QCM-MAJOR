@@ -3692,6 +3692,73 @@ async function exportAdminCandidateReportPdf() {
     setAuthMessage("admin-dashboard-message", `${fileName} téléchargé.`);
 }
 
+function openAdminChangeSpecialtyModal() {
+    const modal = document.getElementById("admin-change-specialty-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        document.getElementById("admin-change-specialty-select")?.focus();
+    }
+}
+
+function closeAdminChangeSpecialtyModal() {
+    const modal = document.getElementById("admin-change-specialty-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+        document.getElementById("admin-change-specialty-message").innerText = "";
+        document.getElementById("admin-change-specialty-select").value = "";
+    }
+}
+
+async function handleAdminChangeSpecialty(event) {
+    event.preventDefault();
+    if (!ensureSupabaseConfigured("admin-change-specialty-message")) return;
+
+    const { filtered } = getAdminDashboardSummaries();
+    const newSpecialty = document.getElementById("admin-change-specialty-select")?.value.trim();
+
+    if (!newSpecialty || !filtered.length) {
+        setAuthMessage("admin-change-specialty-message", filtered.length ? "Sélectionnez une spécialité." : "Aucun candidat à modifier.");
+        return;
+    }
+
+    setAuthMessage("admin-change-specialty-message", `Modification en cours pour ${filtered.length} candidat(s)...`);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const candidate of filtered) {
+        try {
+            const userId = candidate.id || candidate.email;
+            if (!userId) continue;
+
+            const { data, error } = await supabase.rpc("update_candidate_specialty", {
+                p_user_id: userId,
+                p_new_specialty: newSpecialty
+            });
+
+            if (error) {
+                console.error(`Erreur pour ${candidate.email}:`, error);
+                errorCount++;
+            } else {
+                successCount++;
+            }
+        } catch (error) {
+            console.error(`Exception pour ${candidate.email}:`, error);
+            errorCount++;
+        }
+    }
+
+    const message = `${successCount} candidat(s) modifié(s)${errorCount ? `, ${errorCount} erreur(s)` : ""}.`;
+    setAuthMessage("admin-change-specialty-message", message);
+
+    if (successCount > 0) {
+        setTimeout(() => {
+            closeAdminChangeSpecialtyModal();
+            renderAdminCandidateDashboard();
+        }, 1500);
+    }
+}
+
 function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const { results, accounts } = getAdminResultsData();
@@ -5179,6 +5246,14 @@ async function initializeAppInteractions() {
         document.getElementById(id)?.addEventListener(id === "admin-dashboard-search" ? "input" : "change", renderAdminCandidateDashboard);
     });
     document.getElementById("admin-dashboard-pdf")?.addEventListener("click", exportAdminCandidateReportPdf);
+    document.getElementById("admin-change-specialty-btn")?.addEventListener("click", openAdminChangeSpecialtyModal);
+    document.getElementById("admin-change-specialty-cancel-btn")?.addEventListener("click", closeAdminChangeSpecialtyModal);
+    document.getElementById("admin-change-specialty-form")?.addEventListener("submit", handleAdminChangeSpecialty);
+    document.getElementById("admin-change-specialty-modal")?.addEventListener("click", event => {
+        if (event.target.id === "admin-change-specialty-modal") {
+            closeAdminChangeSpecialtyModal();
+        }
+    });
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
