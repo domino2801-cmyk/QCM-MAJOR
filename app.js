@@ -3718,7 +3718,7 @@ function renderAdminCandidateDashboard() {
             renderAdminCandidateDashboard();
         });
         summary.appendChild(total);
-        ["struggling", "watch", "ready", "none"].forEach(key => {
+        ["struggling", "none", "watch", "ready"].forEach(key => {
             const chip = document.createElement("button");
             chip.type = "button";
             chip.className = "admin-dashboard-chip";

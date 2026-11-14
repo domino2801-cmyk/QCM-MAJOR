@@ -2572,6 +2572,13 @@ h1 {
     flex: 1;
     min-width: 200px;
     max-width: 400px;
+    height: 40px;
+}
+
+.admin-dashboard-controls .admin-edit-btn {
+    height: 40px;
+    display: flex;
+    align-items: center;
 }
 
 .admin-filter-label {
@@ -2584,6 +2591,7 @@ h1 {
     flex-wrap: wrap;
     gap: 8px;
     margin: 12px 0;
+    justify-content: center;
 }
 
 .admin-dashboard-chip {
@@ -2596,6 +2604,26 @@ h1 {
     font: inherit;
     font-size: 0.82rem;
     font-weight: 700;
+    flex: 0 1 auto;
+}
+
+.admin-dashboard-chip:first-child {
+    flex-basis: 100%;
+    text-align: center;
+}
+
+.admin-dashboard-chip:nth-child(2),
+.admin-dashboard-chip:nth-child(3) {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    text-align: center;
+}
+
+.admin-dashboard-chip:nth-child(4),
+.admin-dashboard-chip:nth-child(5) {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    text-align: center;
 }
 
 .admin-dashboard-chip[aria-pressed="true"] {
