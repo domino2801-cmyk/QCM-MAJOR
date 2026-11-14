@@ -2957,6 +2957,11 @@ function renderAdminAccounts() {
         specialtyButton.innerText = "Spécialité";
         specialtyButton.title = "Modifier la spécialité du candidat";
         specialtyButton.addEventListener("click", async () => {
+            if (!account.id) {
+                setAuthMessage("admin-data-status", "ID de candidat indisponible. Rafraîchissez les données.");
+                return;
+            }
+
             const specialties = ["INF", "BLD", "ART", "GEN", "AER", "EMP", "SIC", "CYB", "RENS", "ADM", "GRH", "PBF", "MVT", "MAI", "COM", "RHL", "EPS", "SAN", "FSP", "EMIA", "OG"];
             let newSpecialty = window.prompt(`Choisir une nouvelle spécialité pour ${account.name || email}:\n\n${specialties.join(", ")}\n\nSpécialité actuelle: ${account.specialty || "Aucune"}`, account.specialty || "");
             if (newSpecialty === null) return;
@@ -2988,6 +2993,7 @@ function renderAdminAccounts() {
                 renderAdminAccounts();
                 setAuthMessage("admin-data-status", `Spécialité modifiée en ${newSpecialty}.`);
             } catch (error) {
+                console.error("Erreur modification spécialité:", error);
                 setAuthMessage("admin-data-status", `Modification de la spécialité impossible : ${error.message}`);
             } finally {
                 setAdminOperationPending(false);
