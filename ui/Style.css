@@ -3601,16 +3601,22 @@ body {
     50% { box-shadow: 0 10px 25px rgba(180, 202, 214, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.24); }
 }
 
-@keyframes global-campaign-sheen {
-    0%, 45% { transform: translateX(-120%); }
-    75%, 100% { transform: translateX(120%); }
+.specialty-og {
+    background-color: #FF6B6B;
+    color: white;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .theme-global-btn,
-    .theme-global-btn::after {
-        animation: none;
-    }
+.specialty-emia {
+    background-color: #FFD700;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    display: inline-block;
 }
 
 #theme-screen > .btn-main {

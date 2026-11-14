@@ -2890,11 +2890,19 @@ function renderAdminAccounts() {
         nameCell.innerText = account.name || getNameTrigram(account.name);
         nameCell.title = account.name || "Non renseigné";
         emailCell.innerText = email;
-        specialtyCell.innerText = getSpecialtyTrigram(account.specialty);
+        const trigram = getSpecialtyTrigram(account.specialty);
+        const specialtySpan = document.createElement("span");
+        specialtySpan.innerText = trigram;
+        if (account.specialty === "OG") {
+            specialtySpan.className = "specialty-og";
+        } else if (account.specialty === "EMIA") {
+            specialtySpan.className = "specialty-emia";
+        }
+        specialtyCell.appendChild(specialtySpan);
         specialtyCell.title = formatSpecialtyLabel(account.specialty);
         const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
         statusBadge.className = `admin-account-status ${statusKnown ? (account.blocked ? "is-blocked" : "is-unblocked") : "is-unknown"}`;
-        statusBadge.innerText = statusKnown ? (account.blocked ? "Bloqué" : "Débloqué") : "Statut indisponible";
+        statusBadge.innerText = statusKnown ? (account.blocked ? "Inactif" : "Actif") : "Statut indisponible";
         statusCell.appendChild(statusBadge);
         deleteButton.type = "button";
         deleteButton.className = "admin-delete-btn";
@@ -3001,7 +3009,18 @@ function renderAdminAccounts() {
             }
         });
 
-        actionCell.append(deleteButton, blockButton, specialtyButton);
+        const accordion = document.createElement("details");
+        accordion.className = "admin-actions-accordion";
+        const summary = document.createElement("summary");
+        summary.innerText = "Actions";
+        accordion.appendChild(summary);
+        
+        const actionsList = document.createElement("div");
+        actionsList.className = "admin-actions-list";
+        actionsList.append(deleteButton, blockButton, specialtyButton);
+        accordion.appendChild(actionsList);
+        
+        actionCell.appendChild(accordion);
         row.append(nameCell, emailCell, specialtyCell, statusCell, actionCell);
         labelAdminRow(row, ["Candidat", "E-mail", "Spécialité", "Statut", "Action"]);
         list.appendChild(row);
