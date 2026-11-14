@@ -2525,8 +2525,8 @@ h1 {
 
 .candidate-card {
     display: grid;
-    gap: 10px;
-    padding: 14px;
+    gap: 8px;
+    padding: 10px;
     border: 1px solid rgba(159, 170, 132, 0.26);
     border-left: 5px solid var(--status-color);
     border-radius: 10px;
@@ -2538,7 +2538,7 @@ h1 {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .candidate-card-identity {
@@ -2550,7 +2550,7 @@ h1 {
 
 .candidate-card-name {
     color: #efe8d0;
-    font-size: 1.02rem;
+    font-size: 0.95rem;
     overflow-wrap: anywhere;
 }
 
@@ -2566,18 +2566,18 @@ h1 {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 8px;
-    padding-top: 4px;
+    gap: 6px;
+    padding-top: 3px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .candidate-pill {
     flex: 0 0 auto;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 999px;
     background: var(--status-color);
     color: #fff;
-    font-size: 0.74rem;
+    font-size: 0.68rem;
     font-weight: 800;
     white-space: nowrap;
 }
@@ -2961,6 +2961,30 @@ h1 {
 
     .result-box {
         padding: 18px;
+    }
+
+    .candidate-card {
+        gap: 6px;
+        padding: 8px;
+    }
+
+    .candidate-card-name {
+        font-size: 0.88rem;
+    }
+
+    .candidate-card-identity small {
+        font-size: 0.72rem;
+    }
+
+    .candidate-card-facts {
+        font-size: 0.7rem;
+        gap: 4px;
+        padding-top: 2px;
+    }
+
+    .candidate-pill {
+        padding: 1px 6px;
+        font-size: 0.64rem;
     }
 }
 
