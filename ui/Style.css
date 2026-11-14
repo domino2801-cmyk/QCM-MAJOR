@@ -2771,12 +2771,25 @@ h1 {
 
 @media (max-width: 760px) {
     .admin-dashboard-controls {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 
     .admin-dashboard-controls .admin-search {
         max-width: none;
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .admin-dashboard-controls .admin-edit-btn {
+        flex: 0 1 auto;
+        white-space: nowrap;
+    }
+
+    .admin-filter-label {
+        flex: 0 0 auto;
     }
 
     .admin-dashboard-cards {
