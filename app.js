@@ -2951,7 +2951,51 @@ function renderAdminAccounts() {
             }
         });
 
-        actionCell.append(deleteButton, blockButton);
+        const specialtyButton = document.createElement("button");
+        specialtyButton.type = "button";
+        specialtyButton.className = "admin-edit-btn";
+        specialtyButton.innerText = "Spécialité";
+        specialtyButton.title = "Modifier la spécialité du candidat";
+        specialtyButton.addEventListener("click", async () => {
+            const specialties = ["INF", "BLD", "ART", "GEN", "AER", "EMP", "SIC", "CYB", "RENS", "ADM", "GRH", "PBF", "MVT", "MAI", "COM", "RHL", "EPS", "SAN", "FSP", "EMIA", "OG"];
+            let newSpecialty = window.prompt(`Choisir une nouvelle spécialité pour ${account.name || email}:\n\n${specialties.join(", ")}\n\nSpécialité actuelle: ${account.specialty || "Aucune"}`, account.specialty || "");
+            if (newSpecialty === null) return;
+            
+            newSpecialty = newSpecialty.toUpperCase().trim();
+            if (!specialties.includes(newSpecialty)) {
+                setAuthMessage("admin-data-status", `Spécialité invalide: ${newSpecialty}`);
+                return;
+            }
+
+            const confirmed = await showConfirmOverlay({
+                title: "Modifier la spécialité ?",
+                message: `Modifier la spécialité de ${account.name || email} à ${newSpecialty} ?`,
+                okLabel: "OUI",
+                cancelLabel: "NON"
+            });
+            if (!confirmed) return;
+
+            specialtyButton.disabled = true;
+            setAdminOperationPending(true);
+            try {
+                const result = await supabaseRestRequest("/rpc/update_candidate_specialty", {
+                    method: "POST",
+                    accessToken: getStoredSupabaseSession()?.access_token,
+                    body: { p_user_id: account.id, p_new_specialty: newSpecialty }
+                });
+                if (!result) throw new Error("La modification n'a pas été confirmée.");
+                account.specialty = newSpecialty;
+                renderAdminAccounts();
+                setAuthMessage("admin-data-status", `Spécialité modifiée en ${newSpecialty}.`);
+            } catch (error) {
+                setAuthMessage("admin-data-status", `Modification de la spécialité impossible : ${error.message}`);
+            } finally {
+                setAdminOperationPending(false);
+                specialtyButton.disabled = false;
+            }
+        });
+
+        actionCell.append(deleteButton, blockButton, specialtyButton);
         row.append(nameCell, emailCell, specialtyCell, statusCell, actionCell);
         labelAdminRow(row, ["Candidat", "E-mail", "Spécialité", "Statut", "Action"]);
         list.appendChild(row);
