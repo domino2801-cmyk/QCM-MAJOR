@@ -69,7 +69,9 @@ const specialtyLabels = {
     RHL: "RHL - Restauration, hôtellerie et loisirs",
     EPS: "EPS - Entraînement physique, militaire et sportif",
     SAN: "SAN - Santé",
-    FSP: "FSP - Forces spéciales"
+    FSP: "FSP - Forces spéciales",
+    OG: "OG - Officier guide",
+    EMIA: "EMIA - École militaire interarmes"
 };
 const supabaseUrl = typeof document !== "undefined"
     ? document.querySelector('meta[name="supabase-url"]')?.content?.trim() || ""

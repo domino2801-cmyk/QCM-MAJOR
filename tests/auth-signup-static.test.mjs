@@ -54,7 +54,7 @@ test("register markup keeps required ids and HTML5 constraints", () => {
     assert.doesNotMatch(html, /Mail personnel du candidat|Top 3 campagne globale|>Mot de passe</);
 });
 
-test("signup flow still stores pending signup and switches to OTP", () => {
+test("signup flow stores selected specialties and switches to OTP", async () => {
     const registerMessageField = { innerText: "" };
     const form = { elements: [], noValidate: false };
     const fields = {
@@ -107,26 +107,33 @@ test("signup flow still stores pending signup and switches to OTP", () => {
         }
     });
 
-    return submitHandler({
-        preventDefault() {},
-        currentTarget: form
-    }).then(() => {
+    for (const [specialty, label] of [
+        ["INF", "INF - Infanterie"],
+        ["OG", "OG - Officier guide"],
+        ["EMIA", "EMIA - École militaire interarmes"]
+    ]) {
+        assert.ok(html.includes(`<option value="${specialty}">${label}</option>`));
+        fields.specialty.value = specialty;
+        await submitHandler({
+            preventDefault() {},
+            currentTarget: form
+        });
         assert.deepEqual(toPlainJson(signUpPayload), {
             email: "test@example.com",
             password: "abc123",
             options: {
-                data: { name: "Caporal", specialty: "INF" }
+                data: { name: "Caporal", specialty }
             }
         });
         assert.deepEqual(toPlainJson(pendingSignup), {
             name: "Caporal",
             email: "test@example.com",
-            specialty: "INF"
+            specialty
         });
         assert.equal(registerMessageField.innerText, "");
         assert.equal(otpInputsCleared, true);
         assert.deepEqual(toPlainJson(shownView), { view: "otp", options: { email: "test@example.com" } });
-    });
+    }
 });
 
 test("signup flow stops on invalid field and shows register-message", async () => {
