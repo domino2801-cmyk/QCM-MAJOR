@@ -2535,9 +2535,9 @@ h1 {
 }
 
 .candidate-card-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
     gap: 10px;
 }
 
@@ -2545,6 +2545,7 @@ h1 {
     display: grid;
     gap: 2px;
     min-width: 0;
+    grid-column: 1 / -1;
 }
 
 .candidate-card-name {
@@ -2561,6 +2562,15 @@ h1 {
     overflow-wrap: anywhere;
 }
 
+.candidate-card-facts {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .candidate-pill {
     flex: 0 0 auto;
     padding: 3px 10px;
@@ -2573,7 +2583,7 @@ h1 {
 }
 
 .candidate-card-score {
-    display: grid;
+    display: none;
     gap: 6px;
 }
 

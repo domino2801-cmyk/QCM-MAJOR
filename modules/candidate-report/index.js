@@ -175,9 +175,18 @@ export function renderCandidateDashboard(container, summaries, doc = document, {
 
         const head = element(doc, "header", "candidate-card-head");
         const identity = element(doc, "div", "candidate-card-identity");
-        identity.append(
+        const nameRow = element(doc, "div");
+        nameRow.style.display = "grid";
+        nameRow.style.gridTemplateColumns = "1fr auto";
+        nameRow.style.alignItems = "center";
+        nameRow.style.gap = "8px";
+        nameRow.append(
             element(doc, "strong", "candidate-card-name", summary.name),
-            element(doc, "small", "", [summary.specialty, summary.email].filter(Boolean).join(" · ") || "Spécialité non renseignée")
+            element(doc, "small", "", summary.specialty || "Spécialité non renseignée")
+        );
+        identity.append(
+            nameRow,
+            element(doc, "small", "", summary.email || "Email non renseigné")
         );
         head.append(identity, element(doc, "span", "candidate-pill", status.label));
 
