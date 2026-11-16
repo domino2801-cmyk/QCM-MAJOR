@@ -3282,10 +3282,9 @@ function formatAdminTrackingDate(timestamp) {
         : "Date inconnue";
 }
 
-function renderAdminTrackingTimeline(candidateResults, tracking, periodDays, candidateId) {
+function renderAdminTrackingActivity(candidateResults, tracking, periodDays, candidateId) {
     const activity = document.getElementById("admin-history-activity");
-    const timeline = document.getElementById("admin-history-timeline");
-    if (!activity || !timeline) return;
+    if (!activity) return;
 
     const cutoff = periodDays > 0 ? Date.now() - periodDays * 24 * 60 * 60 * 1000 : 0;
     const isInPeriod = timestamp => {
@@ -3417,30 +3416,6 @@ function renderAdminTrackingTimeline(candidateResults, tracking, periodDays, can
             latestDoctrine?.title || "Aucun événement DOCTRINE enregistré dans la période."
         )
     );
-
-    timeline.replaceChildren();
-    if (events.length === 0) {
-        const empty = document.createElement("li");
-        empty.className = "admin-history-timeline-empty";
-        empty.innerText = "Aucun événement enregistré pour cette période.";
-        timeline.appendChild(empty);
-        return;
-    }
-    events.forEach(event => {
-        const item = document.createElement("li");
-        const heading = document.createElement("strong");
-        const meta = document.createElement("span");
-        const date = document.createElement("time");
-        item.className = "admin-history-timeline-item";
-        heading.innerText = `${event.source} — ${event.title}`;
-        meta.innerText = event.detail;
-        date.innerText = formatAdminTrackingDate(event.timestamp);
-        if (Number.isFinite(Date.parse(event.timestamp || ""))) {
-            date.dateTime = new Date(event.timestamp).toISOString();
-        }
-        item.append(heading, meta, date);
-        timeline.appendChild(item);
-    });
 }
 
 function renderAdminThemeSummary(candidateResults, periodDays) {
@@ -3494,14 +3469,12 @@ async function loadAdminCandidateTracking(candidateId, candidateResults, periodD
     const status = document.getElementById("admin-history-status");
     const progression = document.getElementById("admin-history-progression");
     const activity = document.getElementById("admin-history-activity");
-    const timeline = document.getElementById("admin-history-timeline");
     if (!candidateId) {
         adminCandidateTrackingKey = "";
         adminCandidateTrackingRequestId++;
         if (status) status.innerText = "Suivi DOCTRINE indisponible : identifiant Supabase du candidat introuvable.";
         if (progression) progression.innerText = "";
         if (activity) activity.replaceChildren();
-        if (timeline) timeline.replaceChildren();
         return;
     }
 
@@ -3511,7 +3484,6 @@ async function loadAdminCandidateTracking(candidateId, candidateResults, periodD
         if (status) status.innerText = "Suivi DOCTRINE indisponible sans connexion à Supabase.";
         if (progression) progression.innerText = "Progression enregistrée indisponible.";
         if (activity) activity.replaceChildren();
-        if (timeline) timeline.replaceChildren();
         return;
     }
     if (adminCandidateTrackingKey === key) return;
@@ -3520,7 +3492,6 @@ async function loadAdminCandidateTracking(candidateId, candidateResults, periodD
     if (status) status.innerText = "Chargement des événements DOCTRINE…";
     if (progression) progression.innerText = "Chargement de la progression enregistrée…";
     if (activity) activity.replaceChildren();
-    if (timeline) timeline.replaceChildren();
 
     try {
         const accessToken = getStoredSupabaseSession()?.access_token;
@@ -3543,7 +3514,7 @@ async function loadAdminCandidateTracking(candidateId, candidateResults, periodD
             throw new Error("Réponse du suivi candidat invalide.");
         }
         renderAdminProgression(tracking.progress);
-        renderAdminTrackingTimeline(candidateResults, tracking, periodDays, candidateId);
+        renderAdminTrackingActivity(candidateResults, tracking, periodDays, candidateId);
         if (status) status.innerText = "";
     } catch (error) {
         if (requestId !== adminCandidateTrackingRequestId) return;
@@ -3552,7 +3523,6 @@ async function loadAdminCandidateTracking(candidateId, candidateResults, periodD
         if (status) status.innerText = `Suivi DOCTRINE indisponible : ${detail}. Vérifiez les migrations et actualisez les données administrateur.`;
         if (progression) progression.innerText = "Progression enregistrée indisponible.";
         if (activity) activity.replaceChildren();
-        if (timeline) timeline.replaceChildren();
     }
 }
 
@@ -3944,7 +3914,6 @@ function renderAdminResults() {
         if (status) status.innerText = "";
         document.getElementById("admin-history-activity")?.replaceChildren();
         document.getElementById("admin-history-theme-summary")?.replaceChildren();
-        document.getElementById("admin-history-timeline")?.replaceChildren();
     }
     renderCandidateHistory(
         candidateResults,

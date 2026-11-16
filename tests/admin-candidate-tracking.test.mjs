@@ -35,12 +35,14 @@ test("tracking RPC returns only required metadata and filters by candidate and d
     assert.doesNotMatch(migration, /reports\.details|views\.document_url|candidate_email/i);
 });
 
-test("admin candidate page includes activity summaries and a shared timeline", () => {
+test("admin candidate page keeps activity summaries without a shared timeline", () => {
     assert.match(html, /id="admin-history-activity"/);
     assert.match(html, /id="admin-history-theme-summary"/);
-    assert.match(html, /id="admin-history-timeline"/);
+    assert.match(html, /id="admin-history-period"/);
+    assert.doesNotMatch(html, /admin-history-timeline|Chronologie commune|Les consultations DOCTRINE sont conservées/);
     assert.match(app, /\/rpc\/get_admin_candidate_tracking/);
-    assert.match(app, /renderAdminTrackingTimeline\(candidateResults, tracking, periodDays, candidateId\)/);
+    assert.match(app, /renderAdminTrackingActivity\(candidateResults, tracking, periodDays, candidateId\)/);
+    assert.doesNotMatch(app, /renderAdminTrackingTimeline/);
     assert.match(app, /function renderAdminThemeSummary/);
     assert.match(app, /6 séries sont nécessaires/);
     assert.match(app, /Corrigé rendu accessible/);

@@ -74,7 +74,7 @@ function harness(customResults) {
         "admin-history-panel", "admin-history-status", "admin-history-period", "admin-history-progression",
         "admin-history-milestone", "admin-theme-acquisition",
         "admin-history-charts", "admin-history-summary", "admin-history-recommendation",
-        "admin-history-theme-summary", "admin-history-activity", "admin-history-timeline",
+        "admin-history-theme-summary", "admin-history-activity",
         "candidate-history-charts", "candidate-history-summary", "candidate-history-recommendation",
         "candidate-history-modes"
     ].map(id => [id, element()]));
@@ -302,7 +302,7 @@ test("la fiche affiche une moyenne et une tendance numérique par thème", () =>
     assert.equal(themeCard.children[2].innerText, "Tendance : +5.00 pt");
 });
 
-test("la chronologie commune ordonne les événements et les borne à la période choisie", () => {
+test("les notes gardent les résumés d’activité sans chronologie commune", () => {
     const recent = Date.now();
     const old = "2020-01-01T00:00:00.000Z";
     const results = [
@@ -311,81 +311,29 @@ test("la chronologie commune ordonne les événements et les borne à la périod
     ];
     const h = harness(results);
     h.context.tracking = {
-        progress_events: [
-            {
-                event_type: "module_started",
-                module_id: "2",
-                dossier: null,
-                created_at: new Date(recent - 6000).toISOString()
-            },
-            {
-                event_type: "dossier_completed",
-                module_id: "3",
-                dossier: 8,
-                created_at: new Date(recent - 5500).toISOString()
-            },
-            {
-                event_type: "correction_accessible",
-                module_id: "4",
-                dossier: 8,
-                created_at: new Date(recent - 5000).toISOString()
-            }
-        ],
-        documents: [{
-            event_type: "open",
-            document_title: "Aide-mémoire",
-            module_id: "2",
-            opened_at: new Date(recent - 3000).toISOString()
-        }],
-        submissions: [{ dossier: 4, created_at: new Date(recent - 2000).toISOString() }],
-        signalements: [{
-            incident_type: "Correction",
+        progress_events: [{
+            event_type: "dossier_completed",
             module_id: "3",
-            resource: "Fiche 3",
-            priority: "Information",
-            status: "pending",
-            created_at: new Date(recent - 4000).toISOString()
-        }]
+            dossier: 8,
+            created_at: new Date(recent - 1000).toISOString()
+        }],
+        documents: [],
+        submissions: [],
+        signalements: [],
+        inactivity_emails: []
     };
-    h.context.questionReports = [{
-        reporter_id: "a",
-        quiz_theme: "1",
-        status: "resolved",
-        details: "ne pas exposer ce commentaire",
-        created_at: new Date(recent - 500).toISOString()
-    }];
 
-    vm.runInContext('renderAdminTrackingTimeline(getResults(), tracking, 7, "a")', h.context);
+    vm.runInContext('renderAdminTrackingActivity(getResults(), tracking, 7, "a")', h.context);
 
-    const events = h.nodes.get("admin-history-timeline").children;
-    assert.equal(events.length, 8);
-    assert.match(events[0].children[0].innerText, /QCM-MAJOR — Signalement d’une question/);
-    assert.match(events[1].children[0].innerText, /QCM-MAJOR — Résultat Campagne globale/);
-    assert.match(events[2].children[0].innerText, /DOCTRINE — Transmission d’une fiche/);
-    assert.match(events[3].children[1].innerText, /Aide-mémoire · module 2/);
-    assert.match(events[4].children[1].innerText, /Information · en attente/);
-    assert.match(events[5].children[0].innerText, /DOCTRINE — Corrigé rendu accessible/);
-    assert.match(events[6].children[0].innerText, /DOCTRINE — Dossier marqué « Fait »/);
-    assert.match(events[7].children[0].innerText, /DOCTRINE — Module commencé/);
-    assert.doesNotMatch(events.map(event => event.children.map(child => child.innerText).join(" ")).join(" "), /ne pas exposer ce commentaire/);
-    assert.match(h.nodes.get("admin-history-activity").children[0].children[2].innerText, /1 série\(s\).*18\.00/);
-});
-
-test("la chronologie indique les relances acceptées et les échecs", () => {
-    const h = harness([]);
-    h.context.tracking = {
-        documents: [], progress_events: [], submissions: [], signalements: [],
-        inactivity_emails: [
-            { status: "sent", attempted_at: new Date().toISOString(), sent_at: new Date().toISOString() },
-            { status: "failed", attempted_at: new Date().toISOString(), error: "Resend HTTP 429." },
-            { status: "sent", attempted_at: "2020-01-01T00:00:00Z" }
-        ]
-    };
-    vm.runInContext('renderAdminTrackingTimeline([], tracking, 7, "a")', h.context);
-    const events = h.nodes.get("admin-history-timeline").children;
-    assert.equal(events.length, 2);
-    assert.ok(events.some(event => event.children[0].innerText.includes("acceptée par Resend")));
-    assert.ok(events.some(event => event.children[1].innerText.includes("Resend HTTP 429")));
+    const activity = h.nodes.get("admin-history-activity").children;
+    assert.equal(activity.length, 2);
+    assert.equal(activity[0].children[0].innerText, "Activité QCM-MAJOR");
+    assert.match(activity[0].children[2].innerText, /1 série\(s\).*18\.00/);
+    assert.equal(activity[1].children[0].innerText, "Activité DOCTRINE");
+    assert.match(activity[1].children[2].innerText, /Dossier marqué « Fait »/);
+    assert.match(html, /id="admin-history-period"/);
+    assert.match(html, /id="admin-history-summary"/);
+    assert.doesNotMatch(html, /admin-history-timeline|Chronologie commune|La période sélectionnée s’applique aux résultats QCM/);
 });
 
 test("la lecture du palier est réservée aux administrateurs", () => {

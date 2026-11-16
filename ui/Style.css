@@ -4678,9 +4678,7 @@ body {
     margin-top: 4px;
 }
 
-.admin-history-activity-card,
-.admin-history-timeline-item,
-.admin-history-timeline-empty {
+.admin-history-activity-card {
     border: 1px solid rgba(159, 170, 132, 0.28);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.16);
@@ -4703,43 +4701,6 @@ body {
 .admin-history-activity-card small {
     color: rgba(226, 232, 226, 0.72);
     margin-top: 6px;
-}
-
-.admin-history-timeline-section {
-    border-top: 1px solid rgba(159, 170, 132, 0.28);
-    margin-top: 20px;
-    padding-top: 16px;
-}
-
-.admin-history-timeline-section h3 {
-    color: var(--accent);
-    font-size: 1rem;
-    margin: 0 0 10px;
-}
-
-.admin-history-timeline {
-    display: grid;
-    gap: 8px;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.admin-history-timeline-item {
-    display: grid;
-    gap: 4px;
-    line-height: 1.45;
-}
-
-.admin-history-timeline-item strong {
-    color: #e7d28f;
-}
-
-.admin-history-timeline-item span,
-.admin-history-timeline-item time,
-.admin-history-timeline-empty {
-    color: rgba(226, 232, 226, 0.76);
-    font-size: 0.82rem;
 }
 
 @media (max-width: 600px) {
