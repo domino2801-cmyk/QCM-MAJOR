@@ -392,7 +392,14 @@ test("retirer du cache demande OUI/NON et ne modifie rien en cas de refus", asyn
         showConfirmOverlay: async options => { confirmation = options; return confirmed; }
     });
     loadFunction("renderAdminAccounts", context)();
-    const button = list.children[0].children[4].children[0];
+    const card = list.children[0];
+    const actions = card.children[2].children[0];
+    assert.equal(card.children[1].innerText, "candidate@test");
+    assert.equal(actions.children[0].innerText, "Actions");
+    assert.deepEqual(actions.children[1].children.map(button => button.innerText), [
+        "Retirer du cache", "Bloquer le compte", "Spécialité"
+    ]);
+    const button = actions.children[1].children[0];
     await button.listeners.click();
     assert.equal(confirmation.okLabel, "OUI");
     assert.equal(confirmation.cancelLabel, "NON");
@@ -432,10 +439,12 @@ test("l’administrateur peut bloquer puis débloquer un candidat", async () => 
         showConfirmOverlay: async () => confirmed
     });
     loadFunction("renderAdminAccounts", context)();
-    let status = list.children[0].children[3].children[0];
-    assert.equal(status.innerText, "Débloqué");
+    const getStatus = () => list.children[0].children[2].children[1];
+    const getBlockButton = () => list.children[0].children[2].children[0].children[1].children[1];
+    let status = getStatus();
+    assert.equal(status.innerText, "Actif");
     assert.match(status.className, /is-unblocked/);
-    let button = list.children[0].children[4].children[1];
+    let button = getBlockButton();
     assert.equal(button.innerText, "Bloquer le compte");
     confirmed = false;
     await button.listeners.click();
@@ -445,23 +454,23 @@ test("l’administrateur peut bloquer puis débloquer un candidat", async () => 
     assert.equal(account.blocked, true);
     assert.match(statuses.at(-1), /Compte bloqué/);
 
-    status = list.children[0].children[3].children[0];
-    assert.equal(status.innerText, "Bloqué");
+    status = getStatus();
+    assert.equal(status.innerText, "Inactif");
     assert.match(status.className, /is-blocked/);
-    button = list.children[0].children[4].children[1];
+    button = getBlockButton();
     assert.equal(button.innerText, "Débloquer");
     assert.match(button.className, /is-blocked/);
     fail = true;
     await button.listeners.click();
     assert.equal(account.blocked, true);
-    assert.equal(list.children[0].children[3].children[0].innerText, "Bloqué");
+    assert.equal(getStatus().innerText, "Inactif");
     assert.match(statuses.at(-1), /Modification du blocage impossible/);
     fail = false;
     await button.listeners.click();
     assert.equal(account.blocked, false);
     assert.match(statuses.at(-1), /Compte débloqué/);
-    status = list.children[0].children[3].children[0];
-    assert.equal(status.innerText, "Débloqué");
+    status = getStatus();
+    assert.equal(status.innerText, "Actif");
     assert.match(status.className, /is-unblocked/);
 });
 
@@ -478,13 +487,15 @@ test("un statut non synchronisé est inconnu et ne permet pas de modifier le com
         getSpecialtyTrigram: value => value, formatSpecialtyLabel: value => value
     });
     loadFunction("renderAdminAccounts", context)();
-    assert.equal(list.children[0].children[3].children[0].innerText, "Statut indisponible");
-    assert.equal(list.children[0].children[4].children[1].disabled, true);
+    const getStatus = () => list.children[0].children[2].children[1];
+    const getBlockButton = () => list.children[0].children[2].children[0].children[1].children[1];
+    assert.equal(getStatus().innerText, "Statut indisponible");
+    assert.equal(getBlockButton().disabled, true);
     context.adminBlockedAccountsLoaded = true;
     context.getAccounts = () => ({ "candidate@test": { name: "Candidat" } });
     context.renderAdminAccounts();
-    assert.equal(list.children[0].children[3].children[0].innerText, "Statut indisponible");
-    assert.equal(list.children[0].children[4].children[1].disabled, true);
+    assert.equal(getStatus().innerText, "Statut indisponible");
+    assert.equal(getBlockButton().disabled, true);
 });
 
 test("un compte bloqué ne passe pas la finalisation de connexion candidat", async () => {

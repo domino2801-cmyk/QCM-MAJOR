@@ -2907,6 +2907,12 @@ function renderAdminAccounts() {
         specialtySpan.title = formatSpecialtyLabel(account.specialty);
         
         topLine.append(nameSpan, specialtySpan);
+
+        const emailSpan = document.createElement("span");
+        emailSpan.className = "admin-account-email";
+        emailSpan.innerText = email;
+        emailSpan.title = email;
+        emailSpan.setAttribute("aria-label", `Adresse mail du candidat : ${email}`);
         
         // Deuxième ligne: Action (gauche) et Statut (droite)
         const bottomLine = document.createElement("div");
@@ -3026,10 +3032,16 @@ function renderAdminAccounts() {
         const actionsContainer = document.createElement("div");
         actionsContainer.className = "admin-account-actions";
         actionsContainer.append(deleteButton, blockButton, specialtyButton);
+        const actionsAccordion = document.createElement("details");
+        actionsAccordion.className = "admin-account-actions-accordion";
+        const actionsSummary = document.createElement("summary");
+        actionsSummary.innerText = "Actions";
+        actionsSummary.setAttribute("aria-label", `Actions pour ${account.name || email}`);
+        actionsAccordion.append(actionsSummary, actionsContainer);
+
+        bottomLine.append(actionsAccordion, statusBadge);
         
-        bottomLine.append(actionsContainer, statusBadge);
-        
-        card.append(topLine, bottomLine);
+        card.append(topLine, emailSpan, bottomLine);
         list.appendChild(card);
     });
 

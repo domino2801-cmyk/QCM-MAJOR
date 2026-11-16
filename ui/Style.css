@@ -2392,6 +2392,31 @@ h1 {
     text-align: right;
 }
 
+.admin-account-email {
+    color: var(--text);
+    font-size: 0.82rem;
+    opacity: 0.8;
+    overflow-wrap: anywhere;
+}
+
+#admin-screen .admin-account-actions-accordion {
+    flex: 1;
+    min-width: 0;
+}
+
+#admin-screen .admin-account-actions-accordion > summary {
+    border: 1px solid rgba(190, 199, 151, 0.3);
+    border-radius: 8px;
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 600;
+    padding: 8px 10px;
+}
+
+#admin-screen .admin-account-actions-accordion[open] > summary {
+    margin-bottom: 8px;
+}
+
 .admin-account-bottom-line {
     display: flex;
     justify-content: space-between;
@@ -3031,6 +3056,10 @@ h1 {
         text-align: right;
     }
 
+    #admin-screen .admin-account-email {
+        font-size: 0.8rem;
+    }
+
     #admin-screen .admin-account-bottom-line {
         display: flex;
         justify-content: space-between;
@@ -3050,6 +3079,15 @@ h1 {
         padding: 4px 6px;
         min-height: auto;
         flex: 0 1 auto;
+    }
+
+    #admin-screen .admin-account-actions-accordion .admin-account-actions {
+        flex-direction: column;
+    }
+
+    #admin-screen .admin-account-actions-accordion .admin-account-actions button {
+        width: 100%;
+        min-height: 44px;
     }
 
     #admin-screen .admin-account-status {
