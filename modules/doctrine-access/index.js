@@ -9,7 +9,7 @@ export function setupDoctrineAccess({ link, status, getSession, returnToConsole 
     link.addEventListener("click", event => {
         if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        const opened = window.open(DOCTRINE_URL, "_blank");
+        const opened = window.open(DOCTRINE_URL, "doctrine-armoire");
         if (!opened) {
             if (status) status.textContent = "Autorisez l’ouverture des fenêtres pour accéder directement à l’armoire.";
             return;

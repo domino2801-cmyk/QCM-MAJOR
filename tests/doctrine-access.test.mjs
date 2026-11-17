@@ -15,7 +15,7 @@ function fixture(getSession) {
     globalThis.window = {
         open: (url, target) => {
             assert.equal(url, "https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major");
-            assert.equal(target, "_blank");
+            assert.equal(target, "doctrine-armoire");
             return child;
         },
         addEventListener: (_type, callback) => { listeners.message = callback; }

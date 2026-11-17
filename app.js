@@ -18,7 +18,7 @@ import {
     countByStatus,
     STATUSES
 } from "./modules/candidate-report/index.js?v=inactivity-card-20261112";
-import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=return-console-20261108";
+import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=doctrine-opener-20261117";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
