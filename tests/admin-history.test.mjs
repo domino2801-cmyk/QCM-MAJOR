@@ -148,6 +148,24 @@ test("les résultats administrateur sont exclus du tableau de bord, du répertoi
     assert.equal(h.nodes.get("admin-history-panel").classList.contains("hidden"), true);
 });
 
+test("les comptes OG sont exclus du tableau de bord des résultats", () => {
+    const now = new Date().toISOString();
+    const h = harness([
+        { candidateId: "og-id", email: "og@test.fr", name: "Compte OG", theme: "all", score: 18, createdAt: now },
+        { candidateId: "candidate-id", email: "candidate@test.fr", name: "Candidat", theme: "all", score: 14, createdAt: now }
+    ]);
+    h.context.getAccounts = () => ({
+        og: { id: "og-id", email: "og@test.fr", name: "Compte OG", specialty: " og " },
+        candidate: { id: "candidate-id", email: "candidate@test.fr", name: "Candidat", specialty: "BM4" }
+    });
+    h.context.buildCandidateSummaries = buildCandidateSummaries;
+    h.context.sortByPriority = sortByPriority;
+
+    const summaries = vm.runInContext("getAdminDashboardSummaries()", h.context);
+    assert.deepEqual(summaries.all.map(summary => summary.email), ["candidate@test.fr"]);
+    assert.doesNotMatch(summaries.all.map(summary => summary.specialty).join(" "), /\bOG\b/i);
+});
+
 test("le journal affiche le palier enregistré et propose les candidats sans résultat", async () => {
     const h = harness();
     h.context.getAccounts = () => ({

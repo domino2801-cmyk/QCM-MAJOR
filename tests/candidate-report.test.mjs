@@ -5,6 +5,7 @@ import {
     buildCandidateSummaries,
     buildCandidateReportPdf,
     getCandidateStatus,
+    groupCandidateSummaries,
     renderCandidateDashboard,
     sortByPriority
 } from "../modules/candidate-report/index.js";
@@ -19,6 +20,7 @@ const accounts = [
     { id: "a", email: "a@x.fr", name: "Alpha", specialty: "Urgences" },
     { id: "d", email: "d@x.fr", name: "Delta", specialty: "Santé" }
 ];
+const css = readFileSync(new URL("../ui/Style.css", import.meta.url), "utf8");
 
 test("status thresholds follow 13 / 10 on 20", () => {
     assert.equal(getCandidateStatus(13), "ready");
@@ -39,6 +41,24 @@ test("summaries merge accounts and results and sort by priority", () => {
     assert.deepEqual(sortByPriority(summaries).map(summary => summary.name), ["Bravo", "Charlie", "Delta", "Alpha"]);
 });
 
+test("candidate summaries are grouped in dashboard status order", () => {
+    const summaries = [
+        { id: "ready", status: "ready" },
+        { id: "none", status: "none" },
+        { id: "watch", status: "watch" },
+        { id: "struggling", status: "struggling" },
+        { id: "watch-2", status: "watch" }
+    ];
+    const groups = groupCandidateSummaries(summaries);
+    assert.deepEqual(groups.map(group => group.status), ["struggling", "none", "watch", "ready"]);
+    assert.deepEqual(groups.map(group => group.summaries.map(summary => summary.id)), [
+        ["struggling"],
+        ["none"],
+        ["watch", "watch-2"],
+        ["ready"]
+    ]);
+});
+
 test("the PDF is a valid multi-page A4 document", async () => {
     const blob = buildCandidateReportPdf(buildCandidateSummaries({ results, accounts }));
     const content = Buffer.from(await blob.arrayBuffer()).toString("latin1");
@@ -53,6 +73,9 @@ test("the admin results panel exposes the dashboard and its PDF export", () => {
     const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
     ["admin-dashboard-cards", "admin-dashboard-status", "admin-dashboard-pdf"].forEach(id =>
         assert.match(html, new RegExp(`id="${id}"`)));
+    assert.match(html, /id="admin-dashboard-cards" class="admin-dashboard-status-groups"/);
+    assert.match(css, /\.admin-dashboard-controls \.admin-filter-select \{[^}]*height: 40px;/);
+    assert.match(css, /\.admin-dashboard-status-accordion > summary/);
     assert.match(app, /getElementById\("admin-dashboard-pdf"\)\?\.addEventListener\("click", exportAdminCandidateReportPdf\)/);
 });
 

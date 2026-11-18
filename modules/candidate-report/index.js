@@ -133,6 +133,13 @@ export function countByStatus(summaries) {
     return counts;
 }
 
+export function groupCandidateSummaries(summaries) {
+    return ["struggling", "none", "watch", "ready"].map(status => ({
+        status,
+        summaries: summaries.filter(summary => summary.status === status)
+    }));
+}
+
 function element(doc, tag, className, text) {
     const node = doc.createElement(tag);
     if (className) node.className = className;

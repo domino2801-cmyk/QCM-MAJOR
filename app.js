@@ -16,8 +16,9 @@ import {
     renderCandidateDashboard,
     sortByPriority,
     countByStatus,
+    groupCandidateSummaries,
     STATUSES
-} from "./modules/candidate-report/index.js?v=inactivity-card-20261112";
+} from "./modules/candidate-report/index.js?v=admin-results-status-accordion-20261118";
 import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=doctrine-opener-20261117";
 import {
     reportNotificationsEnabled,
@@ -3667,10 +3668,12 @@ function getAdminDashboardSummaries() {
     const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
     const status = document.getElementById("admin-dashboard-status")?.value || "";
     const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
-    const all = buildCandidateSummaries(getAdminResultsData()).map(summary => ({
-        ...summary,
-        inactivityReminderSent: adminInactivityReminderIds.has(summary.id)
-    }));
+    const all = buildCandidateSummaries(getAdminResultsData())
+        .filter(summary => String(summary.specialty || "").trim().toUpperCase() !== "OG")
+        .map(summary => ({
+            ...summary,
+            inactivityReminderSent: adminInactivityReminderIds.has(summary.id)
+        }));
     const scoped = all.filter(summary =>
         (!specialty || summary.specialty === specialty)
         && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
@@ -3692,7 +3695,7 @@ function renderAdminCandidateDashboard() {
         specialtySelect.value = specialties.includes(selected) ? selected : "";
     }
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
-    renderCandidateDashboard(cards, filtered, document, {
+    const renderOptions = {
         selected: candidateFilter?.value || "",
         onSelect: (candidate, wasSelected) => {
             if (!candidateFilter) return;
@@ -3707,6 +3710,29 @@ function renderAdminCandidateDashboard() {
                 document.getElementById("admin-history-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
             }
         }
+    };
+    cards.replaceChildren();
+    const statusGroups = groupCandidateSummaries(filtered)
+        .filter(group => !activeStatus || group.status === activeStatus);
+    statusGroups.forEach(({ status, summaries }) => {
+        const accordion = document.createElement("details");
+        accordion.className = "admin-dashboard-status-accordion";
+        accordion.style.setProperty("--status-color", STATUSES[status].color);
+        const heading = document.createElement("summary");
+        const label = status === "none" ? "Sans résultats" : STATUSES[status].label;
+        heading.textContent = `${label} (${summaries.length})`;
+        const groupCards = document.createElement("div");
+        groupCards.className = "admin-dashboard-cards admin-dashboard-status-cards";
+        if (summaries.length) {
+            renderCandidateDashboard(groupCards, summaries, document, renderOptions);
+        } else {
+            const empty = document.createElement("p");
+            empty.className = "admin-dashboard-status-empty";
+            empty.textContent = "Aucun candidat dans cette catégorie.";
+            groupCards.appendChild(empty);
+        }
+        accordion.append(heading, groupCards);
+        cards.appendChild(accordion);
     });
     const counts = countByStatus(scoped);
     const summary = document.getElementById("admin-dashboard-summary");

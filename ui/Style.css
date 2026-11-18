@@ -2622,6 +2622,17 @@ h1 {
     height: 40px;
 }
 
+.admin-dashboard-controls .admin-filter-select {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+    height: 40px;
+    min-height: 40px;
+    margin: 0;
+    padding: 0 12px;
+}
+
 .admin-dashboard-controls .admin-edit-btn {
     height: 40px;
     display: flex;
@@ -2682,6 +2693,43 @@ h1 {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 12px;
+}
+
+.admin-dashboard-status-groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+}
+
+.admin-dashboard-status-accordion {
+    min-width: 0;
+    border: 1px solid var(--status-color, rgba(159, 170, 132, 0.5));
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.admin-dashboard-status-accordion > summary {
+    min-height: 44px;
+    padding: 10px 14px;
+    color: var(--status-color, var(--accent));
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.admin-dashboard-status-accordion > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.admin-dashboard-status-cards {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    padding: 0 12px 12px;
+}
+
+.admin-dashboard-status-empty {
+    grid-column: 1 / -1;
+    margin: 4px 0;
+    color: var(--muted);
 }
 
 .candidate-card {
@@ -2875,6 +2923,12 @@ h1 {
     .admin-dashboard-controls .admin-search {
         max-width: none;
         flex: 1;
+        min-width: 150px;
+    }
+
+    .admin-dashboard-controls .admin-filter-select {
+        max-width: none;
+        flex: 1 1 150px;
         min-width: 150px;
     }
 

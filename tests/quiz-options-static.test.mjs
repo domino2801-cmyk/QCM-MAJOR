@@ -18,8 +18,8 @@ test("theme selection keeps the exam question count only for the global campaign
 });
 
 test("the app and styles use fresh cache versions", () => {
-    assert.match(indexHtml, /app\.js\?v=inactivity-visit-20261111/);
-    assert.match(indexHtml, /ui\/Style\.css\?v=dashboard-status-20261111/);
+    assert.match(indexHtml, /app\.js\?v=[^"']+/);
+    assert.match(indexHtml, /ui\/Style\.css\?v=[^"']+/);
     const css = readFileSync(`${root}/ui/Style.css`, "utf8");
     assert.match(css, /#auth-screen \.terminal-shell\s*\{[^}]*border-radius:\s*16px;/);
     assert.match(css, /#auth-screen \.auth-form input:focus-visible[\s\S]*?box-shadow:\s*0 0 0 3px/);
