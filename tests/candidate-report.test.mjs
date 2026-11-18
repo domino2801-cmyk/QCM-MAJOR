@@ -71,8 +71,10 @@ test("the PDF is a valid multi-page A4 document", async () => {
 test("the admin results panel exposes the dashboard and its PDF export", () => {
     const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
     const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
-    ["admin-dashboard-cards", "admin-dashboard-status", "admin-dashboard-pdf"].forEach(id =>
+    ["admin-dashboard-cards", "admin-dashboard-specialty", "admin-dashboard-pdf"].forEach(id =>
         assert.match(html, new RegExp(`id="${id}"`)));
+    assert.doesNotMatch(html, /admin-dashboard-summary|id="admin-dashboard-status"/);
+    assert.doesNotMatch(app, /admin-dashboard-summary|admin-dashboard-status"/);
     assert.match(html, /id="admin-dashboard-cards" class="admin-dashboard-status-groups"/);
     assert.match(css, /\.admin-dashboard-controls \.admin-filter-select \{[^}]*height: 40px;/);
     assert.match(css, /\.admin-dashboard-controls \.admin-filter-select \{[^}]*color: #fff;[^}]*color-scheme: dark;/);

@@ -2651,51 +2651,6 @@ h1 {
     font-weight: 500;
 }
 
-.admin-dashboard-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 12px 0;
-    justify-content: center;
-}
-
-.admin-dashboard-chip {
-    padding: 4px 10px;
-    border: 1px solid var(--status-color, rgba(159, 170, 132, 0.5));
-    border-radius: 999px;
-    background: transparent;
-    color: #efe8d0;
-    cursor: pointer;
-    font: inherit;
-    font-size: 0.82rem;
-    font-weight: 700;
-    flex: 0 1 auto;
-}
-
-.admin-dashboard-chip:first-child {
-    flex-basis: 100%;
-    text-align: center;
-}
-
-.admin-dashboard-chip:nth-child(2),
-.admin-dashboard-chip:nth-child(3) {
-    flex: 1;
-    min-width: calc(50% - 4px);
-    text-align: center;
-}
-
-.admin-dashboard-chip:nth-child(4),
-.admin-dashboard-chip:nth-child(5) {
-    flex: 1;
-    min-width: calc(50% - 4px);
-    text-align: center;
-}
-
-.admin-dashboard-chip[aria-pressed="true"] {
-    background: var(--status-color, #74835f);
-    color: #fff;
-}
-
 .admin-dashboard-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

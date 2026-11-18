@@ -15,7 +15,6 @@ import {
     buildCandidateReportPdf,
     renderCandidateDashboard,
     sortByPriority,
-    countByStatus,
     groupCandidateSummaries,
     STATUSES
 } from "./modules/candidate-report/index.js?v=admin-results-status-accordion-20261118";
@@ -3666,7 +3665,6 @@ function renderAdminThemeAcquisition(results, milestoneValue) {
 
 function getAdminDashboardSummaries() {
     const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
-    const status = document.getElementById("admin-dashboard-status")?.value || "";
     const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
     const all = buildCandidateSummaries(getAdminResultsData())
         .filter(summary => String(summary.specialty || "").trim().toUpperCase() !== "OG")
@@ -3677,15 +3675,18 @@ function getAdminDashboardSummaries() {
     const scoped = all.filter(summary =>
         (!specialty || summary.specialty === specialty)
         && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
-    const filtered = scoped.filter(summary => !status || summary.status === status);
-    return { all, scoped, status, filtered: sortByPriority(filtered), hasFilter: Boolean(status || specialty || search) };
+    return {
+        all,
+        filtered: sortByPriority(scoped),
+        hasFilter: Boolean(specialty || search)
+    };
 }
 
 function renderAdminCandidateDashboard() {
     const cards = document.getElementById("admin-dashboard-cards");
     if (!cards) return;
     const specialtySelect = document.getElementById("admin-dashboard-specialty");
-    const { all, scoped, status: activeStatus, filtered } = getAdminDashboardSummaries();
+    const { all, filtered } = getAdminDashboardSummaries();
     if (specialtySelect) {
         const selected = specialtySelect.value;
         const specialties = [...new Set(all.map(summary => summary.specialty).filter(Boolean))]
@@ -3712,8 +3713,7 @@ function renderAdminCandidateDashboard() {
         }
     };
     cards.replaceChildren();
-    const statusGroups = groupCandidateSummaries(filtered)
-        .filter(group => !activeStatus || group.status === activeStatus);
+    const statusGroups = groupCandidateSummaries(filtered);
     statusGroups.forEach(({ status, summaries }) => {
         const accordion = document.createElement("details");
         accordion.className = "admin-dashboard-status-accordion";
@@ -3734,35 +3734,6 @@ function renderAdminCandidateDashboard() {
         accordion.append(heading, groupCards);
         cards.appendChild(accordion);
     });
-    const counts = countByStatus(scoped);
-    const summary = document.getElementById("admin-dashboard-summary");
-    if (summary) {
-        summary.replaceChildren();
-        const statusSelect = document.getElementById("admin-dashboard-status");
-        const total = document.createElement("button");
-        total.type = "button";
-        total.className = "admin-dashboard-chip";
-        total.setAttribute("aria-pressed", String(activeStatus === ""));
-        total.textContent = `Total : ${all.length}`;
-        total.addEventListener("click", () => {
-            if (statusSelect) statusSelect.value = "";
-            renderAdminCandidateDashboard();
-        });
-        summary.appendChild(total);
-        ["struggling", "none", "watch", "ready"].forEach(key => {
-            const chip = document.createElement("button");
-            chip.type = "button";
-            chip.className = "admin-dashboard-chip";
-            chip.style.setProperty("--status-color", STATUSES[key].color);
-            chip.setAttribute("aria-pressed", String(activeStatus === key));
-            chip.textContent = `${STATUSES[key].label} : ${counts[key]}`;
-            chip.addEventListener("click", () => {
-                if (statusSelect) statusSelect.value = key;
-                renderAdminCandidateDashboard();
-            });
-            summary.appendChild(chip);
-        });
-    }
     const message = document.getElementById("admin-dashboard-message");
     if (message) message.innerText = [
         adminInactivityReminderError,
@@ -5281,7 +5252,7 @@ async function initializeAppInteractions() {
     document.getElementById("admin-results-theme-filter")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-period")?.addEventListener("change", renderAdminResults);
     document.getElementById("admin-history-milestone")?.addEventListener("change", renderAdminResults);
-    ["admin-dashboard-search", "admin-dashboard-status", "admin-dashboard-specialty"].forEach(id => {
+    ["admin-dashboard-search", "admin-dashboard-specialty"].forEach(id => {
         document.getElementById(id)?.addEventListener(id === "admin-dashboard-search" ? "input" : "change", renderAdminCandidateDashboard);
     });
     document.getElementById("admin-dashboard-pdf")?.addEventListener("click", exportAdminCandidateReportPdf);
