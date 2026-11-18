@@ -2631,6 +2631,13 @@ h1 {
     min-height: 40px;
     margin: 0;
     padding: 0 12px;
+    color: #fff;
+    color-scheme: dark;
+}
+
+.admin-dashboard-controls .admin-filter-select option {
+    background: #101b26;
+    color: #fff;
 }
 
 .admin-dashboard-controls .admin-edit-btn {

@@ -75,6 +75,8 @@ test("the admin results panel exposes the dashboard and its PDF export", () => {
         assert.match(html, new RegExp(`id="${id}"`)));
     assert.match(html, /id="admin-dashboard-cards" class="admin-dashboard-status-groups"/);
     assert.match(css, /\.admin-dashboard-controls \.admin-filter-select \{[^}]*height: 40px;/);
+    assert.match(css, /\.admin-dashboard-controls \.admin-filter-select \{[^}]*color: #fff;[^}]*color-scheme: dark;/);
+    assert.match(css, /\.admin-dashboard-controls \.admin-filter-select option \{[^}]*color: #fff;/);
     assert.match(css, /\.admin-dashboard-status-accordion > summary/);
     assert.match(app, /getElementById\("admin-dashboard-pdf"\)\?\.addEventListener\("click", exportAdminCandidateReportPdf\)/);
 });
