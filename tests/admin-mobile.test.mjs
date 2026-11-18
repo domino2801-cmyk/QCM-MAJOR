@@ -208,10 +208,10 @@ test("les actualisations simultanées partagent une seule requête et affichent 
     assert.equal(nodes["admin-refresh-btn"].classList.ready, true);
 });
 
-function element() {
+function element(tagName = "div") {
     return {
-        children: [], listeners: {}, dataset: {},
-        classList: { toggle() {} },
+        tagName: tagName.toUpperCase(), children: [], listeners: {}, dataset: {},
+        classList: { add() {}, toggle() {} },
         set innerHTML(_) { this.children = []; },
         append(...children) { this.children.push(...children); },
         appendChild(child) { this.children.push(child); },
@@ -536,6 +536,38 @@ test("les comptes candidats sont affichés du plus récent au plus ancien", () =
     assert.deepEqual(list.children.map(row => row.children[1].innerText), [
         "new@test", "middle@test", "old@test"
     ]);
+});
+
+test("les comptes OG sont regroupés dans un accordéon avant les autres comptes", () => {
+    const accounts = {
+        "latest@test": { name: "Candidat récent", specialty: "GEN", createdAt: "2026-10-04T12:00:00Z" },
+        "old-og@test": { name: "OG ancien", specialty: "OG", createdAt: "2026-10-01T12:00:00Z" },
+        "new-og@test": { name: "OG récent", specialty: "OG", createdAt: "2026-10-03T12:00:00Z" },
+        "middle@test": { name: "Candidat intermédiaire", specialty: "GEN", createdAt: "2026-10-02T12:00:00Z" }
+    };
+    const list = element();
+    const context = vm.createContext({
+        getAccounts: () => accounts,
+        adminBlockedAccountsLoaded: false,
+        currentAuthenticatedAccount: null,
+        document: {
+            getElementById: id => id === "admin-accounts-table" ? list : null,
+            createElement: element
+        },
+        getAdminListPage: (_, items) => items.slice(0, 1), labelAdminRow: () => {},
+        getSpecialtyTrigram: value => value, formatSpecialtyLabel: value => value,
+        showConfirmOverlay: async () => false
+    });
+
+    loadFunction("renderAdminAccounts", context)();
+
+    const accordion = list.children[0];
+    assert.equal(accordion.tagName, "DETAILS");
+    assert.equal(accordion.children[0].innerText, "Comptes OG (2)");
+    assert.deepEqual(accordion.children[1].children.map(card => card.children[1].innerText), [
+        "new-og@test", "old-og@test"
+    ]);
+    assert.deepEqual(list.children.slice(1).map(card => card.children[1].innerText), ["latest@test"]);
 });
 
 test("le combo Statut et ses options conservent un fond sombre", () => {

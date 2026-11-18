@@ -2876,7 +2876,30 @@ function renderAdminAccounts() {
             const secondTimestamp = Number.isFinite(secondCreatedAt) ? secondCreatedAt : -Infinity;
             return secondTimestamp - firstTimestamp;
         });
-    getAdminListPage("accounts", filteredAccounts, search).forEach(([email, account]) => {
+    const ogAccounts = filteredAccounts.filter(([, account]) => account.specialty === "OG");
+    const otherAccounts = filteredAccounts.filter(([, account]) => account.specialty !== "OG");
+    const visibleOtherAccounts = getAdminListPage("accounts", otherAccounts, search);
+    const accountsCount = document.getElementById("admin-accounts-count");
+    if (accountsCount) {
+        const visibleCount = ogAccounts.length + visibleOtherAccounts.length;
+        accountsCount.innerText = filteredAccounts.length
+            ? `${visibleCount} / ${filteredAccounts.length} compte(s)`
+            : "";
+    }
+
+    let ogAccountCards = null;
+    if (ogAccounts.length) {
+        const accordion = document.createElement("details");
+        accordion.className = "admin-og-accounts-accordion";
+        const summary = document.createElement("summary");
+        summary.innerText = `Comptes OG (${ogAccounts.length})`;
+        ogAccountCards = document.createElement("div");
+        ogAccountCards.className = "admin-accounts-cards-wrapper admin-og-accounts-list";
+        accordion.append(summary, ogAccountCards);
+        list.appendChild(accordion);
+    }
+
+    [...ogAccounts, ...visibleOtherAccounts].forEach(([email, account]) => {
         const statusKnown = adminBlockedAccountsLoaded && Boolean(account.id);
         const card = document.createElement("div");
         card.className = "admin-account-card";
@@ -3042,7 +3065,7 @@ function renderAdminAccounts() {
         bottomLine.append(actionsAccordion, statusBadge);
         
         card.append(topLine, emailSpan, bottomLine);
-        list.appendChild(card);
+        (account.specialty === "OG" && ogAccountCards ? ogAccountCards : list).appendChild(card);
     });
 
     if (accountCount) {

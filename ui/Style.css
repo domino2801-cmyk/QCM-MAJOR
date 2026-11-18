@@ -2356,6 +2356,28 @@ h1 {
     width: 100%;
 }
 
+.admin-og-accounts-accordion {
+    overflow: hidden;
+    border: 1px solid rgba(190, 199, 151, 0.3);
+    border-radius: 12px;
+    background: rgba(36, 46, 34, 0.55);
+}
+
+.admin-og-accounts-accordion > summary {
+    padding: 14px;
+    color: var(--accent);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.admin-og-accounts-accordion[open] > summary {
+    border-bottom: 1px solid rgba(190, 199, 151, 0.3);
+}
+
+.admin-og-accounts-list {
+    padding: 12px;
+}
+
 .admin-account-card {
     padding: 14px;
     background: rgba(36, 46, 34, 0.96);
