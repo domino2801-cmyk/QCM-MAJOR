@@ -3797,8 +3797,12 @@ function renderAdminCandidateDashboard() {
         accordion.className = "admin-dashboard-status-accordion";
         accordion.style.setProperty("--status-color", STATUSES[status].color);
         const heading = document.createElement("summary");
-        const label = statusGroups.find(group => group.status === status)?.summaries[0]?.dashboardStatusLabel
-            || ({ struggling: "En difficulté", none: "Non prêts", watch: "À suivre", ready: "Prêts" }[status]);
+        const label = {
+            struggling: "Candidats en difficulté",
+            none: "Candidats non prêts",
+            watch: "Candidats à suivre",
+            ready: "Candidats prêts"
+        }[status];
         heading.textContent = `${label} (${summaries.length})`;
         const groupCards = document.createElement("div");
         groupCards.className = "admin-dashboard-cards admin-dashboard-status-cards";
