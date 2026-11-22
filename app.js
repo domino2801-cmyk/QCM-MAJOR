@@ -3743,15 +3743,30 @@ function classifyAdminDoctrineCandidate(summary) {
     };
 }
 
-function getAdminDashboardSummaries(specialtyId = "admin-dashboard-specialty", searchId = "admin-dashboard-search") {
+function getAdminDashboardSummaries(specialtyId = "admin-dashboard-specialty", searchId = "admin-dashboard-search", classificationMode = "doctrine") {
     const search = (document.getElementById(searchId)?.value || "").trim().toLowerCase();
     const specialty = document.getElementById(specialtyId)?.value || "";
+    const useDoctrine = classificationMode !== "qcm";
     const all = buildCandidateSummaries(getAdminResultsData())
         .filter(summary => String(summary.specialty || "").trim().toUpperCase() !== "OG")
-        .map(summary => classifyAdminDoctrineCandidate({
-            ...summary,
-            inactivityReminderSent: adminInactivityReminderIds.has(summary.id)
-        }));
+        .map(summary => {
+            const withReminder = {
+                ...summary,
+                inactivityReminderSent: adminInactivityReminderIds.has(summary.id)
+            };
+            if (useDoctrine) return classifyAdminDoctrineCandidate(withReminder);
+            const labels = {
+                struggling: "En difficulté",
+                none: "Non prêt",
+                watch: "À suivre",
+                ready: "Prêt"
+            };
+            return {
+                ...withReminder,
+                dashboardStatusLabel: labels[summary.status] || "Non prêt",
+                moduleProgressText: "Résultats QCM-MAJOR uniquement"
+            };
+        });
     const scoped = all.filter(summary =>
         (!specialty || summary.specialty === specialty)
         && (!search || `${summary.name} ${summary.email}`.toLowerCase().includes(search)));
@@ -3767,10 +3782,11 @@ function renderAdminCandidateDashboard(config = {}) {
     const cardsId = config.cardsId || "admin-dashboard-cards";
     const messageId = config.messageId || "admin-dashboard-message";
     const searchId = config.searchId || "admin-dashboard-search";
+    const classificationMode = config.classificationMode || "doctrine";
     const cards = document.getElementById(cardsId);
     if (!cards) return;
     const specialtySelect = document.getElementById(specialtyId);
-    const { all, filtered } = getAdminDashboardSummaries(specialtyId, searchId);
+    const { all, filtered } = getAdminDashboardSummaries(specialtyId, searchId, classificationMode);
     if (specialtySelect) {
         const selected = specialtySelect.value;
         const specialties = [...new Set(all.map(summary => summary.specialty).filter(Boolean))]
@@ -3825,7 +3841,7 @@ function renderAdminCandidateDashboard(config = {}) {
     });
     const message = document.getElementById(messageId);
     if (message) message.innerText = [
-        adminDoctrineModuleProgressError,
+        classificationMode === "qcm" ? "" : adminDoctrineModuleProgressError,
         adminInactivityReminderError,
         filtered.length ? "" : "Aucun candidat ne correspond à la sélection."
     ].filter(Boolean).join(" ");
@@ -3835,7 +3851,7 @@ async function exportAdminCandidateReportPdf(config = {}) {
     const specialtyId = config.specialtyId || "admin-dashboard-specialty";
     const searchId = config.searchId || "admin-dashboard-search";
     const messageId = config.messageId || "admin-dashboard-message";
-    const { filtered, hasFilter } = getAdminDashboardSummaries(specialtyId, searchId);
+    const { filtered, hasFilter } = getAdminDashboardSummaries(specialtyId, searchId, config.classificationMode || "doctrine");
     if (!filtered.length) {
         setAuthMessage(messageId, "Aucun candidat à exporter.");
         return;
@@ -3876,8 +3892,7 @@ function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const { results, accounts } = getAdminResultsData();
     if (!list) return;
-    ensureAdminDoctrineModuleProgressLoaded();
-    renderAdminCandidateDashboard();
+    renderAdminCandidateDashboard({ classificationMode: "qcm" });
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";
     let selectedCandidate = candidateFilter?.value || "";
