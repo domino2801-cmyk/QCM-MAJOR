@@ -3702,6 +3702,8 @@ function ensureAdminDoctrineModuleProgressLoaded() {
         adminDoctrineModuleProgressPromise = null;
         const section = document.getElementById("admin-results-section");
         if (section && !section.classList.contains("hidden")) renderAdminResults();
+        const operationalSection = document.getElementById("admin-operational-section");
+        if (operationalSection && !operationalSection.classList.contains("hidden")) renderAdminOperationalDashboard();
     });
 }
 
@@ -3741,9 +3743,9 @@ function classifyAdminDoctrineCandidate(summary) {
     };
 }
 
-function getAdminDashboardSummaries() {
-    const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
-    const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
+function getAdminDashboardSummaries(specialtyId = "admin-dashboard-specialty", searchId = "admin-dashboard-search") {
+    const search = (document.getElementById(searchId)?.value || "").trim().toLowerCase();
+    const specialty = document.getElementById(specialtyId)?.value || "";
     const all = buildCandidateSummaries(getAdminResultsData())
         .filter(summary => String(summary.specialty || "").trim().toUpperCase() !== "OG")
         .map(summary => classifyAdminDoctrineCandidate({
@@ -3760,11 +3762,15 @@ function getAdminDashboardSummaries() {
     };
 }
 
-function renderAdminCandidateDashboard() {
-    const cards = document.getElementById("admin-dashboard-cards");
+function renderAdminCandidateDashboard(config = {}) {
+    const specialtyId = config.specialtyId || "admin-dashboard-specialty";
+    const cardsId = config.cardsId || "admin-dashboard-cards";
+    const messageId = config.messageId || "admin-dashboard-message";
+    const searchId = config.searchId || "admin-dashboard-search";
+    const cards = document.getElementById(cardsId);
     if (!cards) return;
-    const specialtySelect = document.getElementById("admin-dashboard-specialty");
-    const { all, filtered } = getAdminDashboardSummaries();
+    const specialtySelect = document.getElementById(specialtyId);
+    const { all, filtered } = getAdminDashboardSummaries(specialtyId, searchId);
     if (specialtySelect) {
         const selected = specialtySelect.value;
         const specialties = [...new Set(all.map(summary => summary.specialty).filter(Boolean))]
@@ -3817,7 +3823,7 @@ function renderAdminCandidateDashboard() {
         accordion.append(heading, groupCards);
         cards.appendChild(accordion);
     });
-    const message = document.getElementById("admin-dashboard-message");
+    const message = document.getElementById(messageId);
     if (message) message.innerText = [
         adminDoctrineModuleProgressError,
         adminInactivityReminderError,
@@ -3825,10 +3831,13 @@ function renderAdminCandidateDashboard() {
     ].filter(Boolean).join(" ");
 }
 
-async function exportAdminCandidateReportPdf() {
-    const { filtered, hasFilter } = getAdminDashboardSummaries();
+async function exportAdminCandidateReportPdf(config = {}) {
+    const specialtyId = config.specialtyId || "admin-dashboard-specialty";
+    const searchId = config.searchId || "admin-dashboard-search";
+    const messageId = config.messageId || "admin-dashboard-message";
+    const { filtered, hasFilter } = getAdminDashboardSummaries(specialtyId, searchId);
     if (!filtered.length) {
-        setAuthMessage("admin-dashboard-message", "Aucun candidat à exporter.");
+        setAuthMessage(messageId, "Aucun candidat à exporter.");
         return;
     }
     const blob = buildCandidateReportPdf(filtered, { scopeLabel: hasFilter ? "sélection filtrée" : "promotion entière" });
@@ -3837,7 +3846,7 @@ async function exportAdminCandidateReportPdf() {
     if (navigator.canShare?.({ files: [file] }) && window.matchMedia?.("(pointer: coarse)").matches) {
         try {
             await navigator.share({ files: [file], title: "Suivi des candidats BM4" });
-            setAuthMessage("admin-dashboard-message", "Suivi partagé.");
+            setAuthMessage(messageId, "Suivi partagé.");
             return;
         } catch (error) {
             if (error?.name === "AbortError") return;
@@ -3851,7 +3860,16 @@ async function exportAdminCandidateReportPdf() {
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
-    setAuthMessage("admin-dashboard-message", `${fileName} téléchargé.`);
+    setAuthMessage(messageId, `${fileName} téléchargé.`);
+}
+
+function renderAdminOperationalDashboard() {
+    ensureAdminDoctrineModuleProgressLoaded();
+    renderAdminCandidateDashboard({
+        specialtyId: "admin-operational-dashboard-specialty",
+        cardsId: "admin-operational-dashboard-cards",
+        messageId: "admin-operational-dashboard-message"
+    });
 }
 
 function renderAdminResults() {
@@ -5341,6 +5359,15 @@ async function initializeAppInteractions() {
         document.getElementById(id)?.addEventListener(id === "admin-dashboard-search" ? "input" : "change", renderAdminCandidateDashboard);
     });
     document.getElementById("admin-dashboard-pdf")?.addEventListener("click", exportAdminCandidateReportPdf);
+    document.getElementById("admin-operational-dashboard-specialty")?.addEventListener("change", () => renderAdminCandidateDashboard({
+        specialtyId: "admin-operational-dashboard-specialty",
+        cardsId: "admin-operational-dashboard-cards",
+        messageId: "admin-operational-dashboard-message"
+    }));
+    document.getElementById("admin-operational-dashboard-pdf")?.addEventListener("click", () => exportAdminCandidateReportPdf({
+        specialtyId: "admin-operational-dashboard-specialty",
+        messageId: "admin-operational-dashboard-message"
+    }));
 
     document.getElementById("reset-question-history-btn")?.addEventListener("click", () => {
         const email = currentAuthenticatedAccount?.email || currentCandidateEmail || "anonymous";
@@ -5669,6 +5696,7 @@ async function initializeAppInteractions() {
             if (!document.getElementById("question-form").classList.contains("hidden")) resetQuestionForm();
             switchAdminSection(button.dataset.adminSection);
             if (button.dataset.adminSection === "retex") void refreshAdminRetex();
+            if (button.dataset.adminSection === "operational") renderAdminOperationalDashboard();
         });
     });
     document.getElementById("admin-retex-pdf-btn")?.addEventListener("click", exportAdminRetexPdf);
