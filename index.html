@@ -243,6 +243,10 @@
                     <span>Signalements</span>
                     <span id="admin-question-reports-badge" class="admin-nav-badge hidden" aria-hidden="true"></span>
                 </button>
+                <button class="admin-nav-btn" type="button" data-admin-section="operational">
+                    <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M3 4h18v16H3zM7 8h10M7 12h10M7 16h6"/></svg>
+                    <span>Synthèse opérationnelle</span>
+                </button>
                 <button class="admin-nav-btn" type="button" data-admin-section="results">
                     <svg class="admin-nav-icon" aria-hidden="true" viewBox="0 0 24 24" focusable="false"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
                     <span>Résultats</span>
@@ -306,6 +310,22 @@
                         <div id="admin-retex-responses" class="retex-response-list"></div>
                     </section>
                 </div>
+            </section>
+            <section id="admin-operational-section" class="admin-section admin-panel hidden">
+                <div class="admin-results-header"><h2>Synthèse opérationnelle</h2></div>
+                <section id="admin-operational-dashboard" class="admin-dashboard" aria-labelledby="admin-operational-dashboard-title">
+                    <h3 id="admin-operational-dashboard-title">Vue d’ensemble de la cohorte</h3>
+                    <p class="terminal-note">Classement automatique selon les validations des 7 modules DOCTRINE : 7/7 = prêt · 2 à 6 = à suivre · 0 à 1 et 30 jours sans activité DOCTRINE enregistrée = en difficulté. Sans historique synchronisé, le candidat reste non prêt.</p>
+                    <div class="admin-dashboard-controls">
+                        <label for="admin-operational-dashboard-specialty" class="admin-filter-label">Spé</label>
+                        <select id="admin-operational-dashboard-specialty" class="admin-filter-select" aria-label="Filtrer la cohorte par spécialité">
+                            <option value="">Toutes les spécialités</option>
+                        </select>
+                        <button id="admin-operational-dashboard-pdf" class="admin-edit-btn" type="button">Exporter</button>
+                    </div>
+                    <div id="admin-operational-dashboard-cards" class="admin-dashboard-status-groups"></div>
+                    <p id="admin-operational-dashboard-message" class="terminal-note" role="status" aria-live="polite"></p>
+                </section>
             </section>
             <section id="admin-results-section" class="admin-section admin-panel hidden">
                 <div class="admin-results-header"><h2>Résultats</h2></div>
