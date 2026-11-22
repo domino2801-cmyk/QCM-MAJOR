@@ -49,3 +49,33 @@ test("admin candidate page keeps activity summaries without a shared timeline", 
     assert.match(app, /tracking\.progress_events/);
     assert.match(app, /Transmission d’une fiche/);
 });
+
+const moduleProgressMigration = readFileSync(
+    path.join(root, "supabase", "migrations", "20261122100000_admin_candidate_module_progress.sql"),
+    "utf8"
+);
+
+test("DOCTRINE module progress RPC exposes only aggregated completion metadata to administrators", () => {
+    assert.ok(moduleProgressMigration.includes("create or replace function public.get_admin_candidate_module_progress()"));
+    assert.match(moduleProgressMigration, /security definer/i);
+    assert.match(moduleProgressMigration, /set search_path = ''/i);
+    assert.match(moduleProgressMigration, /Administrator access required/i);
+    assert.match(moduleProgressMigration, /event_type = 'module_completed'/i);
+    assert.match(moduleProgressMigration, /event_type = 'module_started'/i);
+    assert.ok(moduleProgressMigration.includes("max(events.created_at) as last_activity"));
+    assert.ok(moduleProgressMigration.includes("revoke all on function public.get_admin_candidate_module_progress() from public, anon"));
+    assert.ok(moduleProgressMigration.includes("grant execute on function public.get_admin_candidate_module_progress() to authenticated"));
+    assert.ok(!moduleProgressMigration.includes("candidate_email"));
+});
+
+test("admin dashboard classifies candidates from the seven DOCTRINE modules", () => {
+    assert.match(html, /Classement automatique selon les validations des 7 modules DOCTRINE/i);
+    assert.match(app, /get_admin_candidate_module_progress/);
+    assert.match(app, /completed_modules/);
+    assert.match(app, /completedCount === 7/);
+    assert.match(app, /completedCount <= 1 && inactiveDays !== null && inactiveDays >= 30/);
+    assert.match(app, /completedCount >= 2/);
+    assert.match(app, /"Non prêt"/);
+    assert.match(app, /"À suivre"/);
+    assert.match(app, /"En difficulté"/);
+});

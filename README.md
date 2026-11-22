@@ -98,6 +98,19 @@ La dernière migration recalcule les paliers avec les seuils actuels sans rédui
 
 Le Top 3 de la campagne globale, affiché avant connexion, est chargé par la fonction RPC publique `get_public_global_campaign_top3()`, sans accès anonyme direct à la table `quiz_results`. Le classement affiche le pseudo, la note et la date ; choisissez un pseudo qui ne révèle pas votre identité.
 
+## Classement automatique des candidats par progression DOCTRINE
+
+Le tableau de bord **Admin > Résultats** classe les candidats à partir des validations synchronisées des sept modules DOCTRINE, et non de leur moyenne QCM :
+
+- **Candidats prêts** : les sept modules sont validés.
+- **Candidats à suivre** : deux à six modules sont validés.
+- **Candidats en difficulté** : zéro ou un module validé et aucune activité enregistrée depuis au moins 30 jours.
+- **Candidats non prêts** : les autres situations, notamment une progression nulle ou non synchronisée.
+
+Les dates d’activité tiennent compte des événements DOCTRINE et des résultats QCM-MAJOR. L’absence de données synchronisées n’est pas assimilée à une absence d’activité : le candidat reste dans « Non prêts » jusqu’à réception des données. La validation manuelle des modules 2, 4, 5, 6 et 7 est déclarative ; les modules 1 et 3 conservent leurs validations propres. Ces indicateurs facilitent le suivi et ne remplacent pas l’appréciation de l’Officier Guide.
+
+Pour activer le classement, exécuter `supabase/migrations/20261122100000_admin_candidate_module_progress.sql` dans **Supabase > SQL Editor** sur le projet partagé avec DOCTRINE, après la migration `20261110120000_admin_candidate_tracking.sql` et après l’installation de la table `doctrine_progress_events` depuis le dépôt DOCTRINE. Publier ensuite le site QCM-MAJOR.
+
 ## PWA, hébergement et mode hors ligne
 
 L’application est un site statique hébergé sur GitHub Pages et installable comme PWA. Le service worker met en cache les ressources locales de l’application ; les quiz, la correction, Tchap et les documents ou services distants nécessitent une connexion Internet.

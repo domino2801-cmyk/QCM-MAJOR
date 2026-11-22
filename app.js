@@ -3663,12 +3663,90 @@ function renderAdminThemeAcquisition(results, milestoneValue) {
     container.replaceChildren(summary, table);
 }
 
+let adminDoctrineModuleProgress = new Map();
+let adminDoctrineModuleProgressLoaded = false;
+let adminDoctrineModuleProgressPromise = null;
+let adminDoctrineModuleProgressError = "";
+
+function ensureAdminDoctrineModuleProgressLoaded() {
+    if (adminDoctrineModuleProgressLoaded || adminDoctrineModuleProgressPromise || !hasSupabaseAuth()) return;
+    adminDoctrineModuleProgressPromise = (async () => {
+        const session = getStoredSupabaseSession();
+        if (!session?.access_token) throw new Error("Session administrateur indisponible.");
+        const rows = await supabaseRestRequest("/rpc/get_admin_candidate_module_progress", {
+            method: "POST",
+            body: {},
+            accessToken: session.access_token
+        });
+        const progress = new Map();
+        (Array.isArray(rows) ? rows : []).forEach(row => {
+            const id = String(row.user_id || "").trim();
+            if (!id) return;
+            const completed = [...new Set((Array.isArray(row.completed_modules) ? row.completed_modules : []).map(String))]
+                .filter(moduleId => /^[1-7]$/.test(moduleId));
+            const started = [...new Set((Array.isArray(row.started_modules) ? row.started_modules : []).map(String))]
+                .filter(moduleId => /^[1-7]$/.test(moduleId));
+            progress.set(id, {
+                completedModules: completed,
+                startedModules: started,
+                lastActivity: Date.parse(row.last_activity || "")
+            });
+        });
+        adminDoctrineModuleProgress = progress;
+        adminDoctrineModuleProgressError = "";
+        adminDoctrineModuleProgressLoaded = true;
+    })().catch(error => {
+        adminDoctrineModuleProgressError = "Progression DOCTRINE indisponible : " + (error?.message || "erreur de chargement") + ". Appliquez la migration de suivi des 7 modules.";
+        adminDoctrineModuleProgressLoaded = true;
+    }).finally(() => {
+        adminDoctrineModuleProgressPromise = null;
+        const section = document.getElementById("admin-results-section");
+        if (section && !section.classList.contains("hidden")) renderAdminResults();
+    });
+}
+
+function classifyAdminDoctrineCandidate(summary) {
+    const progress = adminDoctrineModuleProgress.get(String(summary.id || ""));
+    const completedCount = progress?.completedModules.length || 0;
+    const doctrineLastActivity = progress?.lastActivity;
+    const lastActivity = Math.max(
+        Number.isFinite(summary.lastActivity) ? summary.lastActivity : 0,
+        Number.isFinite(doctrineLastActivity) ? doctrineLastActivity : 0
+    ) || NaN;
+    const inactiveDays = Number.isFinite(lastActivity)
+        ? Math.floor((Date.now() - lastActivity) / (24 * 60 * 60 * 1000))
+        : null;
+    let status = "none";
+    let label = "Non prêt";
+    if (completedCount === 7) {
+        status = "ready";
+        label = "Prêt";
+    } else if (progress && Number.isFinite(doctrineLastActivity) && completedCount <= 1 && inactiveDays !== null && inactiveDays >= 30) {
+        status = "struggling";
+        label = "En difficulté";
+    } else if (completedCount >= 2) {
+        status = "watch";
+        label = "À suivre";
+    }
+    return {
+        ...summary,
+        status,
+        dashboardStatusLabel: label,
+        completedModuleCount: completedCount,
+        startedModuleCount: progress?.startedModules.length || 0,
+        doctrineProgressKnown: Boolean(progress),
+        doctrineLastActivity,
+        lastActivity,
+        moduleProgressText: progress ? completedCount + "/7 modules validés" : "Progression DOCTRINE non synchronisée"
+    };
+}
+
 function getAdminDashboardSummaries() {
     const search = (document.getElementById("admin-dashboard-search")?.value || "").trim().toLowerCase();
     const specialty = document.getElementById("admin-dashboard-specialty")?.value || "";
     const all = buildCandidateSummaries(getAdminResultsData())
         .filter(summary => String(summary.specialty || "").trim().toUpperCase() !== "OG")
-        .map(summary => ({
+        .map(summary => classifyAdminDoctrineCandidate({
             ...summary,
             inactivityReminderSent: adminInactivityReminderIds.has(summary.id)
         }));
@@ -3713,13 +3791,18 @@ function renderAdminCandidateDashboard() {
         }
     };
     cards.replaceChildren();
-    const statusGroups = groupCandidateSummaries(filtered);
+    const statusGroups = ["struggling", "none", "watch", "ready"].map(status => ({ status, summaries: filtered.filter(summary => summary.status === status) }));
     statusGroups.forEach(({ status, summaries }) => {
         const accordion = document.createElement("details");
         accordion.className = "admin-dashboard-status-accordion";
         accordion.style.setProperty("--status-color", STATUSES[status].color);
         const heading = document.createElement("summary");
-        const label = status === "none" ? "Sans résultats" : STATUSES[status].label;
+        const label = {
+            struggling: "Candidats en difficulté",
+            none: "Candidats non prêts",
+            watch: "Candidats à suivre",
+            ready: "Candidats prêts"
+        }[status];
         heading.textContent = `${label} (${summaries.length})`;
         const groupCards = document.createElement("div");
         groupCards.className = "admin-dashboard-cards admin-dashboard-status-cards";
@@ -3736,6 +3819,7 @@ function renderAdminCandidateDashboard() {
     });
     const message = document.getElementById("admin-dashboard-message");
     if (message) message.innerText = [
+        adminDoctrineModuleProgressError,
         adminInactivityReminderError,
         filtered.length ? "" : "Aucun candidat ne correspond à la sélection."
     ].filter(Boolean).join(" ");
@@ -3774,6 +3858,7 @@ function renderAdminResults() {
     const list = document.getElementById("admin-results-table");
     const { results, accounts } = getAdminResultsData();
     if (!list) return;
+    ensureAdminDoctrineModuleProgressLoaded();
     renderAdminCandidateDashboard();
     const candidateFilter = document.getElementById("admin-results-candidate-filter");
     const search = document.getElementById("admin-results-search")?.value.trim().toLowerCase() || "";

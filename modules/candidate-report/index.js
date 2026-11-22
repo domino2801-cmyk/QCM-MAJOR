@@ -195,7 +195,7 @@ export function renderCandidateDashboard(container, summaries, doc = document, {
             nameRow,
             element(doc, "small", "", summary.email || "Email non renseigné")
         );
-        head.append(identity, element(doc, "span", "candidate-pill", status.label));
+        head.append(identity, element(doc, "span", "candidate-pill", summary.dashboardStatusLabel || status.label));
 
         const score = element(doc, "div", "candidate-card-score");
         score.append(
@@ -207,7 +207,7 @@ export function renderCandidateDashboard(container, summaries, doc = document, {
         const trend = summary.trend === null
             ? "tendance : 6 séries requises"
             : `tendance ${summary.trend >= 0 ? "+" : ""}${formatScore(summary.trend)} pt`;
-        facts.textContent = `${summary.seriesCount} série(s) · dernière activité ${formatDate(summary.lastActivity)} · ${trend}`;
+        facts.textContent = `${summary.moduleProgressText || ""} · ${summary.seriesCount} série(s) · dernière activité ${formatDate(summary.lastActivity)} · ${trend}`;
 
         card.append(head, score, facts);
         if (summary.inactivityReminderSent) {
