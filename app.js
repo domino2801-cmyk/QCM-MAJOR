@@ -1324,11 +1324,11 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
 
     try {
         const accessToken = getStoredSupabaseSession()?.access_token;
-        const loadRows = async (candidateColumn, includeFeedbackMode = true) => {
+        const loadRows = async (candidateColumns, includeFeedbackMode = true) => {
             const rows = [];
             const paginated = isAdminSession(getStoredSupabaseSession());
             for (let offset = 0; ; offset += 250) {
-                const selectedColumns = `id,${candidateColumn},email,name,theme,${includeFeedbackMode ? "feedback_mode," : ""}score,correct,wrong,skipped,total,created_at`;
+                const selectedColumns = `id,${candidateColumns.join(",")},email,name,theme,${includeFeedbackMode ? "feedback_mode," : ""}score,correct,wrong,skipped,total,created_at`;
                 const page = await supabaseRestRequest(
                     `/quiz_results?select=${selectedColumns}&order=created_at.desc${paginated ? `,id.desc&limit=250&offset=${offset}` : ""}`,
                     { accessToken }
@@ -1338,22 +1338,29 @@ async function loadResultsFromSupabase({ throwOnError = false } = {}) {
                 if (!paginated || page.length < 250) return rows;
             }
         };
-        const loadRowsWithOptionalFeedbackMode = async candidateColumn => {
+        const loadRowsWithOptionalFeedbackMode = async candidateColumns => {
             try {
-                return await loadRows(candidateColumn);
+                return await loadRows(candidateColumns);
             } catch (error) {
                 if (!isMissingFeedbackModeColumn(error)) throw error;
-                return loadRows(candidateColumn, false);
+                return loadRows(candidateColumns, false);
             }
         };
         let data;
         try {
-            data = await loadRowsWithOptionalFeedbackMode("user_id");
-        } catch (primaryError) {
+            // Certaines bases conservent encore des résultats historiques dans
+            // candidate_id alors que les nouveaux résultats utilisent user_id.
+            // Lire les deux colonnes évite de perdre les anciens rattachements.
+            data = await loadRowsWithOptionalFeedbackMode(["user_id", "candidate_id"]);
+        } catch (bothColumnsError) {
             try {
-                data = await loadRowsWithOptionalFeedbackMode("candidate_id");
-            } catch {
-                throw primaryError;
+                data = await loadRowsWithOptionalFeedbackMode(["user_id"]);
+            } catch (userIdError) {
+                try {
+                    data = await loadRowsWithOptionalFeedbackMode(["candidate_id"]);
+                } catch {
+                    throw bothColumnsError;
+                }
             }
         }
         if (!Array.isArray(data)) return false;

@@ -110,3 +110,11 @@ test("only candidates with a current accepted reminder get the dark card and lab
     assert.doesNotMatch(normal.className, /\bhas-inactivity-reminder\b/);
     assert.doesNotMatch(normal.attributes["aria-label"], /relance/);
 });
+
+test("admin results load both legacy candidate_id and current user_id identifiers", () => {
+    const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+    assert.match(app, /loadRowsWithOptionalFeedbackMode\(\["user_id", "candidate_id"\]\)/);
+    assert.match(app, /loadRowsWithOptionalFeedbackMode\(\["user_id"\]\)/);
+    assert.match(app, /loadRowsWithOptionalFeedbackMode\(\["candidate_id"\]\)/);
+    assert.match(app, /candidate_id alors que les nouveaux résultats utilisent user_id/);
+});
