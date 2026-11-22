@@ -3721,7 +3721,7 @@ function classifyAdminDoctrineCandidate(summary) {
     if (completedCount === 7) {
         status = "ready";
         label = "Prêt";
-    } else if (completedCount <= 1 && inactiveDays !== null && inactiveDays >= 30) {
+    } else if (progress && Number.isFinite(doctrineLastActivity) && completedCount <= 1 && inactiveDays !== null && inactiveDays >= 30) {
         status = "struggling";
         label = "En difficulté";
     } else if (completedCount >= 2) {
