@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import { setupDoctrineAccess } from "../modules/doctrine-access/index.js";
 
-function fixture(getSession) {
+function fixture(getSession, adminMode = false) {
     const listeners = {};
     const messages = [];
     const child = { postMessage: (data, origin) => messages.push({ data, origin }) };
@@ -14,13 +14,13 @@ function fixture(getSession) {
     const previousWindow = globalThis.window;
     globalThis.window = {
         open: (url, target) => {
-            assert.equal(url, "https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major");
+            assert.equal(url, `https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major${adminMode ? "&admin=1" : ""}`);
             assert.equal(target, "doctrine-armoire");
             return child;
         },
         addEventListener: (_type, callback) => { listeners.message = callback; }
     };
-    setupDoctrineAccess({ link, status, getSession, returnToConsole: id => { returns.push(id); return true; } });
+    setupDoctrineAccess({ link, status, getSession, returnToConsole: id => { returns.push(id); return true; }, adminMode });
     return { listeners, child, status, messages, returns, restore: () => { globalThis.window = previousWindow; } };
 }
 
@@ -128,4 +128,19 @@ test("le retour affiche la console sans interrompre une partie ni changer de com
     active = "";
     context.returnToDoctrineConsole("candidate");
     assert.deepEqual(screens, ["theme-screen"]);
+});
+
+
+test("le bouton Admin ANC ouvre l'espace administrateur de l'Armoire", async () => {
+    const f = fixture(async () => ({
+        access_token: "admin-access", expires_at: 12345
+    }), true);
+    try {
+        f.listeners.click({ button: 0, preventDefault() {} });
+        await f.listeners.message({
+            origin: "https://domino2801-cmyk.github.io", source: f.child,
+            data: { type: "doctrine-session-request", id: "admin-mode" }
+        });
+        assert.equal(f.messages[0].data.access_token, "admin-access");
+    } finally { f.restore(); }
 });
