@@ -1,7 +1,7 @@
 const DOCTRINE_ORIGIN = "https://domino2801-cmyk.github.io";
 const DOCTRINE_URL = `${DOCTRINE_ORIGIN}/DOCTRINE/index.html?from=qcm-major`;
 
-export function setupDoctrineAccess({ link, status, getSession, returnToConsole }) {
+export function setupDoctrineAccess({ link, status, getSession, returnToConsole, adminMode = false }) {
     if (!link) return;
     const windows = new Set();
     let sessionRequest = null;
@@ -9,7 +9,9 @@ export function setupDoctrineAccess({ link, status, getSession, returnToConsole 
     link.addEventListener("click", event => {
         if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        const opened = window.open(DOCTRINE_URL, "doctrine-armoire");
+        const targetUrl = new URL(DOCTRINE_URL);
+        if (adminMode) targetUrl.searchParams.set("admin", "1");
+        const opened = window.open(targetUrl.toString(), "doctrine-armoire");
         if (!opened) {
             if (status) status.textContent = "Autorisez l’ouverture des fenêtres pour accéder directement à l’armoire.";
             return;
