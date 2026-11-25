@@ -71,6 +71,7 @@ test("l'administration utilise le même relais sécurisé que le centre", async 
     const source = await readFile(new URL("../app.js", import.meta.url), "utf8");
     const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
     assert.match(source, /setupDoctrineAccess\(\{\s*\.\.\.doctrineAccess,\s*link: document\.getElementById\("admin-doctrine-btn"\),\s*status: document\.getElementById\("admin-doctrine-status"\)/);
+    assert.match(source, /link: document\.getElementById\("admin-doctrine-btn"\),\s*status: document\.getElementById\("admin-doctrine-status"\),\s*adminMode: true/);
     assert.match(html, /id="admin-doctrine-status"[^>]*role="status"/);
     const f = fixture(async () => ({
         access_token: "admin-access", refresh_token: "secret", expires_at: 12345
