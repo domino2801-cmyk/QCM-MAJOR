@@ -5485,7 +5485,8 @@ async function initializeAppInteractions() {
     setupDoctrineAccess({
         ...doctrineAccess,
         link: document.getElementById("admin-doctrine-btn"),
-        status: document.getElementById("admin-doctrine-status")
+        status: document.getElementById("admin-doctrine-status"),
+        adminMode: true
     });
 
     document.getElementById("btn-retex-theme")?.addEventListener("click", () => {
