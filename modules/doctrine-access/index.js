@@ -5,6 +5,7 @@ export function setupDoctrineAccess({ link, status, getSession, returnToConsole,
     if (!link) return;
     const windows = new Set();
     let sessionRequest = null;
+    let preparedAdminWindow = null;
 
     link.addEventListener("click", event => {
         if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -55,4 +56,34 @@ export function setupDoctrineAccess({ link, status, getSession, returnToConsole,
             event.source.postMessage({ type: "doctrine-session-response", id: event.data.id }, DOCTRINE_ORIGIN);
         }
     });
+    return {
+        prepareAdminLaunch() {
+            if (!adminMode) return false;
+            try {
+                preparedAdminWindow = window.open("about:blank", "doctrine-armoire");
+                if (!preparedAdminWindow) return false;
+                windows.add(preparedAdminWindow);
+                return true;
+            } catch {
+                preparedAdminWindow = null;
+                return false;
+            }
+        },
+        launchPreparedAdmin() {
+            if (!adminMode || !preparedAdminWindow || preparedAdminWindow.closed) {
+                preparedAdminWindow = null;
+                return false;
+            }
+            const targetUrl = new URL(DOCTRINE_URL);
+            targetUrl.searchParams.set("admin", "1");
+            preparedAdminWindow.location.replace(targetUrl.toString());
+            preparedAdminWindow = null;
+            return true;
+        },
+        cancelPreparedAdminLaunch() {
+            if (preparedAdminWindow && !preparedAdminWindow.closed) preparedAdminWindow.close();
+            if (preparedAdminWindow) windows.delete(preparedAdminWindow);
+            preparedAdminWindow = null;
+        }
+    };
 }
