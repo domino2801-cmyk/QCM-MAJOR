@@ -7,21 +7,29 @@ import { setupDoctrineAccess } from "../modules/doctrine-access/index.js";
 function fixture(getSession, adminMode = false) {
     const listeners = {};
     const messages = [];
-    const child = { postMessage: (data, origin) => messages.push({ data, origin }) };
+    const child = {
+        closed: false,
+        url: "",
+        location: { replace(url) { child.url = url; } },
+        close() { child.closed = true; },
+        postMessage: (data, origin) => messages.push({ data, origin })
+    };
     const link = { addEventListener: (_type, callback) => { listeners.click = callback; } };
     const status = { textContent: "" };
     const returns = [];
     const previousWindow = globalThis.window;
     globalThis.window = {
         open: (url, target) => {
-            assert.equal(url, `https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major${adminMode ? "&admin=1" : ""}`);
             assert.equal(target, "doctrine-armoire");
+            if (url !== "about:blank") {
+                assert.equal(url, `https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major${adminMode ? "&admin=1" : ""}`);
+            }
             return child;
         },
         addEventListener: (_type, callback) => { listeners.message = callback; }
     };
-    setupDoctrineAccess({ link, status, getSession, returnToConsole: id => { returns.push(id); return true; }, adminMode });
-    return { listeners, child, status, messages, returns, restore: () => { globalThis.window = previousWindow; } };
+    const api = setupDoctrineAccess({ link, status, getSession, returnToConsole: id => { returns.push(id); return true; }, adminMode });
+    return { api, listeners, child, status, messages, returns, restore: () => { globalThis.window = previousWindow; } };
 }
 
 test("seul l'onglet ouvert à la bonne origine reçoit le jeton d'accès", async () => {
@@ -144,4 +152,32 @@ test("le bouton Admin ANC ouvre l'espace administrateur de l'Armoire", async () 
         });
         assert.equal(f.messages[0].data.access_token, "admin-access");
     } finally { f.restore(); }
+});
+
+
+test("la connexion administrateur prépare une fenêtre puis ouvre directement l'Armoire en mode admin", () => {
+    const f = fixture(async () => ({ access_token: "admin-access", expires_at: 12345 }), true);
+    try {
+        assert.equal(f.api.prepareAdminLaunch(), true);
+        assert.equal(f.child.url, "");
+        assert.equal(f.api.launchPreparedAdmin(), true);
+        assert.equal(f.child.url, "https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major&admin=1");
+        assert.equal(f.api.launchPreparedAdmin(), false);
+    } finally { f.restore(); }
+});
+
+test("une fenêtre préparée est fermée si l'authentification échoue", () => {
+    const f = fixture(async () => null, true);
+    try {
+        assert.equal(f.api.prepareAdminLaunch(), true);
+        f.api.cancelPreparedAdminLaunch();
+        assert.equal(f.child.closed, true);
+        assert.equal(f.api.launchPreparedAdmin(), false);
+    } finally { f.restore(); }
+});
+
+test("la finalisation admin lance l'Armoire et le formulaire réserve la fenêtre avant l'authentification", async () => {
+    const source = await readFile(new URL("../app.js", import.meta.url), "utf8");
+    assert.match(source, /adminDoctrineAccess\?\.prepareAdminLaunch\?\.\(\);[\s\S]{0,350}signInWithPassword/);
+    assert.match(source, /if \(adminDoctrineAccess\?\.launchPreparedAdmin\?\.\(\)\) return;/);
 });
