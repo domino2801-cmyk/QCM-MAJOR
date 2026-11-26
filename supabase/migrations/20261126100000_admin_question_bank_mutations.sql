@@ -28,10 +28,13 @@ begin
         raise exception 'Administrator access required' using errcode = '42501';
     end if;
 
-    if p_theme_id not in ('0', '1', '2', '3', '4', '5')
+    if p_theme_id is null or p_theme_id not in ('0', '1', '2', '3', '4', '5')
        or nullif(btrim(p_question), '') is null
-       or array_position(answers, null) is not null
-       or p_correct_index not between 0 and 3 then
+       or nullif(btrim(p_answer_1), '') is null
+       or nullif(btrim(p_answer_2), '') is null
+       or nullif(btrim(p_answer_3), '') is null
+       or nullif(btrim(p_answer_4), '') is null
+       or p_correct_index is null or p_correct_index not between 0 and 3 then
         raise exception 'Invalid question data' using errcode = '22023';
     end if;
 
@@ -74,10 +77,13 @@ begin
     end if;
 
     if p_question_id is null
-       or p_theme_id not in ('0', '1', '2', '3', '4', '5')
+       or p_theme_id is null or p_theme_id not in ('0', '1', '2', '3', '4', '5')
        or nullif(btrim(p_question), '') is null
-       or array_position(answers, null) is not null
-       or p_correct_index not between 0 and 3 then
+       or nullif(btrim(p_answer_1), '') is null
+       or nullif(btrim(p_answer_2), '') is null
+       or nullif(btrim(p_answer_3), '') is null
+       or nullif(btrim(p_answer_4), '') is null
+       or p_correct_index is null or p_correct_index not between 0 and 3 then
         raise exception 'Invalid question data' using errcode = '22023';
     end if;
 
@@ -113,7 +119,7 @@ begin
         raise exception 'Administrator access required' using errcode = '42501';
     end if;
 
-    if p_question_id is null or p_theme_id not in ('0', '1', '2', '3', '4', '5') then
+    if p_question_id is null or p_theme_id is null or p_theme_id not in ('0', '1', '2', '3', '4', '5') then
         raise exception 'Invalid question data' using errcode = '22023';
     end if;
 
