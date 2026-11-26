@@ -18,7 +18,7 @@ import {
     groupCandidateSummaries,
     STATUSES
 } from "./modules/candidate-report/index.js?v=admin-results-status-accordion-20261118";
-import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=doctrine-opener-20261117";
+import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=doctrine-admin-direct-20261126";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
@@ -92,6 +92,7 @@ let currentAuthenticatedAccount = null;
 let progressionMaximum = 10;
 let currentCandidateEmail = "";
 let currentSupabaseSession = null;
+let adminDoctrineAccess = null;
 let authUiReady = false;
 let cachedAccounts = {};
 let adminBlockedAccountsLoaded = false;
@@ -1725,10 +1726,16 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
     if (isAdminSession(session)) {
         currentAuthenticatedAccount = buildAccountFromUser(user, fallback);
         currentCandidateEmail = "";
+        if (adminDoctrineAccess?.launchPreparedAdmin?.()) return;
         showAdminApp();
+        const adminStatus = document.getElementById("admin-doctrine-status");
+        if (adminStatus) {
+            adminStatus.textContent = "L’ouverture directe de l’Armoire a été bloquée. Utilisez le bouton « Ouvrir l’espace administrateur » ci-dessous.";
+        }
         return;
     }
 
+    adminDoctrineAccess?.cancelPreparedAdminLaunch?.();
     let accountBlocked;
     try {
         accountBlocked = await isCurrentAccountBlocked(session?.access_token);
@@ -4884,6 +4891,7 @@ function initializeAuth() {
         try {
             await successAction();
         } catch (error) {
+            adminDoctrineAccess?.cancelPreparedAdminLaunch?.();
             if (error?.code === accountBlockedErrorCode) {
                 await handleBlockedAccount("login-message");
                 return;
@@ -4920,6 +4928,9 @@ function initializeAuth() {
 
         const email = normalizeEmail(document.getElementById("login-email").value);
         const password = document.getElementById("login-password").value;
+        // Réserver la fenêtre pendant le geste utilisateur pour éviter le blocage popup
+        // lorsque l’authentification Supabase se termine de façon asynchrone.
+        adminDoctrineAccess?.prepareAdminLaunch?.();
         let signedInUser = null;
         let signedInSession = null;
         try {
@@ -5482,7 +5493,7 @@ async function initializeAppInteractions() {
         link: document.getElementById("centre-doctrine-link"),
         status: document.getElementById("centre-doctrine-status")
     });
-    setupDoctrineAccess({
+    adminDoctrineAccess = setupDoctrineAccess({
         ...doctrineAccess,
         link: document.getElementById("admin-doctrine-btn"),
         status: document.getElementById("admin-doctrine-status"),
