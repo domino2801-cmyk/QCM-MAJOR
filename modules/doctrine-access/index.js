@@ -11,7 +11,7 @@ export function setupDoctrineAccess({ link, status, getSession, returnToConsole,
         const session = await getSession();
         if (!session?.access_token || !session.user?.id) throw new Error("Session QCM-MAJOR indisponible.");
         if (!supabaseUrl || !supabaseAnonKey) throw new Error("Configuration du relais indisponible.");
-        const response = await fetch(`${supabaseUrl.replace(/\\/$/, "")}/functions/v1/doctrine-auth-handoff`, {
+        const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/functions/v1/doctrine-auth-handoff`, {
             method: "POST",
             headers: {
                 apikey: supabaseAnonKey,
