@@ -18,6 +18,8 @@ function fixture(getSession, adminMode = false) {
     const status = { textContent: "" };
     const returns = [];
     const previousWindow = globalThis.window;
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({ code: "one-time-random-code" }) });
     globalThis.window = {
         open: (url, target) => {
             assert.equal(target, "doctrine-armoire");
@@ -28,8 +30,8 @@ function fixture(getSession, adminMode = false) {
         },
         addEventListener: (_type, callback) => { listeners.message = callback; }
     };
-    const api = setupDoctrineAccess({ link, status, getSession, returnToConsole: id => { returns.push(id); return true; }, adminMode });
-    return { api, listeners, child, status, messages, returns, restore: () => { globalThis.window = previousWindow; } };
+    const api = setupDoctrineAccess({ link, status, getSession: async () => { const session = await getSession(); return session ? { ...session, user: session.user || { id: "candidate" } } : null; }, returnToConsole: id => { returns.push(id); return true; }, supabaseUrl: "https://example.supabase.co", supabaseAnonKey: "public-test-key", adminMode });
+    return { api, listeners, child, status, messages, returns, restore: () => { globalThis.window = previousWindow; globalThis.fetch = previousFetch; } };
 }
 
 test("seul l'onglet ouvert à la bonne origine reçoit le jeton d'accès", async () => {
@@ -160,9 +162,9 @@ test("la connexion administrateur prépare une fenêtre puis ouvre directement l
     try {
         assert.equal(f.api.prepareAdminLaunch(), true);
         assert.equal(f.child.url, "");
-        assert.equal(f.api.launchPreparedAdmin(), true);
-        assert.equal(f.child.url, "https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major&admin=1");
-        assert.equal(f.api.launchPreparedAdmin(), false);
+        assert.equal(await f.api.launchPreparedAdmin(), true);
+        assert.equal(f.child.url, "https://domino2801-cmyk.github.io/DOCTRINE/index.html?from=qcm-major&admin=1#anc_handoff=one-time-random-code");
+        assert.equal(await f.api.launchPreparedAdmin(), false);
     } finally { f.restore(); }
 });
 
@@ -179,5 +181,17 @@ test("une fenêtre préparée est fermée si l'authentification échoue", () => 
 test("la finalisation admin lance l'Armoire et le formulaire réserve la fenêtre avant l'authentification", async () => {
     const source = await readFile(new URL("../app.js", import.meta.url), "utf8");
     assert.match(source, /adminDoctrineAccess\?\.prepareAdminLaunch\?\.\(\);[\s\S]{0,350}signInWithPassword/);
-    assert.match(source, /if \(adminDoctrineAccess\?\.launchPreparedAdmin\?\.\(\)\) return;/);
+    assert.match(source, /if \(await adminDoctrineAccess\?\.launchPreparedAdmin\?\.\(\)\) return;/);
+});
+
+
+test("le lancement ANC crée un code éphémère au lieu de transmettre un jeton dans l’URL", async () => {
+    const f = fixture(async () => ({ access_token: "access", user: { id: "candidate" } }));
+    try {
+        f.listeners.click({ button: 0, preventDefault() {} });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.match(f.child.url, /#anc_handoff=one-time-random-code$/);
+        assert.equal(f.child.url.includes("access"), false);
+        assert.equal(f.child.url.includes("refresh"), false);
+    } finally { f.restore(); }
 });
