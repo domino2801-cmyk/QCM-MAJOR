@@ -174,7 +174,7 @@ test("une fenêtre préparée est fermée si l'authentification échoue", async 
         assert.equal(f.api.prepareAdminLaunch(), true);
         f.api.cancelPreparedAdminLaunch();
         assert.equal(f.child.closed, true);
-        assert.equal(f.api.launchPreparedAdmin(), false);
+        assert.equal(await f.api.launchPreparedAdmin(), false);
     } finally { f.restore(); }
 });
 
