@@ -157,7 +157,7 @@ test("le bouton Admin ANC ouvre l'espace administrateur de l'Armoire", async () 
 });
 
 
-test("la connexion administrateur prépare une fenêtre puis ouvre directement l'Armoire en mode admin", () => {
+test("la connexion administrateur prépare une fenêtre puis ouvre directement l'Armoire en mode admin", async () => {
     const f = fixture(async () => ({ access_token: "admin-access", expires_at: 12345 }), true);
     try {
         assert.equal(f.api.prepareAdminLaunch(), true);
@@ -168,7 +168,7 @@ test("la connexion administrateur prépare une fenêtre puis ouvre directement l
     } finally { f.restore(); }
 });
 
-test("une fenêtre préparée est fermée si l'authentification échoue", () => {
+test("une fenêtre préparée est fermée si l'authentification échoue", async () => {
     const f = fixture(async () => null, true);
     try {
         assert.equal(f.api.prepareAdminLaunch(), true);
