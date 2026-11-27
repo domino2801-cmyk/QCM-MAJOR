@@ -18,7 +18,7 @@ import {
     groupCandidateSummaries,
     STATUSES
 } from "./modules/candidate-report/index.js?v=admin-results-status-accordion-20261118";
-import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=doctrine-admin-direct-20261126";
+import { setupDoctrineAccess } from "./modules/doctrine-access/index.js?v=doctrine-one-time-handoff-20261127";
 import {
     reportNotificationsEnabled,
     enableReportNotifications,
@@ -1726,7 +1726,7 @@ async function finalizeAuthenticatedUser(user, fallback = {}, session = getStore
     if (isAdminSession(session)) {
         currentAuthenticatedAccount = buildAccountFromUser(user, fallback);
         currentCandidateEmail = "";
-        if (adminDoctrineAccess?.launchPreparedAdmin?.()) return;
+        if (await adminDoctrineAccess?.launchPreparedAdmin?.()) return;
         showAdminApp();
         const adminStatus = document.getElementById("admin-doctrine-status");
         if (adminStatus) {
@@ -5486,7 +5486,9 @@ async function initializeAppInteractions() {
             return currentAuthenticatedAccount?.id === accountId && session?.user?.id === accountId
                 ? session : null;
         },
-        returnToConsole: returnToDoctrineConsole
+        returnToConsole: returnToDoctrineConsole,
+        supabaseUrl,
+        supabaseAnonKey
     };
     setupDoctrineAccess({
         ...doctrineAccess,
