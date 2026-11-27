@@ -1,24 +1,61 @@
 const DOCTRINE_ORIGIN = "https://domino2801-cmyk.github.io";
 const DOCTRINE_URL = `${DOCTRINE_ORIGIN}/DOCTRINE/index.html?from=qcm-major`;
 
-export function setupDoctrineAccess({ link, status, getSession, returnToConsole, adminMode = false }) {
+export function setupDoctrineAccess({ link, status, getSession, returnToConsole, supabaseUrl, supabaseAnonKey, adminMode = false }) {
     if (!link) return;
     const windows = new Set();
     let sessionRequest = null;
     let preparedAdminWindow = null;
+
+    async function prepareHandoffUrl(targetUrl) {
+        const session = await getSession();
+        if (!session?.access_token || !session.user?.id) throw new Error("Session QCM-MAJOR indisponible.");
+        if (!supabaseUrl || !supabaseAnonKey) throw new Error("Configuration du relais indisponible.");
+        const response = await fetch(`${supabaseUrl.replace(/\\/$/, "")}/functions/v1/doctrine-auth-handoff`, {
+            method: "POST",
+            headers: {
+                apikey: supabaseAnonKey,
+                Authorization: `Bearer ${session.access_token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ action: "create" })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || typeof data.code !== "string" || !data.code) {
+            throw new Error(data.error || "Création du relais sécurisé impossible.");
+        }
+        targetUrl.hash = new URLSearchParams({ anc_handoff: data.code }).toString();
+        return targetUrl;
+    }
+
+    async function navigateWithHandoff(opened, targetUrl) {
+        try {
+            const secureUrl = await prepareHandoffUrl(targetUrl);
+            if (!opened.closed) opened.location.replace(secureUrl.toString());
+            return true;
+        } catch (error) {
+            console.warn("Relais sécurisé ANC indisponible ; tentative du relais de fenêtre classique.", error);
+            if (status) status.textContent = "Relais sécurisé momentanément indisponible. Tentative de connexion classique…";
+            if (!opened.closed) opened.location.replace(targetUrl.toString());
+            return false;
+        }
+    }
 
     link.addEventListener("click", event => {
         if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         const targetUrl = new URL(DOCTRINE_URL);
         if (adminMode) targetUrl.searchParams.set("admin", "1");
-        const opened = window.open(targetUrl.toString(), "doctrine-armoire");
+        const opened = window.open("about:blank", "doctrine-armoire");
         if (!opened) {
             if (status) status.textContent = "Autorisez l’ouverture des fenêtres pour accéder directement à l’armoire.";
             return;
         }
-        if (status) status.textContent = "";
+        if (status) status.textContent = "Ouverture de l’Armoire…";
         windows.add(opened);
+        void navigateWithHandoff(opened, targetUrl).then(secure => {
+            if (status) status.textContent = secure ? "" : status.textContent;
+        });
     });
 
     window.addEventListener("message", async event => {
@@ -69,15 +106,16 @@ export function setupDoctrineAccess({ link, status, getSession, returnToConsole,
                 return false;
             }
         },
-        launchPreparedAdmin() {
+        async launchPreparedAdmin() {
             if (!adminMode || !preparedAdminWindow || preparedAdminWindow.closed) {
                 preparedAdminWindow = null;
                 return false;
             }
+            const opened = preparedAdminWindow;
+            preparedAdminWindow = null;
             const targetUrl = new URL(DOCTRINE_URL);
             targetUrl.searchParams.set("admin", "1");
-            preparedAdminWindow.location.replace(targetUrl.toString());
-            preparedAdminWindow = null;
+            await navigateWithHandoff(opened, targetUrl);
             return true;
         },
         cancelPreparedAdminLaunch() {
