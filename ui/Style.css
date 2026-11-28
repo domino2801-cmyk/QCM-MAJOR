@@ -6625,3 +6625,149 @@ body {
         scrollbar-width: thin;
     }
 }
+
+
+/* Ajustement ciblé de l'écran de sélection : tout tenir dans la hauteur visible. */
+@media (min-width: 1101px) and (min-height: 680px) {
+    #theme-screen.screen.active {
+        display: flex;
+        flex: 1 1 0;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        gap: 5px;
+        height: 100%;
+        min-height: 0;
+        max-height: 100%;
+        padding: 2px 14px;
+        overflow: hidden;
+    }
+
+    #theme-screen > .brand-lockup {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    #theme-screen > .brand-lockup img {
+        width: 52px !important;
+        height: 52px !important;
+        margin: 0 auto 3px;
+    }
+
+    #theme-screen > #theme-welcome-message,
+    #theme-screen > #account-summary,
+    #theme-screen > #connection-status {
+        flex: 0 0 auto;
+        margin: 0 0 2px;
+        line-height: 1.2;
+    }
+
+    #theme-screen > .theme-selector-panel {
+        flex: 0 1 auto;
+        min-height: 0;
+        margin: 4px auto;
+        padding: 8px 12px;
+        gap: 6px;
+        overflow: hidden;
+    }
+
+    #theme-screen .theme-select-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 7px;
+    }
+
+    #theme-screen .theme-field {
+        gap: 5px;
+    }
+
+    #theme-screen .theme-objective-grid {
+        gap: 5px;
+    }
+
+    #theme-screen .theme-objective-btn {
+        min-height: 48px;
+        padding: 5px 8px;
+        gap: 3px;
+        border-radius: 8px;
+    }
+
+    #theme-screen .theme-objective-name {
+        font-size: 0.76rem;
+        line-height: 1.15;
+    }
+
+    #theme-screen .theme-objective-new-count {
+        min-height: 13px;
+        font-size: 0.5rem;
+    }
+
+    #theme-screen .qty-choice-row {
+        gap: 7px;
+    }
+
+    #theme-screen .qty-choice-btn {
+        min-height: 62px;
+        padding: 7px 8px;
+        border-radius: 10px;
+    }
+
+    #theme-screen .qty-choice-count {
+        font-size: 1.15rem;
+    }
+
+    #theme-screen .qty-choice-level {
+        font-size: 0.62rem;
+    }
+
+    #theme-screen .theme-high-intensity-panel {
+        flex: 0 0 auto;
+        margin-top: 2px;
+        margin-bottom: 4px;
+        padding: 8px 12px;
+    }
+
+    #theme-screen .theme-mode-row {
+        gap: 8px;
+    }
+
+    #theme-screen .theme-global-btn {
+        min-height: 48px;
+        padding: 8px 10px;
+        font-size: 0.76rem;
+    }
+
+    #theme-screen .theme-mode-detail {
+        font-size: 0.62rem;
+    }
+
+    #theme-screen #progression-status,
+    #theme-screen #question-rotation-status,
+    #theme-screen #theme-start-guidance,
+    #theme-screen #candidate-history-sync-status {
+        flex: 0 0 auto;
+        margin: 0;
+        font-size: 0.68rem;
+        line-height: 1.15;
+    }
+
+    #theme-screen #start-btn {
+        flex: 0 0 auto;
+        min-height: 40px;
+        margin: 3px auto;
+        padding: 8px 16px;
+    }
+
+    #theme-screen .theme-bottom-actions {
+        flex: 0 0 auto;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        max-width: 100%;
+        margin: 4px auto 0;
+    }
+
+    #theme-screen .theme-bottom-actions .btn-secondary {
+        min-height: 36px;
+        padding: 7px 8px;
+        font-size: 0.72rem;
+    }
+}
