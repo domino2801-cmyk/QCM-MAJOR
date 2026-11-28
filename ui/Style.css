@@ -6780,3 +6780,27 @@ body {
         display: none !important;
     }
 }
+
+
+/* Correctif définitif : les règles par identifiant ne doivent jamais afficher
+   un écran inactif. Le sélecteur explicite neutralise les display:flex desktop. */
+@media (min-width: 601px) {
+    .container > #auth-screen.screen:not(.active),
+    .container > #centre-screen.screen:not(.active),
+    .container > #admin-screen.screen:not(.active),
+    .container > #theme-screen.screen:not(.active),
+    .container > #history-screen.screen:not(.active),
+    .container > #retex-screen.screen:not(.active),
+    .container > #report-screen.screen:not(.active),
+    .container > #quiz-screen.screen:not(.active),
+    .container > #result-screen.screen:not(.active) {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    .container > .screen.active {
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
