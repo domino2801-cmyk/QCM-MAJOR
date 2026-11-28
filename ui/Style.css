@@ -6804,3 +6804,58 @@ body {
         pointer-events: auto;
     }
 }
+
+/* TOP 3 — mise en page robuste lorsque le panneau de classement est étroit.
+   Le pseudo reste sur une vraie colonne ; note et date passent dessous. */
+@media (max-width: 760px) {
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 3px;
+        min-width: 0;
+        padding: 10px 10px;
+        text-align: left;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-rank {
+        grid-column: 1;
+        grid-row: 1 / 4;
+        align-self: center;
+        min-width: 0;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-candidate {
+        grid-column: 2;
+        grid-row: 1;
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        overflow-wrap: normal;
+        word-break: normal;
+        white-space: normal;
+        line-height: 1.25;
+        text-overflow: ellipsis;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item strong {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
+        white-space: nowrap;
+        line-height: 1.2;
+        font-size: 0.9rem;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item small {
+        grid-column: 2;
+        grid-row: 3;
+        justify-self: start;
+        white-space: nowrap;
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+}
