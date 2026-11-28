@@ -6859,3 +6859,60 @@ body {
         line-height: 1.2;
     }
 }
+
+/* TOP 3 — ordinateur : empêcher les colonnes note/date d'écraser le pseudo.
+   Le classement utilise une colonne identité, puis note et date en dessous.
+   Cette règle est volontairement limitée aux écrans ordinateur. */
+@media (min-width: 761px) {
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        align-items: center;
+        column-gap: 12px;
+        row-gap: 3px;
+        min-width: 0;
+        padding: 10px 12px;
+        text-align: left;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-rank {
+        grid-column: 1;
+        grid-row: 1 / 4;
+        align-self: center;
+        min-width: 0;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-candidate {
+        grid-column: 2;
+        grid-row: 1;
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+        line-height: 1.3;
+        font-size: 0.98rem;
+        text-align: left;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item strong {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
+        white-space: nowrap;
+        font-size: 0.92rem;
+        line-height: 1.25;
+    }
+
+    :is(#login-global-ranking-list, #history-global-ranking-list, #admin-global-ranking-list) .global-ranking-item small {
+        grid-column: 2;
+        grid-row: 3;
+        justify-self: start;
+        white-space: nowrap;
+        font-size: 0.76rem;
+        line-height: 1.2;
+    }
+}
