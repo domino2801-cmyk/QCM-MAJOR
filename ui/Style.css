@@ -6771,3 +6771,12 @@ body {
         font-size: 0.72rem;
     }
 }
+
+
+/* Sécurité d'affichage : un seul écran applicatif visible à la fois sur ordinateur.
+   Neutralise les display:flex déclarés sur certains écrans inactifs. */
+@media (min-width: 1101px) {
+    .container > .screen:not(.active) {
+        display: none !important;
+    }
+}
