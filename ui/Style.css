@@ -6251,3 +6251,79 @@ body {
         padding: 12px 14px;
     }
 }
+
+
+/* QCM-MAJOR — empêcher les débordements horizontaux sur tablette et ordinateur.
+   Les règles des téléphones (600 px et moins) restent strictement inchangées. */
+@media (min-width: 601px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: clip;
+    }
+
+    body {
+        box-sizing: border-box;
+    }
+
+    .container,
+    .container *,
+    .container *::before,
+    .container *::after {
+        min-width: 0;
+    }
+
+    .container,
+    .screen,
+    .screen.active,
+    #auth-screen,
+    #theme-screen,
+    #quiz-screen,
+    #result-screen,
+    #history-screen,
+    #retex-screen,
+    #report-screen,
+    #admin-screen {
+        max-width: 100%;
+    }
+
+    .container img,
+    .container video,
+    .container canvas,
+    .container svg,
+    .container iframe {
+        max-width: 100%;
+    }
+
+    .container :where(p, h1, h2, h3, h4, label, a, button, span, li, td, th, code, pre) {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    .container input,
+    .container select,
+    .container textarea,
+    .container button {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .container table {
+        width: 100%;
+        max-width: 100%;
+        table-layout: fixed;
+    }
+
+    .container pre {
+        max-width: 100%;
+        white-space: pre-wrap;
+    }
+
+    .container .stats-grid,
+    .container .theme-grid,
+    .container .admin-dashboard-cards,
+    .container .admin-dashboard-status-groups,
+    .container .report-context-grid {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    }
+}
